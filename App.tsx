@@ -883,7 +883,15 @@ const App: React.FC = () => {
       
       // Attempt to parse style from current avatar URL to pre-select the dropdown
       const url = currentUser.avatar_url || '';
-      if (url.includes('robohash.org')) {
+      // Check if it's a Firebase Storage URL (starts with https://firebasestorage.googleapis.com)
+      const isFirebaseStorageUrl = url.startsWith('https://firebasestorage.googleapis.com');
+      // Check if it's a base64 data URL
+      const isBase64Url = url.startsWith('data:image');
+      
+      if (isFirebaseStorageUrl || isBase64Url) {
+          // User has uploaded a photo, don't set avatarStyle (keep it null/empty to preserve uploaded photo)
+          setAvatarStyle('');
+      } else if (url.includes('robohash.org')) {
           if (url.includes('set=set4')) setAvatarStyle('cats');
           else if (url.includes('set=set2')) setAvatarStyle('monsters');
       } else if (url.includes('api.dicebear.com')) {
@@ -959,12 +967,18 @@ const App: React.FC = () => {
                   return;
               }
           }
-          // Priority 2: Generated avatar (if no file uploaded and prompt/style changed)
-          else if (avatarPrompt || avatarStyle) {
-              const seed = avatarPrompt || currentUser.name;
-              updatedUser.avatar_url = getAvatarUrl(avatarStyle, seed);
+          // Priority 2: Generated avatar (only if user explicitly changed prompt/style)
+          // Only regenerate if avatarPrompt is set (not empty) OR if avatarStyle is set and current avatar is NOT a Firebase Storage/base64 URL
+          else if (avatarPrompt || (avatarStyle && avatarStyle !== '' && !currentUser.avatar_url?.startsWith('https://firebasestorage.googleapis.com') && !currentUser.avatar_url?.startsWith('data:image'))) {
+              const seed = avatarPrompt || (editProfileForm.name || currentUser.name);
+              updatedUser.avatar_url = getAvatarUrl(avatarStyle || 'avataaars', seed);
           }
           // Priority 3: Keep existing avatar_url if nothing changed
+          // Preserve existing avatar_url (especially Firebase Storage URLs and base64 URLs)
+          else {
+              // Keep the existing avatar_url from editProfileForm (which includes currentUser.avatar_url)
+              updatedUser.avatar_url = editProfileForm.avatar_url || currentUser.avatar_url;
+          }
 
           await DataService.updateUser(updatedUser as User);
           setCurrentUser(updatedUser as User);
