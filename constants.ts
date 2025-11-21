@@ -1,5 +1,5 @@
 
-import { AthleteType, GroupType, Log, ScalingTier, User, VerificationStatus, Workout, Exercise, WorkoutScheme, Gender, Venue, UserCategory } from './types';
+import { AthleteType, GroupType, Log, ScalingTier, User, VerificationStatus, Workout, Exercise, WorkoutScheme, Gender, Venue, UserCategory, WorldRecord } from './types';
 
 export const APP_NAME = "HDB FitX";
 
@@ -740,5 +740,153 @@ export const MOCK_LOGS: Log[] = [
     verification_status: VerificationStatus.VERIFIED,
     witness_id: 'u1',
     witness_name: 'Hunter McIntyre'
+  }
+];
+
+// World Records
+export const WORLD_RECORDS: WorldRecord[] = [
+  // Pure Running WRs
+  {
+    id: 'wr_5km_men',
+    workout_id: 'w_5km_run',
+    workout_name: '5KM Run Challenge',
+    athlete_name: 'Joshua Cheptegei',
+    record_display: '12:35.36',
+    gender: Gender.MALE,
+    division: "Men's WR",
+    category: 'Pure Running'
+  },
+  {
+    id: 'wr_5km_women',
+    workout_id: 'w_5km_run',
+    workout_name: '5KM Run Challenge',
+    athlete_name: 'Gudaf Tsegay',
+    record_display: '14:00.21',
+    gender: Gender.FEMALE,
+    division: "Women's WR",
+    category: 'Pure Running'
+  },
+  {
+    id: 'wr_10km_men',
+    workout_id: 'w_10km_run',
+    workout_name: '10KM Run Challenge',
+    athlete_name: 'Joshua Cheptegei',
+    record_display: '26:11.00',
+    gender: Gender.MALE,
+    division: "Men's WR",
+    category: 'Pure Running'
+  },
+  {
+    id: 'wr_10km_women',
+    workout_id: 'w_10km_run',
+    workout_name: '10KM Run Challenge',
+    athlete_name: 'Beatrice Chebet',
+    record_display: '28:54.14',
+    gender: Gender.FEMALE,
+    division: "Women's WR",
+    category: 'Pure Running'
+  },
+  // Calisthenics 1RM WRs
+  {
+    id: 'wr_pullup_men',
+    workout_id: 'w_street_lift_pullup',
+    workout_name: 'Pull Up 1RM',
+    athlete_name: 'Liu Weiqiang',
+    record_display: '146.64 kg (323.28 lb)',
+    gender: Gender.MALE,
+    division: "Men's 1RM",
+    category: 'Calisthenics'
+  },
+  {
+    id: 'wr_muscleup_men',
+    workout_id: 'w_street_lift_muscleup',
+    workout_name: 'Muscle Up 1RM',
+    athlete_name: 'Liu Weiqiang',
+    record_display: '54.30 kg (119.71 lb)',
+    gender: Gender.MALE,
+    division: "Men's 1RM",
+    category: 'Calisthenics'
+  },
+  // HYROX Records
+  {
+    id: 'wr_hyrox_men_pro',
+    workout_id: 'w_hyrox_pro',
+    workout_name: 'HYROX Simulation (RX)',
+    athlete_name: 'Alexander Rončević',
+    record_display: '53:15',
+    gender: Gender.MALE,
+    division: "Men's Pro (WR)",
+    category: 'HYROX'
+  },
+  {
+    id: 'wr_hyrox_men_pro_former',
+    workout_id: 'w_hyrox_pro',
+    workout_name: 'HYROX Simulation (RX)',
+    athlete_name: 'Hunter McIntyre',
+    record_display: '53:22',
+    gender: Gender.MALE,
+    division: "Men's Pro (Former WR)",
+    category: 'HYROX'
+  },
+  {
+    id: 'wr_hyrox_men_open',
+    workout_id: 'w_hyrox_pro',
+    workout_name: 'HYROX Simulation (RX)',
+    athlete_name: 'Alexander Rončević',
+    record_display: '50:38',
+    gender: Gender.MALE,
+    division: "Men's Open (WR)",
+    category: 'HYROX'
+  },
+  {
+    id: 'wr_hyrox_women_pro',
+    workout_id: 'w_hyrox_pro',
+    workout_name: 'HYROX Simulation (RX)',
+    athlete_name: 'Lauren Weeks',
+    record_display: '56:22',
+    gender: Gender.FEMALE,
+    division: "Women's Pro (WR)",
+    category: 'HYROX'
+  },
+  {
+    id: 'wr_hyrox_women_open',
+    workout_id: 'w_hyrox_pro',
+    workout_name: 'HYROX Simulation (RX)',
+    athlete_name: 'Lucy Procter',
+    record_display: '57:35',
+    gender: Gender.FEMALE,
+    division: "Women's Open (Elite)",
+    category: 'HYROX'
+  },
+  {
+    id: 'wr_hyrox_men_open_hong',
+    workout_id: 'w_hyrox_pro',
+    workout_name: 'HYROX Simulation (RX)',
+    athlete_name: 'Hong Beom-seok',
+    record_display: '58:35',
+    gender: Gender.MALE,
+    division: "Men's Open",
+    category: 'HYROX'
+  },
+  // Murph Records
+  {
+    id: 'wr_murph_men',
+    workout_id: 'w_murph',
+    workout_name: 'Murph',
+    athlete_name: 'Alec Blenis',
+    record_display: '32:41',
+    gender: Gender.MALE,
+    division: "Men's Rx'd",
+    category: 'Murph'
+  },
+  {
+    id: 'wr_murph_women',
+    workout_id: 'w_murph',
+    workout_name: 'Murph',
+    athlete_name: 'Samantha Briggs',
+    record_display: '39:10',
+    gender: Gender.FEMALE,
+    division: "Women's Rx'd",
+    category: 'Murph'
   }
 ];

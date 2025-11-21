@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { MOCK_USERS, CURRENT_USER_ID } from './constants';
-import { User, Log, Notification, Workout, VerificationStatus, Gender, GroupType, AthleteType, ScalingTier, Venue, PinnedWOD, UserCategory } from './types';
+import { User, Log, Notification, Workout, VerificationStatus, Gender, GroupType, AthleteType, ScalingTier, Venue, PinnedWOD, UserCategory, WorldRecord } from './types';
 import { DataService } from './services/dataService';
 import { GeminiService } from './services/geminiService';
 import Navbar from './components/Navbar';
@@ -11,7 +11,7 @@ import AdminDashboard from './components/AdminDashboard';
 import AuthScreen from './components/AuthScreen';
 import DIYWorkout from './components/DIYWorkout';
 import { Trophy, Flame, MapPin, ChevronRight, Bot, Loader2, ShieldAlert, Filter, Dumbbell, Settings, Edit2, Save, X, RefreshCcw, Search, Calendar, Wand2, Star, RotateCcw, Pin, Users, Baby, Trash2, Check } from 'lucide-react';
-import { MOCK_EXERCISES } from './constants';
+import { MOCK_EXERCISES, WORLD_RECORDS } from './constants';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth, storage } from './firebaseConfig';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -507,6 +507,28 @@ const LeaderboardTab: React.FC<{ logs: Log[], workouts: Workout[], allUsers: Use
 
     }, [logs, selectedWorkoutId, workoutNameSearch, selectedGender, selectedVerification, selectedTier, selectedCategory, allUsers]);
 
+    // Filter world records based on current filters
+    const filteredWorldRecords = useMemo(() => {
+        let tempRecords = WORLD_RECORDS;
+        
+        // Filter by Workout ID
+        if (selectedWorkoutId !== 'all') {
+            tempRecords = tempRecords.filter(wr => wr.workout_id === selectedWorkoutId);
+        }
+        
+        // Filter by Workout Name Text
+        if (workoutNameSearch) {
+            tempRecords = tempRecords.filter(wr => wr.workout_name.toLowerCase().includes(workoutNameSearch.toLowerCase()));
+        }
+        
+        // Filter by Gender
+        if (selectedGender !== 'all') {
+            tempRecords = tempRecords.filter(wr => wr.gender === selectedGender);
+        }
+        
+        return tempRecords;
+    }, [selectedWorkoutId, workoutNameSearch, selectedGender]);
+
     return (
         <div className="p-5 space-y-4 pb-24">
              <header className="flex items-center justify-between">
@@ -602,12 +624,60 @@ const LeaderboardTab: React.FC<{ logs: Log[], workouts: Workout[], allUsers: Use
             </div>
 
             <div className="space-y-3">
-                {filteredLogs.length === 0 ? (
+                {/* World Records Section */}
+                {filteredWorldRecords.length > 0 && (
+                    <div className="mb-6">
+                        <h3 className="text-sm font-bold text-yellow-400 uppercase mb-3 flex items-center gap-2">
+                            <Star size={16} className="fill-yellow-400" /> World Records
+                        </h3>
+                        <div className="space-y-2">
+                            {filteredWorldRecords.map((wr) => (
+                                <div key={wr.id} className="bg-gradient-to-r from-yellow-900/30 to-yellow-800/20 border-2 border-yellow-500/50 p-3 rounded-xl flex items-center gap-3 shadow-lg shadow-yellow-500/10">
+                                    <div className="w-8 h-8 flex items-center justify-center text-lg font-black text-yellow-400 italic shrink-0">
+                                        <Star size={20} className="fill-yellow-400" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <h4 className="text-white font-bold text-sm truncate">{wr.athlete_name}</h4>
+                                            <span className="text-[10px] text-yellow-400 bg-yellow-500/20 px-1.5 py-0.5 rounded border border-yellow-500/30 font-bold">
+                                                WR
+                                            </span>
+                                        </div>
+                                        <p className="text-xs text-yellow-300 truncate">{wr.workout_name}</p>
+                                        <div className="flex flex-wrap gap-2 mt-1 items-center">
+                                            {wr.division && (
+                                                <span className="text-[10px] text-yellow-400 border border-yellow-500/30 px-1 rounded" title="Division">{wr.division}</span>
+                                            )}
+                                            <span className="text-[10px] text-yellow-300/70 border border-yellow-500/20 px-1 rounded" title="Category">{wr.category}</span>
+                                        </div>
+                                    </div>
+                                    <div className="text-right shrink-0 ml-2">
+                                        <div className="text-yellow-400 font-mono font-bold text-lg">{wr.record_display}</div>
+                                        <div className="flex items-center justify-end gap-1 mt-1">
+                                            <span className="flex items-center gap-1 text-[10px] text-yellow-400 bg-yellow-500/20 px-1.5 py-0.5 rounded border border-yellow-500/30 font-bold">
+                                                World Record
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+                
+                {/* Regular Leaderboard */}
+                {filteredLogs.length === 0 && filteredWorldRecords.length === 0 ? (
                     <div className="text-center py-10 text-slate-500 text-sm">
                         No records found matching filters.
                     </div>
                 ) : (
-                    filteredLogs.map((log, idx) => {
+                    <>
+                        {filteredWorldRecords.length > 0 && (
+                            <div className="mb-4">
+                                <h3 className="text-sm font-bold text-slate-400 uppercase mb-3">Community Leaderboard</h3>
+                            </div>
+                        )}
+                        {filteredLogs.map((log, idx) => {
                         // Format Timestamp
                         const dateObj = new Date(log.timestamp);
                         const dateDisplay = dateObj.toLocaleDateString('en-GB', {
@@ -666,7 +736,8 @@ const LeaderboardTab: React.FC<{ logs: Log[], workouts: Workout[], allUsers: Use
                                 </div>
                             </div>
                         );
-                    })
+                        })}
+                    </>
                 )}
             </div>
         </div>

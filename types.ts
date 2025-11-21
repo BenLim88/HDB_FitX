@@ -130,6 +130,17 @@ export interface Notification {
   read: boolean;
 }
 
+export interface WorldRecord {
+  id: string;
+  workout_id: string; // Match to workout ID or use pattern matching
+  workout_name: string;
+  athlete_name: string;
+  record_display: string; // e.g., "12:35.36" or "146.64 kg"
+  gender: Gender;
+  division?: string; // e.g., "Men's Pro", "Women's Open"
+  category: string; // e.g., "Pure Running", "Calisthenics", "HYROX", "Murph"
+}
+
 export interface PinnedWOD {
   id: string;
   workout_id: string;
