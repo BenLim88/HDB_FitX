@@ -617,8 +617,10 @@ const LeaderboardTab: React.FC<{ logs: Log[], workouts: Workout[], allUsers: Use
                             minute: '2-digit'
                         });
 
-                        // Find user for avatar
+                        // Find user for avatar and current name
                         const user = allUsers.find(u => u.id === log.user_id);
+                        // Use current user name if available, otherwise fall back to stored name
+                        const displayName = user?.name || log.user_name;
 
                         return (
                             <div key={log.id} className="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center gap-3">
@@ -631,7 +633,7 @@ const LeaderboardTab: React.FC<{ logs: Log[], workouts: Workout[], allUsers: Use
                                     </div>
                                 )}
                                 <div className="flex-1 min-w-0">
-                                    <h4 className="text-white font-bold text-sm truncate">{log.user_name}</h4>
+                                    <h4 className="text-white font-bold text-sm truncate">{displayName}</h4>
                                     <p className="text-xs text-orange-500 truncate">{log.workout_name}</p>
                                     <div className="flex flex-wrap gap-2 mt-1 items-center">
                                         <span className="text-[10px] text-slate-400 border border-slate-700 px-1 rounded">{log.difficulty_tier}</span>
@@ -1212,6 +1214,9 @@ const App: React.FC = () => {
                                             const dateObj = new Date(log.timestamp);
                                             const dateDisplay = `${dateObj.toLocaleDateString()} ${dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
                                             const workout = workouts.find(w => w.id === log.workout_id);
+                                            // Find user to get current name
+                                            const logUser = allUsers.find(u => u.id === log.user_id);
+                                            const displayName = logUser?.name || log.user_name;
                                             
                                             return (
                                                 <div key={log.id} className={`p-3 ${isKid ? 'bg-white border-blue-200' : 'bg-slate-950 border-slate-800'} rounded border flex items-start justify-between gap-3`}>
@@ -1220,7 +1225,7 @@ const App: React.FC = () => {
                                                             <h4 className={`text-sm font-bold ${isKid ? 'text-blue-900' : 'text-white'} truncate`}>{log.workout_name}</h4>
                                                             {currentUser.is_admin && (
                                                                 <span className={`text-[10px] ${isKid ? 'text-blue-600' : 'text-slate-400'} truncate`}>
-                                                                    by {log.user_name}
+                                                                    by {displayName}
                                                                 </span>
                                                             )}
                                                         </div>
