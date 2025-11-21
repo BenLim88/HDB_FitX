@@ -403,6 +403,79 @@ export const MOCK_WORKOUTS: Workout[] = [
       [ScalingTier.INTERMEDIATE]: 'Reduce reps by 2, remove hanging knee raises',
       [ScalingTier.BEGINNER]: 'Wall push-ups, squats, and plank only',
     }
+  },
+  // === RUNNING & ERG CHALLENGES ===
+  {
+    id: 'w_5km_run',
+    name: '5KM Run Challenge',
+    description: 'Test your endurance with a 5KM run. Track your time and aim for a personal best!',
+    scheme: WorkoutScheme.FOR_TIME,
+    time_cap_seconds: 1800, // 30 mins cap
+    rest_type: 'none',
+    is_featured: true,
+    components: [
+      { exercise_id: 'run', target: '5KM Run', order: 1 },
+    ],
+    scaling: {
+      [ScalingTier.RX]: '5KM continuous run',
+      [ScalingTier.ADVANCED]: '5KM with 1-2 walk breaks allowed',
+      [ScalingTier.INTERMEDIATE]: '3KM run, 2KM walk/run',
+      [ScalingTier.BEGINNER]: '2KM run/walk intervals',
+    }
+  },
+  {
+    id: 'w_10km_run',
+    name: '10KM Run Challenge',
+    description: 'Push your limits with a 10KM run. Elite endurance challenge for serious runners.',
+    scheme: WorkoutScheme.FOR_TIME,
+    time_cap_seconds: 3600, // 60 mins cap
+    rest_type: 'none',
+    is_featured: true,
+    components: [
+      { exercise_id: 'run', target: '10KM Run', order: 1 },
+    ],
+    scaling: {
+      [ScalingTier.RX]: '10KM continuous run',
+      [ScalingTier.ADVANCED]: '10KM with strategic walk breaks',
+      [ScalingTier.INTERMEDIATE]: '7KM run, 3KM walk/run',
+      [ScalingTier.BEGINNER]: '5KM run/walk intervals',
+    }
+  },
+  {
+    id: 'w_rowerg_1km',
+    name: 'Rowerg 1KM Fastest Challenge',
+    description: 'All-out sprint on the rowing machine. How fast can you complete 1KM?',
+    scheme: WorkoutScheme.FOR_TIME,
+    time_cap_seconds: 600, // 10 mins cap
+    rest_type: 'none',
+    is_featured: false,
+    components: [
+      { exercise_id: 'row', target: '1KM Row', order: 1 },
+    ],
+    scaling: {
+      [ScalingTier.RX]: '1KM continuous row - fastest time',
+      [ScalingTier.ADVANCED]: '1KM row with 30s rest at 500m',
+      [ScalingTier.INTERMEDIATE]: '750m row - fastest time',
+      [ScalingTier.BEGINNER]: '500m row - fastest time',
+    }
+  },
+  {
+    id: 'w_skierg_1km',
+    name: 'Skierg 1KM Fastest Challenge',
+    description: 'Maximum effort on the ski erg. Push through the burn for your fastest 1KM time!',
+    scheme: WorkoutScheme.FOR_TIME,
+    time_cap_seconds: 600, // 10 mins cap
+    rest_type: 'none',
+    is_featured: false,
+    components: [
+      { exercise_id: 'ski', target: '1KM Ski Erg', order: 1 },
+    ],
+    scaling: {
+      [ScalingTier.RX]: '1KM continuous ski - fastest time',
+      [ScalingTier.ADVANCED]: '1KM ski with 30s rest at 500m',
+      [ScalingTier.INTERMEDIATE]: '750m ski - fastest time',
+      [ScalingTier.BEGINNER]: '500m ski - fastest time',
+    }
   }
 ];
 
