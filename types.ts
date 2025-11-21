@@ -121,10 +121,11 @@ export interface Log {
 export interface Notification {
   id: string;
   target_user_id: string;
-  type: 'witness_request' | 'system';
+  type: 'witness_request' | 'system' | 'pinned_wod_invitation';
   message: string;
   payload: {
     log_id?: string;
+    pinned_wod_id?: string;
   };
   read: boolean;
 }

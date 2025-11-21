@@ -1021,7 +1021,12 @@ const App: React.FC = () => {
             )}
             
             {activeTab === 'inbox' && (
-                <WitnessInbox notifications={notifications} currentUserId={currentUser.id} refreshData={refreshData} />
+                <WitnessInbox 
+                  notifications={notifications} 
+                  currentUserId={currentUser.id} 
+                  refreshData={refreshData}
+                  onNavigateToHome={() => setActiveTab('home')}
+                />
             )}
 
             {activeTab === 'admin' && (

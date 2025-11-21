@@ -30,6 +30,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
   const [intendedTime, setIntendedTime] = useState('');
   const [deadlineDate, setDeadlineDate] = useState('');
   const [deadlineTime, setDeadlineTime] = useState('');
+  const [inviteFilter, setInviteFilter] = useState<'all' | 'adults' | 'kids' | string>('all'); // 'all', 'adults', 'kids', or athlete_type
+  const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
 
   // Exercise Form State
   const [newExerciseName, setNewExerciseName] = useState('');
@@ -278,7 +280,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
   };
 
   // --- PIN WOD HANDLERS ---
-  const handleStartPinning = (workoutId: string) => {
+  const handleStartPinning = async (workoutId: string) => {
       setPinningWorkoutId(workoutId);
       // Set default dates (today and tomorrow)
       const now = new Date();
@@ -289,6 +291,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       tomorrow.setDate(tomorrow.getDate() + 1);
       setDeadlineDate(tomorrow.toISOString().split('T')[0]);
       setDeadlineTime("23:59");
+      
+      // Reset invitation selection
+      setInviteFilter('all');
+      setSelectedUserIds(new Set());
+      
+      // Load users if not already loaded
+      if (users.length === 0) {
+          await loadUsers();
+      }
   };
 
   const handleConfirmPin = async () => {
@@ -301,15 +312,53 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       const start = new Date(`${intendedDate}T${intendedTime || '00:00'}`).getTime();
       const end = new Date(`${deadlineDate}T${deadlineTime || '23:59'}`).getTime();
 
-      await DataService.addPinnedWOD({
+      // Create pinned WOD
+      const pinnedWod = await DataService.addPinnedWOD({
           workout_id: workout.id,
           workout_name: workout.name,
           intended_date: start,
           deadline: end
       });
 
-      alert(`Pinned "${workout.name}" to the Home Board!`);
+      // Determine which users to invite
+      let usersToInvite: User[] = [];
+      
+      if (inviteFilter === 'all') {
+          usersToInvite = users.filter(u => !u.is_admin); // Exclude admins
+      } else if (inviteFilter === 'adults') {
+          usersToInvite = users.filter(u => !u.is_admin && u.category === UserCategory.ADULT);
+      } else if (inviteFilter === 'kids') {
+          usersToInvite = users.filter(u => !u.is_admin && u.category === UserCategory.KID);
+      } else {
+          // Filter by athlete type
+          usersToInvite = users.filter(u => !u.is_admin && u.athlete_type === inviteFilter);
+      }
+
+      // If specific users are selected, use those instead
+      if (selectedUserIds.size > 0) {
+          usersToInvite = users.filter(u => selectedUserIds.has(u.id));
+      }
+
+      // Send notifications to selected users
+      const dateStr = new Date(start).toLocaleDateString();
+      const timeStr = new Date(start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      
+      for (const user of usersToInvite) {
+          await DataService.addNotification({
+              target_user_id: user.id,
+              type: 'pinned_wod_invitation',
+              message: `New Priority Mission: "${workout.name}" scheduled for ${dateStr} at ${timeStr}`,
+              payload: {
+                  pinned_wod_id: pinnedWod.id
+              },
+              read: false
+          });
+      }
+
+      alert(`Pinned "${workout.name}" to the Home Board! ${usersToInvite.length > 0 ? `Invitations sent to ${usersToInvite.length} user(s).` : ''}`);
       setPinningWorkoutId(null);
+      setSelectedUserIds(new Set());
+      setInviteFilter('all');
   };
 
   // --- USER MANAGEMENT HANDLERS ---
@@ -615,35 +664,137 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                         </div>
 
                         {/* PIN WOD MODAL */}
-                        {pinningWorkoutId && (
-                            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                                <div className="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-2xl p-6 shadow-2xl animate-in zoom-in-95 duration-200">
-                                    <h3 className="text-white font-bold text-lg mb-4 flex items-center gap-2">
-                                        <Pin className="text-blue-500" /> Pin Workout
-                                    </h3>
-                                    <div className="space-y-4">
-                                        <div>
-                                            <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Intended Start</label>
-                                            <div className="flex gap-2">
-                                                <input type="date" className="bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm w-full" value={intendedDate} onChange={e => setIntendedDate(e.target.value)} />
-                                                <input type="time" className="bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm w-full" value={intendedTime} onChange={e => setIntendedTime(e.target.value)} />
+                        {pinningWorkoutId && (() => {
+                            // Filter users based on inviteFilter
+                            let filteredUsers = users.filter(u => !u.is_admin);
+                            
+                            if (inviteFilter === 'adults') {
+                                filteredUsers = filteredUsers.filter(u => u.category === UserCategory.ADULT);
+                            } else if (inviteFilter === 'kids') {
+                                filteredUsers = filteredUsers.filter(u => u.category === UserCategory.KID);
+                            } else if (inviteFilter !== 'all') {
+                                filteredUsers = filteredUsers.filter(u => u.athlete_type === inviteFilter);
+                            }
+
+                            const allFilteredSelected = filteredUsers.length > 0 && filteredUsers.every(u => selectedUserIds.has(u.id));
+                            
+                            return (
+                                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                                    <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl p-6 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
+                                        <h3 className="text-white font-bold text-lg mb-4 flex items-center gap-2">
+                                            <Pin className="text-blue-500" /> Pin Workout
+                                        </h3>
+                                        <div className="space-y-4 flex-1 overflow-y-auto pr-2">
+                                            <div>
+                                                <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Intended Start</label>
+                                                <div className="flex gap-2">
+                                                    <input type="date" className="bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm w-full" value={intendedDate} onChange={e => setIntendedDate(e.target.value)} />
+                                                    <input type="time" className="bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm w-full" value={intendedTime} onChange={e => setIntendedTime(e.target.value)} />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Deadline (Completion)</label>
+                                                <div className="flex gap-2">
+                                                    <input type="date" className="bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm w-full" value={deadlineDate} onChange={e => setDeadlineDate(e.target.value)} />
+                                                    <input type="time" className="bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm w-full" value={deadlineTime} onChange={e => setDeadlineTime(e.target.value)} />
+                                                </div>
+                                            </div>
+                                            
+                                            {/* User Invitation Section */}
+                                            <div className="border-t border-slate-800 pt-4">
+                                                <label className="block text-[10px] uppercase font-bold text-slate-500 mb-2">Send Invitations To</label>
+                                                
+                                                {/* Filter Dropdown */}
+                                                <select
+                                                    className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm mb-3 outline-none"
+                                                    value={inviteFilter}
+                                                    onChange={(e) => {
+                                                        setInviteFilter(e.target.value);
+                                                        setSelectedUserIds(new Set()); // Clear selection when filter changes
+                                                    }}
+                                                >
+                                                    <option value="all">All Users</option>
+                                                    <option value="adults">Adults Only</option>
+                                                    <option value="kids">Kids Only</option>
+                                                    {Array.from(new Set(users.filter(u => !u.is_admin).map(u => u.athlete_type))).map(type => (
+                                                        <option key={type} value={type}>{type}</option>
+                                                    ))}
+                                                </select>
+
+                                                {/* Select All / Deselect All */}
+                                                {filteredUsers.length > 0 && (
+                                                    <div className="mb-2">
+                                                        <button
+                                                            onClick={() => {
+                                                                if (allFilteredSelected) {
+                                                                    // Deselect all filtered users
+                                                                    const newSet = new Set(selectedUserIds);
+                                                                    filteredUsers.forEach(u => newSet.delete(u.id));
+                                                                    setSelectedUserIds(newSet);
+                                                                } else {
+                                                                    // Select all filtered users
+                                                                    const newSet = new Set(selectedUserIds);
+                                                                    filteredUsers.forEach(u => newSet.add(u.id));
+                                                                    setSelectedUserIds(newSet);
+                                                                }
+                                                            }}
+                                                            className="text-xs text-blue-400 hover:text-blue-300 font-bold"
+                                                        >
+                                                            {allFilteredSelected ? 'Deselect All' : 'Select All'} ({filteredUsers.length})
+                                                        </button>
+                                                    </div>
+                                                )}
+
+                                                {/* User List */}
+                                                <div className="max-h-48 overflow-y-auto space-y-2 border border-slate-800 rounded p-2 bg-slate-950">
+                                                    {filteredUsers.length === 0 ? (
+                                                        <p className="text-xs text-slate-500 text-center py-4">No users match this filter</p>
+                                                    ) : (
+                                                        filteredUsers.map(user => (
+                                                            <label key={user.id} className="flex items-center gap-2 p-2 hover:bg-slate-800 rounded cursor-pointer">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={selectedUserIds.has(user.id)}
+                                                                    onChange={(e) => {
+                                                                        const newSet = new Set(selectedUserIds);
+                                                                        if (e.target.checked) {
+                                                                            newSet.add(user.id);
+                                                                        } else {
+                                                                            newSet.delete(user.id);
+                                                                        }
+                                                                        setSelectedUserIds(newSet);
+                                                                    }}
+                                                                    className="w-4 h-4 rounded border-slate-700 bg-slate-950 text-blue-500 focus:ring-blue-500"
+                                                                />
+                                                                <div className="flex-1 min-w-0">
+                                                                    <p className="text-xs text-white font-bold truncate">{user.name}</p>
+                                                                    <p className="text-[10px] text-slate-500">{user.athlete_type} • {user.category}</p>
+                                                                </div>
+                                                            </label>
+                                                        ))
+                                                    )}
+                                                </div>
+                                                
+                                                {selectedUserIds.size > 0 && (
+                                                    <p className="text-xs text-blue-400 mt-2 font-bold">
+                                                        {selectedUserIds.size} user{selectedUserIds.size !== 1 ? 's' : ''} selected
+                                                    </p>
+                                                )}
                                             </div>
                                         </div>
-                                        <div>
-                                            <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Deadline (Completion)</label>
-                                            <div className="flex gap-2">
-                                                <input type="date" className="bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm w-full" value={deadlineDate} onChange={e => setDeadlineDate(e.target.value)} />
-                                                <input type="time" className="bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm w-full" value={deadlineTime} onChange={e => setDeadlineTime(e.target.value)} />
-                                            </div>
-                                        </div>
-                                        <div className="flex gap-2 mt-4">
-                                            <button onClick={() => setPinningWorkoutId(null)} className="flex-1 py-3 bg-slate-800 text-slate-400 font-bold rounded-lg text-xs">CANCEL</button>
+                                        
+                                        <div className="flex gap-2 mt-4 pt-4 border-t border-slate-800">
+                                            <button onClick={() => {
+                                                setPinningWorkoutId(null);
+                                                setSelectedUserIds(new Set());
+                                                setInviteFilter('all');
+                                            }} className="flex-1 py-3 bg-slate-800 text-slate-400 font-bold rounded-lg text-xs">CANCEL</button>
                                             <button onClick={handleConfirmPin} className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-lg text-xs hover:bg-blue-500">CONFIRM PIN</button>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        )}
+                            );
+                        })()}
 
                     </div>
                 ) : (

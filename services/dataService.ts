@@ -309,5 +309,23 @@ export const DataService = {
     }
     // Remove notification related to this log
     notifications = notifications.filter(n => n.payload.log_id !== logId);
+  },
+
+  addNotification: async (notification: Omit<Notification, 'id'>): Promise<Notification> => {
+    await delay(200);
+    const newNotification: Notification = {
+      ...notification,
+      id: `n_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    };
+    notifications.push(newNotification);
+    return newNotification;
+  },
+
+  markNotificationAsRead: async (notificationId: string): Promise<void> => {
+    await delay(200);
+    const index = notifications.findIndex(n => n.id === notificationId);
+    if (index !== -1) {
+      notifications[index].read = true;
+    }
   }
 };
