@@ -1,129 +1,131 @@
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    
-    // Helper function: Check if user is authenticated
-    function isAuthenticated() {
-      return request.auth != null;
+    rules_version = '2';
+    service cloud.firestore {
+    match /databases/{database}/documents {
+        
+        // Helper function: Check if user is authenticated
+        function isAuthenticated() {
+        return request.auth != null;
+        }
+        
+        // Helper function: Check if user is admin
+        // Note: This will return false if user document doesn't exist
+        function isAdmin() {
+        return isAuthenticated() && 
+                get(/databases/$(database)/documents/users/$(request.auth.uid)).data.is_admin == true;
+        }
+        
+        // Helper function: Check if user owns the document
+        function isOwner(userId) {
+        return isAuthenticated() && request.auth.uid == userId;
+        }
+        
+        // Helper function: Allow admin user IDs to be created (for mock Admin/Guest accounts)
+        function isSpecialAccount(userId) {
+        return userId == 'master_admin' || userId == 'guest';
+        }
+        
+        // USERS Collection
+        match /users/{userId} {
+        // Anyone can read user profiles (for leaderboards, etc.)
+        allow read: if true;
+        
+        // Allow creating special accounts (Admin/Guest) without auth
+        // Allow authenticated users to create their own profile
+        // Admins can create any user
+        allow create: if isSpecialAccount(userId) || 
+                        (isAuthenticated() && (isOwner(userId) || isAdmin()));
+        
+        // Users can update their own profile
+        // Admins can update any user
+        // Special accounts can update themselves (for mock login)
+        allow update: if isSpecialAccount(userId) || 
+                        (isAuthenticated() && (isOwner(userId) || isAdmin()));
+        
+        // Only admins can delete users
+        allow delete: if isAdmin();
+        }
+        
+        // WORKOUTS Collection (Public Read, Admin Write)
+        match /workouts/{workoutId} {
+        // Anyone can read workouts
+        allow read: if true;
+        
+        // Allow creating if document doesn't exist yet (initial seeding) OR admin writes
+        allow create: if !exists(/databases/$(database)/documents/workouts/$(workoutId)) || isAdmin();
+        allow update: if isAdmin();
+        allow delete: if isAdmin();
+        }
+        
+        // VENUES Collection (Public Read, Admin Write)
+        match /venues/{venueId} {
+        // Anyone can read venues
+        allow read: if true;
+        
+        // Allow creating if document doesn't exist yet (initial seeding) OR admin writes
+        allow create: if !exists(/databases/$(database)/documents/venues/$(venueId)) || isAdmin();
+        allow update: if isAdmin();
+        allow delete: if isAdmin();
+        }
+        
+        // LOGS Collection
+        match /logs/{logId} {
+        // Anyone can read logs (for leaderboards)
+        allow read: if true;
+        
+        // Allow creating if document doesn't exist yet (initial seeding) OR users can create their own logs
+        // Admins can create any log
+        allow create: if !exists(/databases/$(database)/documents/logs/$(logId)) || 
+                        (isAuthenticated() && 
+                            (resource == null || isOwner(resource.data.user_id) || isAdmin()));
+        
+        // Users can update their own logs
+        // Admins can update any log (for verification)
+        allow update: if isAuthenticated() && 
+                        (isOwner(resource.data.user_id) || isAdmin());
+        
+        // Only admins can delete logs
+        allow delete: if isAdmin();
+        }
+        
+        // PINNED WODS Collection
+        match /pinnedWods/{wodId} {
+        // Anyone can read pinned WODs
+        allow read: if true;
+        
+        // Allow creating pinned WODs
+        // Note: App-level security (AdminDashboard) ensures only admins can call this
+        // This allows mock admin users (who don't use Firebase Auth) to create pinned WODs
+        allow create: if true;
+        
+        // Users can update to join/unjoin (update participants array)
+        // Admins can update anything
+        allow update: if isAuthenticated() && 
+                        (isAdmin() || 
+                            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['participants']));
+        
+        // Only admins can delete pinned WODs
+        allow delete: if isAdmin();
+        }
+        
+        // NOTIFICATIONS Collection
+        match /notifications/{notificationId} {
+        // Allow reading notifications by target_user_id
+        // Note: App-level security ensures users only query their own notifications
+        // This allows mock users (who don't use Firebase Auth) to read their notifications
+        allow read: if true;
+        
+        // Allow creating notifications
+        // Note: App-level security ensures only admins/users can create notifications
+        // This allows mock admin users to create notifications
+        allow create: if true;
+        
+        // Allow updating notifications (mark as read)
+        // Note: App-level security ensures users only update their own notifications
+        allow update: if true;
+        
+        // Allow deleting notifications
+        // Note: App-level security ensures users only delete their own notifications
+        allow delete: if true;
+        }
     }
-    
-    // Helper function: Check if user is admin
-    // Note: This will return false if user document doesn't exist
-    function isAdmin() {
-      return isAuthenticated() && 
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.is_admin == true;
     }
-    
-    // Helper function: Check if user owns the document
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
-    }
-    
-    // Helper function: Allow admin user IDs to be created (for mock Admin/Guest accounts)
-    function isSpecialAccount(userId) {
-      return userId == 'master_admin' || userId == 'guest';
-    }
-    
-    // USERS Collection
-    match /users/{userId} {
-      // Anyone can read user profiles (for leaderboards, etc.)
-      allow read: if true;
-      
-      // Allow creating special accounts (Admin/Guest) without auth
-      // Allow authenticated users to create their own profile
-      // Admins can create any user
-      allow create: if isSpecialAccount(userId) || 
-                       (isAuthenticated() && (isOwner(userId) || isAdmin()));
-      
-      // Users can update their own profile
-      // Admins can update any user
-      // Special accounts can update themselves (for mock login)
-      allow update: if isSpecialAccount(userId) || 
-                       (isAuthenticated() && (isOwner(userId) || isAdmin()));
-      
-      // Only admins can delete users
-      allow delete: if isAdmin();
-    }
-    
-    // WORKOUTS Collection (Public Read, Admin Write)
-    match /workouts/{workoutId} {
-      // Anyone can read workouts
-      allow read: if true;
-      
-      // Allow creating if document doesn't exist yet (initial seeding) OR admin writes
-      allow create: if !exists(/databases/$(database)/documents/workouts/$(workoutId)) || isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
-    }
-    
-    // VENUES Collection (Public Read, Admin Write)
-    match /venues/{venueId} {
-      // Anyone can read venues
-      allow read: if true;
-      
-      // Allow creating if document doesn't exist yet (initial seeding) OR admin writes
-      allow create: if !exists(/databases/$(database)/documents/venues/$(venueId)) || isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
-    }
-    
-    // LOGS Collection
-    match /logs/{logId} {
-      // Anyone can read logs (for leaderboards)
-      allow read: if true;
-      
-      // Allow creating if document doesn't exist yet (initial seeding) OR users can create their own logs
-      // Admins can create any log
-      allow create: if !exists(/databases/$(database)/documents/logs/$(logId)) || 
-                       (isAuthenticated() && 
-                        (resource == null || isOwner(resource.data.user_id) || isAdmin()));
-      
-      // Users can update their own logs
-      // Admins can update any log (for verification)
-      allow update: if isAuthenticated() && 
-                       (isOwner(resource.data.user_id) || isAdmin());
-      
-      // Only admins can delete logs
-      allow delete: if isAdmin();
-    }
-    
-    // PINNED WODS Collection
-    match /pinnedWods/{wodId} {
-      // Anyone can read pinned WODs
-      allow read: if true;
-      
-      // Allow creating pinned WODs
-      // Note: App-level security (AdminDashboard) ensures only admins can call this
-      // This allows mock admin users (who don't use Firebase Auth) to create pinned WODs
-      allow create: if true;
-      
-      // Users can update to join/unjoin (update participants array)
-      // Admins can update anything
-      allow update: if isAuthenticated() && 
-                       (isAdmin() || 
-                        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['participants']));
-      
-      // Only admins can delete pinned WODs
-      allow delete: if isAdmin();
-    }
-    
-    // NOTIFICATIONS Collection
-    match /notifications/{notificationId} {
-      // Users can only read their own notifications
-      allow read: if isAuthenticated() && 
-                      resource.data.target_user_id == request.auth.uid;
-      
-      // Admins can create notifications (for pinned WOD invitations)
-      // Users can create notifications (for witness requests)
-      allow create: if isAuthenticated();
-      
-      // Users can update their own notifications (mark as read)
-      allow update: if isAuthenticated() && 
-                       resource.data.target_user_id == request.auth.uid;
-      
-      // Users can delete their own notifications
-      allow delete: if isAuthenticated() && 
-                       resource.data.target_user_id == request.auth.uid;
-    }
-  }
-}

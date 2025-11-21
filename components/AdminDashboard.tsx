@@ -360,7 +360,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
           
           for (const user of usersToInvite) {
               try {
-                  await DataService.addNotification({
+                  const notification = await DataService.addNotification({
                       target_user_id: user.id,
                       type: 'pinned_wod_invitation',
                       message: `New Priority Mission: "${workout.name}" scheduled for ${dateStr} at ${timeStr}`,
@@ -369,8 +369,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                       },
                       read: false
                   });
+                  console.log(`Notification created for ${user.name}:`, notification.id);
               } catch (notifError) {
                   console.error(`Failed to send notification to ${user.name}:`, notifError);
+                  alert(`Failed to send notification to ${user.name}. Check console for details.`);
               }
           }
 

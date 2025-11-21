@@ -508,15 +508,22 @@ export const DataService = {
   },
 
   getNotifications: async (userId: string): Promise<Notification[]> => {
-      const notificationsQuery = query(
-          collection(db, COLLECTIONS.NOTIFICATIONS),
-          where('target_user_id', '==', userId)
-      );
-      const notificationsSnapshot = await getDocs(notificationsQuery);
-      return notificationsSnapshot.docs.map(doc => ({
-          ...doc.data(),
-          id: doc.id
-      } as Notification));
+      try {
+          const notificationsQuery = query(
+              collection(db, COLLECTIONS.NOTIFICATIONS),
+              where('target_user_id', '==', userId)
+          );
+          const notificationsSnapshot = await getDocs(notificationsQuery);
+          const notifications = notificationsSnapshot.docs.map(doc => ({
+              ...doc.data(),
+              id: doc.id
+          } as Notification));
+          console.log(`Fetched ${notifications.length} notifications for user ${userId}`);
+          return notifications;
+      } catch (error) {
+          console.error('Error fetching notifications:', error);
+          return [];
+      }
   },
 
   verifyLog: async (logId: string, verifierId: string, status: VerificationStatus): Promise<void> => {
@@ -554,11 +561,18 @@ export const DataService = {
   },
 
   addNotification: async (notification: Omit<Notification, 'id'>): Promise<Notification> => {
-      const docRef = await addDoc(collection(db, COLLECTIONS.NOTIFICATIONS), notification);
-      return {
-          ...notification,
-          id: docRef.id
-      };
+      try {
+          const docRef = await addDoc(collection(db, COLLECTIONS.NOTIFICATIONS), notification);
+          const newNotification: Notification = {
+              ...notification,
+              id: docRef.id
+          };
+          console.log('Notification created successfully:', newNotification.id, 'for user:', notification.target_user_id);
+          return newNotification;
+      } catch (error) {
+          console.error('Error creating notification:', error);
+          throw error;
+      }
   },
 
   markNotificationAsRead: async (notificationId: string): Promise<void> => {
