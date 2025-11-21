@@ -634,6 +634,12 @@ const LeaderboardTab: React.FC<{ logs: Log[], workouts: Workout[], allUsers: Use
                                     <p className="text-xs text-orange-500 truncate">{log.workout_name}</p>
                                     <div className="flex flex-wrap gap-2 mt-1 items-center">
                                         <span className="text-[10px] text-slate-400 border border-slate-700 px-1 rounded">{log.difficulty_tier}</span>
+                                        {user && user.group_id && user.group_id !== 'None' && (
+                                            <span className="text-[10px] text-blue-400 border border-blue-700 px-1 rounded" title="Group">{user.group_id}</span>
+                                        )}
+                                        {user && user.athlete_type && user.athlete_type !== 'Generic' && (
+                                            <span className="text-[10px] text-purple-400 border border-purple-700 px-1 rounded" title="Archetype">{user.athlete_type}</span>
+                                        )}
                                         <span className="text-[10px] text-slate-500 flex items-center gap-1">
                                             <Calendar size={10} /> {dateDisplay}
                                         </span>
