@@ -58,6 +58,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
   const [restSeconds, setRestSeconds] = useState<string>('60');
   const [isKidsFriendly, setIsKidsFriendly] = useState(false);
   const [workoutCategory, setWorkoutCategory] = useState<string>('General');
+  const [workoutRounds, setWorkoutRounds] = useState<string>('1');
+  const [componentRound, setComponentRound] = useState<string>('1');
   
   // Scaling Builder State
   const [scalingRx, setScalingRx] = useState('');
@@ -161,12 +163,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
           target: fullTarget,
           weight: weightInput || undefined,
           sets: setsInput ? parseInt(setsInput) : 1,
+          round: componentRound ? parseInt(componentRound) : 1,
           order: workoutComponents.length + 1
       };
       setWorkoutComponents([...workoutComponents, newComponent]);
       setTargetValue('');
       setWeightInput('');
       setSetsInput('1');
+      // Keep round value so user can add multiple exercises to same round
   };
 
   const removeComponent = (idx: number) => {
@@ -186,9 +190,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       setRestSeconds(workout.rest_seconds ? workout.rest_seconds.toString() : '60');
       setIsKidsFriendly(workout.is_kids_friendly || false);
       setWorkoutCategory(workout.category || 'General');
+      setWorkoutRounds(workout.rounds ? workout.rounds.toString() : '1');
       
       // Deep copy components to avoid mutating the original object during editing
       setWorkoutComponents(JSON.parse(JSON.stringify(workout.components)));
+      // Set component round to the last round used, or 1
+      const lastRound = workout.components.length > 0 
+        ? Math.max(...workout.components.map(c => c.round || 1))
+        : 1;
+      setComponentRound(lastRound.toString());
       
       setScalingRx(workout.scaling[ScalingTier.RX] || '');
       setScalingAdv(workout.scaling[ScalingTier.ADVANCED] || '');
@@ -214,6 +224,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
           time_cap_seconds: workoutTimeCap ? parseInt(workoutTimeCap) * 60 : undefined,
           rest_type: restType,
           rest_seconds: restType === 'fixed' ? parseInt(restSeconds) : undefined,
+          rounds: workoutRounds ? parseInt(workoutRounds) : 1,
           components: workoutComponents,
           scaling: {
               [ScalingTier.RX]: scalingRx || 'RX',
@@ -274,6 +285,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       setIsKidsFriendly(false);
       setSetsInput('1');
       setWorkoutCategory('General');
+      setWorkoutRounds('1');
+      setComponentRound('1');
   };
 
   const handleDeleteWorkout = (id: string) => {
@@ -950,6 +963,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                                         onChange={e => setWorkoutTimeCap(e.target.value)}
                                     />
                                 </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Rounds</label>
+                                    <input 
+                                        type="number"
+                                        min="1"
+                                        className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-xs outline-none"
+                                        placeholder="1"
+                                        value={workoutRounds}
+                                        onChange={e => setWorkoutRounds(e.target.value || '1')}
+                                    />
+                                    <p className="text-[10px] text-slate-500 mt-1">Number of times to repeat all exercises</p>
+                                </div>
                             </div>
 
                             {/* Kids Friendly Toggle */}
@@ -1041,30 +1066,54 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                                 
                                 {/* List of added components */}
                                 {workoutComponents.length > 0 && (
-                                    <div className="mb-4 space-y-2">
-                                        {workoutComponents.map((comp, idx) => {
-                                            const ex = exercises.find(e => e.id === comp.exercise_id);
-                                            return (
-                                                <div key={idx} className="flex items-center justify-between bg-slate-950 p-2 rounded border border-slate-800">
-                                                    <div className="flex items-center gap-3">
-                                                        <span className="text-slate-600 font-mono font-bold text-xs">#{idx + 1}</span>
-                                                        <div>
-                                                            <p className="text-white text-xs font-bold">{ex?.name || 'Unknown'}</p>
-                                                            <div className="flex gap-2 items-center flex-wrap">
-                                                                {(comp.sets && comp.sets > 1) && (
-                                                                    <span className="text-[10px] text-blue-400 font-bold">{comp.sets}x</span>
-                                                                )}
-                                                                <span className="text-[10px] text-orange-500">{comp.target}</span>
-                                                                {comp.weight && <span className="text-[10px] text-slate-400">@ {comp.weight}</span>}
+                                    <div className="mb-4 space-y-3">
+                                        {(() => {
+                                            // Group components by round
+                                            const roundsMap = new Map<number, WorkoutComponent[]>();
+                                            workoutComponents.forEach(comp => {
+                                                const round = comp.round || 1;
+                                                if (!roundsMap.has(round)) {
+                                                    roundsMap.set(round, []);
+                                                }
+                                                roundsMap.get(round)!.push(comp);
+                                            });
+                                            
+                                            return Array.from(roundsMap.entries())
+                                                .sort((a, b) => a[0] - b[0])
+                                                .map(([roundNum, roundComponents]) => (
+                                                    <div key={roundNum} className="space-y-2">
+                                                        {roundsMap.size > 1 && (
+                                                            <div className="text-[10px] text-purple-400 font-bold uppercase mb-1">
+                                                                Round {roundNum}
                                                             </div>
-                                                        </div>
+                                                        )}
+                                                        {roundComponents.map((comp, compIdx) => {
+                                                            const globalIdx = workoutComponents.findIndex(c => c === comp);
+                                                            const ex = exercises.find(e => e.id === comp.exercise_id);
+                                                            return (
+                                                                <div key={globalIdx} className="flex items-center justify-between bg-slate-950 p-2 rounded border border-slate-800">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <span className="text-slate-600 font-mono font-bold text-xs">#{globalIdx + 1}</span>
+                                                                        <div>
+                                                                            <p className="text-white text-xs font-bold">{ex?.name || 'Unknown'}</p>
+                                                                            <div className="flex gap-2 items-center flex-wrap">
+                                                                                {(comp.sets && comp.sets > 1) && (
+                                                                                    <span className="text-[10px] text-blue-400 font-bold">{comp.sets}x</span>
+                                                                                )}
+                                                                                <span className="text-[10px] text-orange-500">{comp.target}</span>
+                                                                                {comp.weight && <span className="text-[10px] text-slate-400">@ {comp.weight}</span>}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <button onClick={() => removeComponent(globalIdx)} className="text-slate-600 hover:text-red-500">
+                                                                        <X size={14} />
+                                                                    </button>
+                                                                </div>
+                                                            );
+                                                        })}
                                                     </div>
-                                                    <button onClick={() => removeComponent(idx)} className="text-slate-600 hover:text-red-500">
-                                                        <X size={14} />
-                                                    </button>
-                                                </div>
-                                            )
-                                        })}
+                                                ));
+                                        })()}
                                     </div>
                                 )}
 
@@ -1145,6 +1194,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                                             className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-xs outline-none"
                                             value={setsInput}
                                             onChange={e => setSetsInput(e.target.value || '1')}
+                                            placeholder="1"
+                                        />
+                                    </div>
+                                    <div className="flex-1">
+                                        <label className="text-[10px] text-slate-500 font-bold mb-1 block">Round</label>
+                                        <input 
+                                            type="number"
+                                            min="1"
+                                            className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-xs outline-none"
+                                            value={componentRound}
+                                            onChange={e => setComponentRound(e.target.value || '1')}
                                             placeholder="1"
                                         />
                                     </div>

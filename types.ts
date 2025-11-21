@@ -84,6 +84,7 @@ export interface WorkoutComponent {
   target: string; // e.g., "100 reps" or "Run 1km"
   weight?: string; // e.g. "20kg" or "BW"
   sets?: number; // Number of sets to complete (defaults to 1 if not specified)
+  round?: number; // Round number to group exercises (defaults to 1 if not specified)
   order: number;
 }
 
@@ -95,6 +96,7 @@ export interface Workout {
   time_cap_seconds?: number; // For AMRAP duration or Time Cap
   rest_type: 'fixed' | 'manual' | 'none';
   rest_seconds?: number;
+  rounds?: number; // Number of rounds to repeat all exercises (defaults to 1 if not specified)
   components: WorkoutComponent[];
   scaling: Record<ScalingTier, string>; // Description of scaling
   is_featured?: boolean;
