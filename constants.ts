@@ -14,54 +14,43 @@ export const CURRENT_USER_ID = 'u1';
 
 // Mock Venues
 export const MOCK_VENUES: Venue[] = [
+    // Priority venues (always at top)
     { id: 'v1', name: 'HDB Hub Aerogym (Toa Payoh)', type: 'HDB' },
-    { id: 'v2', name: 'Bedok Reservoir Fitness Corner', type: 'Outdoor' },
-    { id: 'v3', name: 'Jurong West ActiveSG', type: 'Commercial' },
     { id: 'v4', name: 'Home Gym', type: 'Home' },
-    { id: 'v5', name: 'External / Commercial Gym', type: 'Commercial' },
-    { id: 'v6', name: 'Open Void Deck', type: 'HDB' },
     { id: 'v_custom', name: 'Other Location', type: 'Other' },
+    { id: 'v5', name: 'External / Commercial Gym', type: 'Commercial' },
     
-    // Functional / HYROX Gyms
-    { id: 'v7', name: 'Mobilus (HYROX Lab) - Official HYROX Training Club & CrossFit Affiliate', type: 'Commercial' },
-    { id: 'v8', name: 'UFIT - Official HYROX Training Club (Structured Classes)', type: 'Commercial' },
-    { id: 'v9', name: 'Actualize CrossFit - Official HYROX Affiliate Gym & CrossFit', type: 'Commercial' },
-    { id: 'v10', name: 'Body Fit Training (BFT) - Official HYROX Training Centre', type: 'Commercial' },
-    { id: 'v11', name: 'UNDIVIDED Performance - Dedicated HYROX Training Club', type: 'Commercial' },
-    
-    // CrossFit Gyms
-    { id: 'v12', name: 'Innervate Fitness - Community-driven CrossFit', type: 'Commercial' },
-    { id: 'v13', name: 'CrossFit Urban Edge - Dedicated CrossFit Gym', type: 'Commercial' },
-    { id: 'v14', name: 'Division Athletics - CrossFit & Functional Fitness', type: 'Commercial' },
-    { id: 'v15', name: 'WE ARE ONE Fitness - Singapore\'s Largest Outdoor CrossFit Gym', type: 'Commercial' },
-    { id: 'v16', name: 'CrossFit Unit - Dedicated CrossFit Gym', type: 'Commercial' },
-    { id: 'v17', name: 'MethodX Singapore - CrossFit, Functional Fitness, & HYROX Pump', type: 'Commercial' },
-    
-    // Specialty Gyms
-    { id: 'v18', name: 'ArkBloc - Bouldering, Calisthenics, & Strongman Training', type: 'Commercial' },
-    
-    // Boutique / HIIT Gyms
-    { id: 'v19', name: 'Barry\'s - High-Intensity Interval Training', type: 'Commercial' },
-    { id: 'v20', name: 'Ritual - 30-Minute High-Intensity Strength & Conditioning', type: 'Commercial' },
-    { id: 'v21', name: 'F45 Training - Global Functional HIIT Program', type: 'Commercial' },
-    
-    // Specialty Pods
-    { id: 'v22', name: 'The Gym Pod - 24/7 Pay-per-use Private Pods (HYROX setup available)', type: 'Commercial' },
-    
-    // Commercial Chain Gyms
-    { id: 'v23', name: 'Anytime Fitness - Largest 24/7 Chain (90+ Locations)', type: 'Commercial' },
-    { id: 'v24', name: 'Fitness First - Premium Commercial Chain & HYROX Club (15+ Locations)', type: 'Commercial' },
-    { id: 'v25', name: 'Virgin Active - Luxury/High-end with Pools & Rock Walls (6 Locations)', type: 'Commercial' },
-    { id: 'v26', name: 'PURE Fitness - Luxury/High-end & HYROX Affiliate (2 Locations)', type: 'Commercial' },
+    // All other venues sorted alphabetically
     { id: 'v27', name: 'ActiveSG Gym - Government-run Affordable Community Gym (Many Locations)', type: 'Commercial' },
-    { id: 'v28', name: 'GYMMBOXX - Local Chain with Multiple Locations', type: 'Commercial' },
-    { id: 'v29', name: 'EnergyOne Gym - Located in SAFRA Clubs (Multiple Locations)', type: 'Commercial' },
-    { id: 'v30', name: '24/7 Fitness - Offers 24/7 Access (Multiple Locations)', type: 'Commercial' },
-    
-    // Boutique/Specialty Gyms
+    { id: 'v33', name: 'Amore Fitness & Define - Ladies-only Option (6 Locations)', type: 'Commercial' },
+    { id: 'v9', name: 'Actualize CrossFit - Official HYROX Affiliate Gym & CrossFit', type: 'Commercial' },
+    { id: 'v23', name: 'Anytime Fitness - Largest 24/7 Chain (90+ Locations)', type: 'Commercial' },
+    { id: 'v18', name: 'ArkBloc - Bouldering, Calisthenics, & Strongman Training', type: 'Commercial' },
+    { id: 'v19', name: 'Barry\'s - High-Intensity Interval Training', type: 'Commercial' },
+    { id: 'v2', name: 'Bedok Reservoir Fitness Corner', type: 'Outdoor' },
+    { id: 'v10', name: 'Body Fit Training (BFT) - Official HYROX Training Centre', type: 'Commercial' },
+    { id: 'v13', name: 'CrossFit Urban Edge - Dedicated CrossFit Gym', type: 'Commercial' },
+    { id: 'v16', name: 'CrossFit Unit - Dedicated CrossFit Gym', type: 'Commercial' },
     { id: 'v31', name: 'Dennis Gym - Bodybuilding & Serious Strength Fitness (6 Locations)', type: 'Commercial' },
+    { id: 'v14', name: 'Division Athletics - CrossFit & Functional Fitness', type: 'Commercial' },
+    { id: 'v29', name: 'EnergyOne Gym - Located in SAFRA Clubs (Multiple Locations)', type: 'Commercial' },
+    { id: 'v21', name: 'F45 Training - Global Functional HIIT Program', type: 'Commercial' },
+    { id: 'v24', name: 'Fitness First - Premium Commercial Chain & HYROX Club (15+ Locations)', type: 'Commercial' },
+    { id: 'v28', name: 'GYMMBOXX - Local Chain with Multiple Locations', type: 'Commercial' },
+    { id: 'v12', name: 'Innervate Fitness - Community-driven CrossFit', type: 'Commercial' },
+    { id: 'v3', name: 'Jurong West ActiveSG', type: 'Commercial' },
+    { id: 'v17', name: 'MethodX Singapore - CrossFit, Functional Fitness, & HYROX Pump', type: 'Commercial' },
+    { id: 'v7', name: 'Mobilus (HYROX Lab) - Official HYROX Training Club & CrossFit Affiliate', type: 'Commercial' },
+    { id: 'v6', name: 'Open Void Deck', type: 'HDB' },
+    { id: 'v26', name: 'PURE Fitness - Luxury/High-end & HYROX Affiliate (2 Locations)', type: 'Commercial' },
+    { id: 'v20', name: 'Ritual - 30-Minute High-Intensity Strength & Conditioning', type: 'Commercial' },
     { id: 'v32', name: 'The Strength Yard - Functional Barbell & Progressive Strength Training', type: 'Commercial' },
-    { id: 'v33', name: 'Amore Fitness & Define - Ladies-only Option (6 Locations)', type: 'Commercial' }
+    { id: 'v22', name: 'The Gym Pod - 24/7 Pay-per-use Private Pods (HYROX setup available)', type: 'Commercial' },
+    { id: 'v11', name: 'UNDIVIDED Performance - Dedicated HYROX Training Club', type: 'Commercial' },
+    { id: 'v8', name: 'UFIT - Official HYROX Training Club (Structured Classes)', type: 'Commercial' },
+    { id: 'v15', name: 'WE ARE ONE Fitness - Singapore\'s Largest Outdoor CrossFit Gym', type: 'Commercial' },
+    { id: 'v25', name: 'Virgin Active - Luxury/High-end with Pools & Rock Walls (6 Locations)', type: 'Commercial' },
+    { id: 'v30', name: '24/7 Fitness - Offers 24/7 Access (Multiple Locations)', type: 'Commercial' }
 ];
 
 // Extensive Exercise List - Organized by Category
