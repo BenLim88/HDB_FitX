@@ -26,6 +26,11 @@ export enum Gender {
   UNSPECIFIED = 'Unspecified'
 }
 
+export enum UserCategory {
+  ADULT = 'Adult',
+  KID = 'Kid'
+}
+
 export enum VerificationStatus {
   PENDING = 'pending',
   VERIFIED = 'verified',
@@ -56,6 +61,7 @@ export interface User {
   athlete_type: AthleteType;
   is_admin: boolean;
   avatar_url?: string;
+  category: UserCategory;
 }
 
 export interface Exercise {
@@ -90,6 +96,7 @@ export interface Workout {
   components: WorkoutComponent[];
   scaling: Record<ScalingTier, string>; // Description of scaling
   is_featured?: boolean;
+  is_kids_friendly?: boolean;
 }
 
 export interface Log {

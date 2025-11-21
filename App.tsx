@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { MOCK_USERS, CURRENT_USER_ID } from './constants';
-import { User, Log, Notification, Workout, VerificationStatus, Gender, GroupType, AthleteType, ScalingTier, Venue, PinnedWOD } from './types';
+import { User, Log, Notification, Workout, VerificationStatus, Gender, GroupType, AthleteType, ScalingTier, Venue, PinnedWOD, UserCategory } from './types';
 import { DataService } from './services/dataService';
 import { GeminiService } from './services/geminiService';
 import Navbar from './components/Navbar';
@@ -36,20 +36,27 @@ const HomeTab: React.FC<{
         setLoadingTip(false);
     };
 
-    const featuredWorkouts = workouts.filter(w => w.is_featured);
-    const otherWorkouts = workouts.filter(w => !w.is_featured);
+    const isKid = user.category === UserCategory.KID;
+    
+    // Filter workouts based on user category
+    const filteredWorkouts = isKid 
+        ? workouts.filter(w => w.is_kids_friendly) 
+        : workouts;
+    
+    const featuredWorkouts = filteredWorkouts.filter(w => w.is_featured);
+    const otherWorkouts = filteredWorkouts.filter(w => !w.is_featured);
 
     return (
         <div className="p-5 space-y-6 pb-24">
             <header className="flex justify-between items-end">
                 <div>
-                    <p className="text-slate-400 text-sm font-medium uppercase tracking-wider">Welcome Back</p>
-                    <h1 className="text-3xl font-black text-white italic uppercase">{user.title}. {user.name}</h1>
-                    <span className="inline-block px-2 py-0.5 mt-1 rounded bg-slate-800 text-slate-300 text-xs font-bold border border-slate-700">
+                    <p className={`${isKid ? 'text-blue-600' : 'text-slate-400'} text-sm font-medium uppercase tracking-wider`}>Welcome Back</p>
+                    <h1 className={`text-3xl font-black ${isKid ? 'text-blue-900' : 'text-white'} italic uppercase`}>{user.title}. {user.name}</h1>
+                    <span className={`inline-block px-2 py-0.5 mt-1 rounded ${isKid ? 'bg-blue-100 text-blue-800 border-blue-300' : 'bg-slate-800 text-slate-300 border-slate-700'} text-xs font-bold border`}>
                         {user.group_id} • {user.athlete_type}
                     </span>
                 </div>
-                <div className="w-12 h-12 rounded-full bg-slate-800 border border-slate-700 overflow-hidden">
+                <div className={`w-12 h-12 rounded-full ${isKid ? 'bg-blue-100 border-blue-300' : 'bg-slate-800 border-slate-700'} border overflow-hidden`}>
                     <img src={user.avatar_url} alt="avatar" className="w-full h-full object-cover" />
                 </div>
             </header>
@@ -57,7 +64,7 @@ const HomeTab: React.FC<{
             {/* PINNED WOD SECTION */}
             {pinnedWods.length > 0 && (
                 <section>
-                     <h2 className="text-white font-bold text-lg mb-3 flex items-center gap-2">
+                     <h2 className={`${isKid ? 'text-blue-900' : 'text-white'} font-bold text-lg mb-3 flex items-center gap-2`}>
                         <Pin size={20} className="text-blue-500" fill="currentColor" />
                         Command Directives
                     </h2>
@@ -71,7 +78,7 @@ const HomeTab: React.FC<{
                              const fullWorkout = workouts.find(w => w.id === pw.workout_id);
 
                              return (
-                                 <div key={pw.id} className="bg-slate-900 border border-blue-500/30 rounded-xl p-4 relative overflow-hidden">
+                                 <div key={pw.id} className={`${isKid ? 'bg-white border-blue-300' : 'bg-slate-900 border-blue-500/30'} border rounded-xl p-4 relative overflow-hidden`}>
                                      <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full -mr-10 -mt-10 blur-2xl"></div>
                                      
                                      <div className="relative z-10">
@@ -80,7 +87,7 @@ const HomeTab: React.FC<{
                                                  <span className="text-[10px] font-bold bg-blue-500/20 text-blue-400 px-2 py-1 rounded mb-2 inline-block">
                                                      PRIORITY MISSION
                                                  </span>
-                                                 <h3 className="text-xl font-black text-white italic uppercase">{pw.workout_name}</h3>
+                                                 <h3 className={`text-xl font-black ${isKid ? 'text-blue-900' : 'text-white'} italic uppercase`}>{pw.workout_name}</h3>
                                              </div>
                                              {isJoined ? (
                                                  <div className="bg-green-500 text-black text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1">
@@ -89,7 +96,7 @@ const HomeTab: React.FC<{
                                              ) : (
                                                  <button 
                                                     onClick={() => onJoinPinned(pw.id)}
-                                                    className="bg-slate-800 hover:bg-blue-600 text-white text-[10px] font-bold px-3 py-1.5 rounded border border-slate-700 transition-colors"
+                                                    className={`${isKid ? 'bg-blue-100 hover:bg-blue-200 text-blue-800 border-blue-300' : 'bg-slate-800 hover:bg-blue-600 text-white border-slate-700'} text-[10px] font-bold px-3 py-1.5 rounded border transition-colors`}
                                                  >
                                                      ACCEPT
                                                  </button>
@@ -97,21 +104,21 @@ const HomeTab: React.FC<{
                                          </div>
 
                                          <div className="flex flex-col gap-1 mb-4">
-                                             <div className="flex items-center gap-2 text-xs text-slate-400">
+                                             <div className={`flex items-center gap-2 text-xs ${isKid ? 'text-blue-600' : 'text-slate-400'}`}>
                                                  <Calendar size={12} /> 
-                                                 <span className="font-bold text-slate-300">Start:</span> {startDate.toLocaleDateString()} {startDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                                 <span className={`font-bold ${isKid ? 'text-blue-800' : 'text-slate-300'}`}>Start:</span> {startDate.toLocaleDateString()} {startDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                                              </div>
-                                             <div className="flex items-center gap-2 text-xs text-slate-400">
+                                             <div className={`flex items-center gap-2 text-xs ${isKid ? 'text-blue-600' : 'text-slate-400'}`}>
                                                  <Calendar size={12} /> 
-                                                 <span className="font-bold text-slate-300">Deadline:</span> {endDate.toLocaleDateString()} {endDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                                 <span className={`font-bold ${isKid ? 'text-blue-800' : 'text-slate-300'}`}>Deadline:</span> {endDate.toLocaleDateString()} {endDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                                              </div>
                                          </div>
 
                                          {/* Participants Preview */}
-                                         <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-800">
+                                         <div className={`flex items-center justify-between mt-4 pt-3 border-t ${isKid ? 'border-blue-200' : 'border-slate-800'}`}>
                                              <button 
                                                 onClick={() => setShowParticipants(showParticipants === pw.id ? null : pw.id)}
-                                                className="flex items-center gap-2 text-xs text-slate-400 hover:text-white"
+                                                className={`flex items-center gap-2 text-xs ${isKid ? 'text-blue-600 hover:text-blue-800' : 'text-slate-400 hover:text-white'}`}
                                              >
                                                  <Users size={14} /> 
                                                  <span className="font-bold">{pw.participants.length}</span> Soldiers Committed
@@ -125,7 +132,7 @@ const HomeTab: React.FC<{
                                                  )}
                                                  <button 
                                                     onClick={() => fullWorkout && onStartWorkout(fullWorkout)}
-                                                    className="flex items-center gap-1 text-xs font-bold text-blue-400 hover:text-blue-300"
+                                                    className={`flex items-center gap-1 text-xs font-bold ${isKid ? 'text-blue-600 hover:text-blue-800' : 'text-blue-400 hover:text-blue-300'}`}
                                                 >
                                                      Execute <ChevronRight size={14} />
                                                  </button>
@@ -134,21 +141,21 @@ const HomeTab: React.FC<{
 
                                          {/* Participant List Expansion */}
                                          {showParticipants === pw.id && (
-                                             <div className="mt-3 p-3 bg-slate-950 rounded-lg animate-in slide-in-from-top-2">
-                                                 <h4 className="text-[10px] font-bold text-slate-500 uppercase mb-2">Roster</h4>
+                                             <div className={`mt-3 p-3 ${isKid ? 'bg-blue-50 border-blue-200' : 'bg-slate-950 border-slate-800'} rounded-lg border animate-in slide-in-from-top-2`}>
+                                                 <h4 className={`text-[10px] font-bold ${isKid ? 'text-blue-700' : 'text-slate-500'} uppercase mb-2`}>Roster</h4>
                                                  <div className="space-y-2 max-h-32 overflow-y-auto">
                                                      {pw.participants.map(uid => {
                                                          const u = allUsers.find(user => user.id === uid);
                                                          return u ? (
                                                              <div key={uid} className="flex items-center gap-2">
-                                                                 <div className="w-5 h-5 rounded-full bg-slate-800 overflow-hidden">
+                                                                 <div className={`w-5 h-5 rounded-full ${isKid ? 'bg-blue-100' : 'bg-slate-800'} overflow-hidden`}>
                                                                      <img src={u.avatar_url} className="w-full h-full object-cover" />
                                                                  </div>
-                                                                 <span className="text-xs text-slate-300">{u.name}</span>
+                                                                 <span className={`text-xs ${isKid ? 'text-blue-800' : 'text-slate-300'}`}>{u.name}</span>
                                                              </div>
                                                          ) : null;
                                                      })}
-                                                     {pw.participants.length === 0 && <span className="text-xs text-slate-600 italic">No personnel yet.</span>}
+                                                     {pw.participants.length === 0 && <span className={`text-xs ${isKid ? 'text-blue-500' : 'text-slate-600'} italic`}>No personnel yet.</span>}
                                                  </div>
                                              </div>
                                          )}
@@ -161,21 +168,21 @@ const HomeTab: React.FC<{
             )}
 
             {/* AI Coach Section */}
-            <div className="bg-gradient-to-br from-indigo-900/40 to-slate-900 border border-indigo-500/30 p-4 rounded-xl relative overflow-hidden">
+            <div className={`${isKid ? 'bg-gradient-to-br from-blue-100 to-blue-50 border-blue-300' : 'bg-gradient-to-br from-indigo-900/40 to-slate-900 border-indigo-500/30'} border p-4 rounded-xl relative overflow-hidden`}>
                 <div className="absolute top-0 right-0 p-3 opacity-10">
                     <Bot size={64} />
                 </div>
                 <div className="relative z-10">
-                    <h3 className="text-indigo-400 text-xs font-bold uppercase flex items-center gap-2">
+                    <h3 className={`${isKid ? 'text-blue-600' : 'text-indigo-400'} text-xs font-bold uppercase flex items-center gap-2`}>
                         <Bot size={14} /> Coach FitX AI
                     </h3>
-                    <p className="text-slate-200 text-sm mt-2 font-medium italic min-h-[3rem]">
+                    <p className={`${isKid ? 'text-blue-800' : 'text-slate-200'} text-sm mt-2 font-medium italic min-h-[3rem]`}>
                         {loadingTip ? <Loader2 className="animate-spin" /> : (aiTip || "Ready to crush it? Tap below for your daily briefing.")}
                     </p>
                     {!aiTip && (
                         <button 
                             onClick={handleGetTip}
-                            className="mt-3 text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded font-bold transition-colors"
+                            className={`mt-3 text-xs ${isKid ? 'bg-blue-500 hover:bg-blue-400' : 'bg-indigo-600 hover:bg-indigo-500'} text-white px-3 py-1.5 rounded font-bold transition-colors`}
                         >
                             Get Motivated
                         </button>
@@ -186,7 +193,7 @@ const HomeTab: React.FC<{
             {/* FEATURED WORKOUTS */}
             {featuredWorkouts.length > 0 && (
                 <section>
-                    <h2 className="text-white font-bold text-lg mb-3 flex items-center gap-2">
+                    <h2 className={`${isKid ? 'text-blue-900' : 'text-white'} font-bold text-lg mb-3 flex items-center gap-2`}>
                         <Star size={20} className="text-yellow-500" fill="currentColor" />
                         Featured Operations
                     </h2>
@@ -195,21 +202,21 @@ const HomeTab: React.FC<{
                             <button 
                                 key={w.id}
                                 onClick={() => onStartWorkout(w)}
-                                className="snap-center min-w-[85%] bg-slate-900 border-2 border-yellow-500/30 p-5 rounded-2xl text-left transition-all active:scale-95 group relative overflow-hidden"
+                                className={`snap-center min-w-[85%] ${isKid ? 'bg-white border-2 border-yellow-400' : 'bg-slate-900 border-2 border-yellow-500/30'} p-5 rounded-2xl text-left transition-all active:scale-95 group relative overflow-hidden`}
                             >
                                 <div className="absolute top-0 right-0 w-20 h-20 bg-yellow-500/10 rounded-bl-full -mr-4 -mt-4"></div>
                                 <div className="relative z-10">
-                                    <h3 className="text-white font-black text-xl uppercase italic leading-tight group-hover:text-yellow-500 transition-colors">{w.name}</h3>
+                                    <h3 className={`${isKid ? 'text-blue-900' : 'text-white'} font-black text-xl uppercase italic leading-tight group-hover:text-yellow-500 transition-colors`}>{w.name}</h3>
                                     <div className="flex gap-2 mt-2 mb-3">
                                          <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-500 border border-yellow-500/30">
                                             Featured
                                          </span>
-                                         <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
+                                         <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${isKid ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-slate-800 text-slate-400 border-slate-700'} border`}>
                                             {w.scheme}
                                          </span>
                                     </div>
-                                    <p className="text-slate-400 text-xs line-clamp-2 mb-2">{w.description}</p>
-                                    <div className="text-xs font-bold text-white flex items-center gap-1">
+                                    <p className={`${isKid ? 'text-blue-700' : 'text-slate-400'} text-xs line-clamp-2 mb-2`}>{w.description}</p>
+                                    <div className={`text-xs font-bold ${isKid ? 'text-blue-900' : 'text-white'} flex items-center gap-1`}>
                                         Start Mission <ChevronRight size={14} className="text-yellow-500" />
                                     </div>
                                 </div>
@@ -222,27 +229,27 @@ const HomeTab: React.FC<{
             {/* DIY / Quick Start Card */}
             <button 
                 onClick={onStartDIY}
-                className="w-full bg-slate-900 border border-slate-800 p-4 rounded-xl text-left hover:border-orange-500 transition-colors group relative overflow-hidden"
+                className={`w-full ${isKid ? 'bg-white border-blue-200 hover:border-blue-400' : 'bg-slate-900 border-slate-800 hover:border-orange-500'} border p-4 rounded-xl text-left transition-colors group relative overflow-hidden`}
             >
                  <div className="absolute top-0 right-0 p-2 opacity-5">
                     <Dumbbell size={80} />
                  </div>
                  <div className="relative z-10">
                     <div className="flex justify-between items-center mb-1">
-                        <h3 className="text-white font-bold text-lg italic uppercase flex items-center gap-2">
-                            <Wand2 size={18} className="text-orange-500" /> DIY / Free Train
+                        <h3 className={`${isKid ? 'text-blue-900' : 'text-white'} font-bold text-lg italic uppercase flex items-center gap-2`}>
+                            <Wand2 size={18} className={isKid ? 'text-blue-500' : 'text-orange-500'} /> DIY / Free Train
                         </h3>
-                        <ChevronRight size={18} className="text-slate-600 group-hover:text-orange-500" />
+                        <ChevronRight size={18} className={isKid ? 'text-blue-400 group-hover:text-blue-600' : 'text-slate-600 group-hover:text-orange-500'} />
                     </div>
-                    <p className="text-slate-400 text-xs pr-8">
+                    <p className={`${isKid ? 'text-blue-700' : 'text-slate-400'} text-xs pr-8`}>
                         Custom session or AI-generated workout. Log your own time/reps. No leaderboard submission.
                     </p>
                  </div>
             </button>
 
             <section>
-                <h2 className="text-white font-bold text-lg mb-3 flex items-center gap-2">
-                    <Flame size={20} className="text-orange-500" />
+                <h2 className={`${isKid ? 'text-blue-900' : 'text-white'} font-bold text-lg mb-3 flex items-center gap-2`}>
+                    <Flame size={20} className={isKid ? 'text-blue-500' : 'text-orange-500'} />
                     Standard Protocol
                 </h2>
                 <div className="grid gap-3">
@@ -250,17 +257,17 @@ const HomeTab: React.FC<{
                         <button 
                             key={w.id}
                             onClick={() => onStartWorkout(w)}
-                            className="bg-slate-900 hover:bg-slate-800 border border-slate-800 p-4 rounded-xl text-left transition-colors group"
+                            className={`${isKid ? 'bg-white hover:bg-blue-50 border-blue-200' : 'bg-slate-900 hover:bg-slate-800 border-slate-800'} border p-4 rounded-xl text-left transition-colors group`}
                         >
                             <div className="flex justify-between items-start">
                                 <div>
-                                    <h3 className="text-white font-bold text-lg group-hover:text-orange-500 transition-colors">{w.name}</h3>
-                                    <p className="text-slate-400 text-xs mt-1 line-clamp-2">{w.description}</p>
+                                    <h3 className={`${isKid ? 'text-blue-900 group-hover:text-blue-600' : 'text-white group-hover:text-orange-500'} font-bold text-lg transition-colors`}>{w.name}</h3>
+                                    <p className={`${isKid ? 'text-blue-700' : 'text-slate-400'} text-xs mt-1 line-clamp-2`}>{w.description}</p>
                                 </div>
-                                <ChevronRight className="text-slate-600" />
+                                <ChevronRight className={isKid ? 'text-blue-400' : 'text-slate-600'} />
                             </div>
                             <div className="mt-3 flex gap-2">
-                                <span className="text-[10px] bg-slate-950 text-slate-400 px-2 py-1 rounded border border-slate-800">
+                                <span className={`text-[10px] ${isKid ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-slate-950 text-slate-400 border-slate-800'} px-2 py-1 rounded border`}>
                                     {w.components.length} Exercises
                                 </span>
                             </div>
@@ -279,6 +286,7 @@ const LeaderboardTab: React.FC<{ logs: Log[], workouts: Workout[], allUsers: Use
     const [selectedGender, setSelectedGender] = useState<string>('all');
     const [selectedVerification, setSelectedVerification] = useState<string>('all');
     const [selectedTier, setSelectedTier] = useState<string>('all');
+    const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
     const filteredLogs = useMemo(() => {
         let tempLogs = logs;
@@ -298,6 +306,14 @@ const LeaderboardTab: React.FC<{ logs: Log[], workouts: Workout[], allUsers: Use
             tempLogs = tempLogs.filter(log => {
                 const user = allUsers.find(u => u.id === log.user_id);
                 return user?.gender === selectedGender;
+            });
+        }
+
+        // 2b. Filter by Category
+        if (selectedCategory !== 'all') {
+            tempLogs = tempLogs.filter(log => {
+                const user = allUsers.find(u => u.id === log.user_id);
+                return user?.category === selectedCategory;
             });
         }
 
@@ -332,7 +348,7 @@ const LeaderboardTab: React.FC<{ logs: Log[], workouts: Workout[], allUsers: Use
             return b.timestamp - a.timestamp;
         });
 
-    }, [logs, selectedWorkoutId, workoutNameSearch, selectedGender, selectedVerification, selectedTier, allUsers]);
+    }, [logs, selectedWorkoutId, workoutNameSearch, selectedGender, selectedVerification, selectedTier, selectedCategory, allUsers]);
 
     return (
         <div className="p-5 space-y-4 pb-24">
@@ -401,17 +417,30 @@ const LeaderboardTab: React.FC<{ logs: Log[], workouts: Workout[], allUsers: Use
                     </div>
                 </div>
                 
-                {/* Row 4: Status */}
-                <div className="relative w-full">
-                    <select 
-                        className="w-full bg-slate-900 border border-slate-800 rounded-lg py-3 px-3 text-white text-sm appearance-none outline-none focus:border-orange-500"
-                        value={selectedVerification}
-                        onChange={(e) => setSelectedVerification(e.target.value)}
-                    >
-                        <option value="all">Any Status</option>
-                        <option value={VerificationStatus.VERIFIED}>Verified Only</option>
-                        <option value={VerificationStatus.UNVERIFIED}>Unverified</option>
-                    </select>
+                {/* Row 4: Status & Category */}
+                <div className="flex gap-2">
+                    <div className="relative flex-1">
+                        <select 
+                            className="w-full bg-slate-900 border border-slate-800 rounded-lg py-3 px-3 text-white text-sm appearance-none outline-none focus:border-orange-500"
+                            value={selectedVerification}
+                            onChange={(e) => setSelectedVerification(e.target.value)}
+                        >
+                            <option value="all">Any Status</option>
+                            <option value={VerificationStatus.VERIFIED}>Verified Only</option>
+                            <option value={VerificationStatus.UNVERIFIED}>Unverified</option>
+                        </select>
+                    </div>
+                    <div className="relative flex-1">
+                        <select 
+                            className="w-full bg-slate-900 border border-slate-800 rounded-lg py-3 px-3 text-white text-sm appearance-none outline-none focus:border-orange-500"
+                            value={selectedCategory}
+                            onChange={(e) => setSelectedCategory(e.target.value)}
+                        >
+                            <option value="all">Any Age Group</option>
+                            <option value={UserCategory.ADULT}>Adults</option>
+                            <option value={UserCategory.KID}>Kids</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -652,9 +681,17 @@ const App: React.FC = () => {
       return <AuthScreen onAuthSuccess={(user) => setCurrentUser(user)} />;
   }
 
+  const isKid = currentUser.category === UserCategory.KID;
+  const themeClasses = isKid 
+    ? 'min-h-screen bg-blue-50 font-sans pb-safe-area' 
+    : 'min-h-screen bg-slate-950 font-sans pb-safe-area';
+  const mainClasses = isKid
+    ? 'max-w-md mx-auto min-h-screen bg-white shadow-2xl shadow-blue-200 relative'
+    : 'max-w-md mx-auto min-h-screen bg-slate-950 shadow-2xl shadow-black relative';
+
   return (
-    <div className="min-h-screen bg-slate-950 font-sans pb-safe-area">
-      <main className="max-w-md mx-auto min-h-screen bg-slate-950 shadow-2xl shadow-black relative">
+    <div className={themeClasses}>
+      <main className={mainClasses}>
         
         {/* 
           PERSISTENT ACTIVE WORKOUT LAYER 
@@ -729,25 +766,26 @@ const App: React.FC = () => {
             )}
 
             {activeTab === 'profile' && (
-                <div className="p-5 text-center text-slate-400 pt-12 pb-32">
+                <div className={`p-5 text-center ${isKid ? 'text-blue-600' : 'text-slate-400'} pt-12 pb-32`}>
                     {!isEditingProfile ? (
                         // VIEW PROFILE MODE
                         <>
-                             <div className="w-28 h-28 rounded-full bg-slate-800 border-4 border-orange-500 overflow-hidden mx-auto mb-4 shadow-lg shadow-orange-500/20 relative group">
+                             <div className={`w-28 h-28 rounded-full ${isKid ? 'bg-blue-100 border-4 border-blue-500 shadow-blue-500/20' : 'bg-slate-800 border-4 border-orange-500 shadow-orange-500/20'} overflow-hidden mx-auto mb-4 shadow-lg relative group`}>
                                 <img src={currentUser.avatar_url} alt="avatar" className="w-full h-full object-cover" />
                             </div>
                             
-                            <h1 className="text-3xl font-black text-white uppercase italic">{currentUser.title} {currentUser.name}</h1>
+                            <h1 className={`text-3xl font-black ${isKid ? 'text-blue-900' : 'text-white'} uppercase italic`}>{currentUser.title} {currentUser.name}</h1>
                             
                             <div className="flex justify-center gap-2 mt-3">
-                                <span className="px-3 py-1 bg-slate-800 rounded text-xs font-bold text-slate-300 border border-slate-700">{currentUser.group_id}</span>
-                                <span className="px-3 py-1 bg-slate-800 rounded text-xs font-bold text-orange-500 border border-slate-700">{currentUser.athlete_type}</span>
+                                <span className={`px-3 py-1 ${isKid ? 'bg-blue-100 text-blue-800 border-blue-300' : 'bg-slate-800 text-slate-300 border-slate-700'} rounded text-xs font-bold border`}>{currentUser.category}</span>
+                                <span className={`px-3 py-1 ${isKid ? 'bg-blue-100 text-blue-800 border-blue-300' : 'bg-slate-800 text-slate-300 border-slate-700'} rounded text-xs font-bold border`}>{currentUser.group_id}</span>
+                                <span className={`px-3 py-1 ${isKid ? 'bg-blue-100 text-blue-600 border-blue-300' : 'bg-slate-800 text-orange-500 border-slate-700'} rounded text-xs font-bold border`}>{currentUser.athlete_type}</span>
                             </div>
 
                             <div className="mt-6 flex justify-center">
                                 <button 
                                     onClick={handleEditProfileStart}
-                                    className="flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-white bg-slate-900 border border-slate-800 px-4 py-2 rounded-full transition-all"
+                                    className={`flex items-center gap-2 text-xs font-bold ${isKid ? 'text-blue-600 hover:text-blue-800 bg-blue-50 border-blue-200' : 'text-slate-500 hover:text-white bg-slate-900 border-slate-800'} border px-4 py-2 rounded-full transition-all`}
                                 >
                                     <Edit2 size={14} /> Edit Details
                                 </button>
@@ -762,24 +800,24 @@ const App: React.FC = () => {
                                 </button>
                             )}
 
-                            <div className="mt-8 p-4 bg-slate-900 rounded-lg border border-slate-800">
+                            <div className={`mt-8 p-4 ${isKid ? 'bg-blue-50 border-blue-200' : 'bg-slate-900 border-slate-800'} rounded-lg border`}>
                                 <div className="flex justify-between items-center mb-4">
-                                    <h3 className="text-sm font-bold text-slate-300 uppercase tracking-wider">Personal Bests (All Statuses)</h3>
-                                    <button onClick={() => refreshData()} className="text-slate-500 hover:text-orange-500 transition-colors" title="Refresh Stats">
+                                    <h3 className={`text-sm font-bold ${isKid ? 'text-blue-800' : 'text-slate-300'} uppercase tracking-wider`}>Personal Bests (All Statuses)</h3>
+                                    <button onClick={() => refreshData()} className={`${isKid ? 'text-blue-500 hover:text-blue-700' : 'text-slate-500 hover:text-orange-500'} transition-colors`} title="Refresh Stats">
                                         <RotateCcw size={14} />
                                     </button>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     {userStats.length > 0 ? (
                                         userStats.map(stat => (
-                                            <div key={stat.id} className="text-center p-3 bg-slate-950 rounded border border-slate-800 flex flex-col justify-center min-h-[80px]">
-                                                <div className="text-lg font-mono font-bold text-white truncate leading-none mb-1">{stat.score_display}</div>
-                                                <div className="text-[10px] uppercase text-slate-500 font-bold line-clamp-2 leading-tight">{stat.workout_name}</div>
+                                            <div key={stat.id} className={`text-center p-3 ${isKid ? 'bg-white border-blue-200' : 'bg-slate-950 border-slate-800'} rounded border flex flex-col justify-center min-h-[80px]`}>
+                                                <div className={`text-lg font-mono font-bold ${isKid ? 'text-blue-900' : 'text-white'} truncate leading-none mb-1`}>{stat.score_display}</div>
+                                                <div className={`text-[10px] uppercase ${isKid ? 'text-blue-600' : 'text-slate-500'} font-bold line-clamp-2 leading-tight`}>{stat.workout_name}</div>
                                                  {stat.verification_status === VerificationStatus.VERIFIED && <div className="text-[8px] text-green-500 font-bold mt-1">VERIFIED</div>}
                                             </div>
                                         ))
                                     ) : (
-                                        <div className="col-span-2 text-center text-xs text-slate-500 italic py-4">
+                                        <div className={`col-span-2 text-center text-xs ${isKid ? 'text-blue-500' : 'text-slate-500'} italic py-4`}>
                                             No records found. Log a standard workout!
                                         </div>
                                     )}
@@ -788,7 +826,7 @@ const App: React.FC = () => {
                             
                             <button 
                                 onClick={() => setCurrentUser(null)}
-                                className="mt-12 text-slate-600 text-sm font-bold hover:text-white flex items-center justify-center gap-2 w-full"
+                                className={`mt-12 ${isKid ? 'text-blue-500' : 'text-slate-600'} text-sm font-bold hover:${isKid ? 'text-blue-700' : 'text-white'} flex items-center justify-center gap-2 w-full`}
                             >
                                 Log Out
                             </button>
@@ -796,11 +834,11 @@ const App: React.FC = () => {
                     ) : (
                         // EDIT PROFILE MODE
                         <div className="animate-in slide-in-from-bottom-4 fade-in">
-                            <h2 className="text-xl font-black text-white uppercase italic mb-6">Update Personnel</h2>
+                            <h2 className={`text-xl font-black ${isKid ? 'text-blue-900' : 'text-white'} uppercase italic mb-6`}>Update Personnel</h2>
                             
                             {/* Avatar Editor */}
-                             <div className="flex items-center gap-4 mb-6 bg-slate-900 p-3 rounded-lg border border-slate-800">
-                                <div className="w-16 h-16 rounded-full bg-slate-950 border border-slate-700 overflow-hidden shrink-0">
+                             <div className={`flex items-center gap-4 mb-6 ${isKid ? 'bg-blue-50 border-blue-200' : 'bg-slate-900 border-slate-800'} p-3 rounded-lg border`}>
+                                <div className={`w-16 h-16 rounded-full ${isKid ? 'bg-white border-blue-300' : 'bg-slate-950 border-slate-700'} border overflow-hidden shrink-0`}>
                                     <img 
                                         src={avatarPrompt ? getAvatarUrl(avatarStyle, avatarPrompt) : (editProfileForm.avatar_url || '')} 
                                         alt="avatar preview" 
@@ -808,7 +846,7 @@ const App: React.FC = () => {
                                     />
                                 </div>
                                 <div className="flex-1">
-                                     <label className="text-[10px] font-bold text-slate-500 block mb-1 text-left">New Avatar Seed (Number)</label>
+                                     <label className={`text-[10px] font-bold ${isKid ? 'text-blue-600' : 'text-slate-500'} block mb-1 text-left`}>New Avatar Seed (Number)</label>
                                      <div className="flex gap-2">
                                         <input 
                                             type="text"
@@ -820,11 +858,11 @@ const App: React.FC = () => {
                                                 if (/^\d*$/.test(val)) setAvatarPrompt(val);
                                             }}
                                             placeholder="e.g. 98765"
-                                            className="flex-1 bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white outline-none font-mono"
+                                            className={`flex-1 ${isKid ? 'bg-white border-blue-200 text-blue-900' : 'bg-slate-950 border-slate-800 text-white'} border rounded px-3 py-2 text-xs outline-none font-mono`}
                                         />
                                         <button 
                                             onClick={() => setAvatarPrompt(Math.floor(Math.random() * 1000000).toString())} 
-                                            className="p-2 bg-slate-800 text-orange-500 rounded hover:bg-slate-700"
+                                            className={`p-2 ${isKid ? 'bg-blue-100 text-blue-600 hover:bg-blue-200' : 'bg-slate-800 text-orange-500 hover:bg-slate-700'} rounded`}
                                         >
                                             <RefreshCcw size={14} />
                                         </button>
@@ -833,7 +871,7 @@ const App: React.FC = () => {
                                         <select
                                             value={avatarStyle}
                                             onChange={(e) => setAvatarStyle(e.target.value)}
-                                            className="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-[10px] text-slate-300 outline-none"
+                                            className={`w-full ${isKid ? 'bg-white border-blue-200 text-blue-900' : 'bg-slate-950 border-slate-800 text-slate-300'} border rounded px-2 py-1.5 text-[10px] outline-none`}
                                         >
                                             <option value="avataaars">Human (Standard)</option>
                                             <option value="adventurer">Human (RPG)</option>
@@ -849,17 +887,17 @@ const App: React.FC = () => {
 
                             <div className="space-y-4 text-left">
                                 <div>
-                                    <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Full Name</label>
+                                    <label className={`text-[10px] font-bold ${isKid ? 'text-blue-600' : 'text-slate-500'} uppercase block mb-1`}>Full Name</label>
                                     <div className="flex gap-2">
                                         <select 
-                                            className="bg-slate-900 border border-slate-800 rounded px-3 py-2 text-white text-sm outline-none w-20"
+                                            className={`${isKid ? 'bg-blue-50 border-blue-200 text-blue-900' : 'bg-slate-900 border-slate-800 text-white'} border rounded px-3 py-2 text-sm outline-none w-20`}
                                             value={editProfileForm.title}
                                             onChange={e => setEditProfileForm({...editProfileForm, title: e.target.value})}
                                         >
-                                             {['Mr', 'Ms', 'Mrs', 'Dr', 'Er', 'Ar', 'Rs'].map(t => <option key={t} value={t}>{t}</option>)}
+                                             {['Mr', 'Ms', 'Mrs', 'Dr', 'Er', 'Ar', 'Rs', 'Master', 'Miss'].map(t => <option key={t} value={t}>{t}</option>)}
                                         </select>
                                         <input 
-                                            className="flex-1 bg-slate-950 border border-slate-800 rounded px-3 py-2 text-white text-sm outline-none"
+                                            className={`flex-1 ${isKid ? 'bg-white border-blue-200 text-blue-900' : 'bg-slate-950 border-slate-800 text-white'} border rounded px-3 py-2 text-sm outline-none`}
                                             value={editProfileForm.name}
                                             onChange={e => setEditProfileForm({...editProfileForm, name: e.target.value})}
                                         />
@@ -867,9 +905,37 @@ const App: React.FC = () => {
                                 </div>
 
                                 <div>
-                                    <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Group</label>
+                                    <label className={`text-[10px] font-bold ${isKid ? 'text-blue-600' : 'text-slate-500'} uppercase block mb-1`}>Category</label>
+                                    <div className="flex gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setEditProfileForm({...editProfileForm, category: UserCategory.ADULT})}
+                                            className={`flex-1 py-2 rounded text-xs font-bold border transition-colors ${
+                                                editProfileForm.category === UserCategory.ADULT 
+                                                    ? (isKid ? 'bg-orange-500 border-orange-500 text-white' : 'bg-orange-600 border-orange-600 text-white')
+                                                    : (isKid ? 'bg-white border-blue-200 text-blue-600' : 'bg-slate-950 border-slate-800 text-slate-400')
+                                            }`}
+                                        >
+                                            ADULT
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setEditProfileForm({...editProfileForm, category: UserCategory.KID})}
+                                            className={`flex-1 py-2 rounded text-xs font-bold border transition-colors ${
+                                                editProfileForm.category === UserCategory.KID 
+                                                    ? 'bg-blue-500 border-blue-500 text-white'
+                                                    : (isKid ? 'bg-white border-blue-200 text-blue-600' : 'bg-slate-950 border-slate-800 text-slate-400')
+                                            }`}
+                                        >
+                                            KID
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className={`text-[10px] font-bold ${isKid ? 'text-blue-600' : 'text-slate-500'} uppercase block mb-1`}>Group</label>
                                     <select 
-                                        className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-white text-sm outline-none"
+                                        className={`w-full ${isKid ? 'bg-white border-blue-200 text-blue-900' : 'bg-slate-950 border-slate-800 text-white'} border rounded px-3 py-2 text-sm outline-none`}
                                         value={editProfileForm.group_id}
                                         onChange={e => setEditProfileForm({...editProfileForm, group_id: e.target.value as GroupType})}
                                     >
@@ -878,9 +944,9 @@ const App: React.FC = () => {
                                 </div>
 
                                 <div>
-                                    <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Archetype</label>
+                                    <label className={`text-[10px] font-bold ${isKid ? 'text-blue-600' : 'text-slate-500'} uppercase block mb-1`}>Archetype</label>
                                     <select 
-                                        className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-white text-sm outline-none"
+                                        className={`w-full ${isKid ? 'bg-white border-blue-200 text-blue-900' : 'bg-slate-950 border-slate-800 text-white'} border rounded px-3 py-2 text-sm outline-none`}
                                         value={editProfileForm.athlete_type}
                                         onChange={e => setEditProfileForm({...editProfileForm, athlete_type: e.target.value as AthleteType})}
                                     >
@@ -892,7 +958,7 @@ const App: React.FC = () => {
                             <div className="flex gap-3 mt-8">
                                 <button 
                                     onClick={() => setIsEditingProfile(false)}
-                                    className="flex-1 py-3 bg-slate-800 text-white font-bold rounded-lg uppercase text-xs hover:bg-slate-700 flex items-center justify-center gap-2"
+                                    className={`flex-1 py-3 ${isKid ? 'bg-blue-200 text-blue-800 hover:bg-blue-300' : 'bg-slate-800 text-white hover:bg-slate-700'} font-bold rounded-lg uppercase text-xs flex items-center justify-center gap-2`}
                                 >
                                     <X size={16} /> Cancel
                                 </button>

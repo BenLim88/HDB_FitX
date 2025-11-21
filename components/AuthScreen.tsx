@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { User, GroupType, AthleteType, Gender } from '../types';
+import { User, GroupType, AthleteType, Gender, UserCategory } from '../types';
 import { DataService } from '../services/dataService';
 import { Dumbbell, UserPlus, LogIn, Wand2, RefreshCcw } from 'lucide-react';
 
@@ -21,6 +21,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
   const [name, setName] = useState('');
   const [title, setTitle] = useState('Mr');
   const [gender, setGender] = useState<Gender>(Gender.MALE);
+  const [category, setCategory] = useState<UserCategory>(UserCategory.ADULT);
   const [group, setGroup] = useState<GroupType>(GroupType.NONE);
   const [athleteType, setAthleteType] = useState<AthleteType>(AthleteType.GENERIC);
   
@@ -78,6 +79,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
         gender,
         group_id: group,
         athlete_type: athleteType,
+        category
       });
       
       // Update the avatar with the specific chosen seed/style
@@ -125,33 +127,37 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
       }
   };
 
+  const isKid = category === UserCategory.KID;
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black">
+    <div className={`min-h-screen flex flex-col items-center justify-center p-6 ${isKid && isRegistering ? 'bg-blue-50' : 'bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black'}`}>
       
       {/* Header / Logo Area */}
       <div className="mb-10 text-center space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
-        <div className="w-24 h-24 mx-auto bg-orange-600 rounded-3xl rotate-3 flex items-center justify-center shadow-[0_0_40px_rgba(249,115,22,0.4)] border border-orange-400">
+        <div className={`w-24 h-24 mx-auto ${isKid && isRegistering ? 'bg-blue-500 border-blue-300 shadow-blue-500/40' : 'bg-orange-600 border-orange-400 shadow-[0_0_40px_rgba(249,115,22,0.4)]'} rounded-3xl rotate-3 flex items-center justify-center shadow-lg border`}>
           <Dumbbell size={48} className="text-white -rotate-3" />
         </div>
         <div>
-            <h1 className="text-4xl font-black text-white italic tracking-tighter uppercase">HDB FitX</h1>
-            <p className="text-orange-500 font-bold tracking-widest text-xs uppercase mt-1">Community Fitness Protocol</p>
+            <h1 className={`text-4xl font-black ${isKid && isRegistering ? 'text-blue-900' : 'text-white'} italic tracking-tighter uppercase`}>HDB FitX</h1>
+            <p className={`${isKid && isRegistering ? 'text-blue-600' : 'text-orange-500'} font-bold tracking-widest text-xs uppercase mt-1`}>
+                {isKid && isRegistering ? 'Junior Cadet Program' : 'Community Fitness Protocol'}
+            </p>
         </div>
       </div>
 
       {/* Auth Card */}
-      <div className="w-full max-w-sm bg-slate-900/80 backdrop-blur-xl border border-slate-800 rounded-2xl p-6 shadow-2xl">
+      <div className={`w-full max-w-sm ${isKid && isRegistering ? 'bg-white border-blue-200 shadow-blue-200' : 'bg-slate-900/80 backdrop-blur-xl border-slate-800'} border rounded-2xl p-6 shadow-2xl transition-colors`}>
         
-        <div className="flex mb-6 bg-slate-950 p-1 rounded-lg">
+        <div className={`flex mb-6 ${isKid && isRegistering ? 'bg-blue-100' : 'bg-slate-950'} p-1 rounded-lg`}>
             <button 
                 onClick={() => setIsRegistering(false)}
-                className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded transition-all ${!isRegistering ? 'bg-slate-800 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}
+                className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded transition-all ${!isRegistering ? (isKid && isRegistering ? 'bg-blue-500 text-white' : 'bg-slate-800 text-white shadow') : 'text-slate-500 hover:text-slate-300'}`}
             >
                 Login
             </button>
             <button 
                 onClick={() => setIsRegistering(true)}
-                className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded transition-all ${isRegistering ? 'bg-orange-600 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}
+                className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded transition-all ${isRegistering ? (isKid ? 'bg-blue-500 text-white' : 'bg-orange-600 text-white shadow') : 'text-slate-500 hover:text-slate-300'}`}
             >
                 Register
             </button>
@@ -168,24 +174,24 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
             {/* Login Fields */}
             <div className="space-y-3">
                 <div>
-                    <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">
+                    <label className={`block text-[10px] uppercase font-bold ${isKid && isRegistering ? 'text-blue-400' : 'text-slate-500'} mb-1`}>
                         {isRegistering ? 'Email Address' : 'Email / ID'}
                     </label>
                     <input 
                         type={isRegistering ? "email" : "text"}
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-800 focus:border-orange-500 rounded-lg px-4 py-3 text-white text-sm outline-none transition-colors"
+                        className={`w-full ${isKid && isRegistering ? 'bg-blue-50 border-blue-200 text-blue-900 placeholder:text-blue-300 focus:border-blue-500' : 'bg-slate-950 border-slate-800 text-white focus:border-orange-500'} border rounded-lg px-4 py-3 text-sm outline-none transition-colors`}
                         placeholder={isRegistering ? "user@example.com" : "user@example.com or 'Admin'"}
                     />
                 </div>
                 <div>
-                    <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Password</label>
+                    <label className={`block text-[10px] uppercase font-bold ${isKid && isRegistering ? 'text-blue-400' : 'text-slate-500'} mb-1`}>Password</label>
                     <input 
                         type="password" 
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-800 focus:border-orange-500 rounded-lg px-4 py-3 text-white text-sm outline-none transition-colors"
+                        className={`w-full ${isKid && isRegistering ? 'bg-blue-50 border-blue-200 text-blue-900 placeholder:text-blue-300 focus:border-blue-500' : 'bg-slate-950 border-slate-800 text-white focus:border-orange-500'} border rounded-lg px-4 py-3 text-sm outline-none transition-colors`}
                         placeholder="••••••••"
                     />
                 </div>
@@ -194,46 +200,65 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
             {/* Registration Only Fields */}
             {isRegistering && (
                 <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300 pt-2 border-t border-slate-800">
+                    
+                    {/* Category Selection */}
+                    <div className="flex gap-2 mb-2">
+                        <button
+                            type="button"
+                            onClick={() => setCategory(UserCategory.ADULT)}
+                            className={`flex-1 py-2 rounded text-xs font-bold border ${category === UserCategory.ADULT ? 'bg-orange-600 border-orange-600 text-white' : 'bg-transparent border-slate-600 text-slate-500'}`}
+                        >
+                            ADULT
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setCategory(UserCategory.KID)}
+                            className={`flex-1 py-2 rounded text-xs font-bold border ${category === UserCategory.KID ? 'bg-blue-500 border-blue-500 text-white' : 'bg-transparent border-slate-600 text-slate-500'}`}
+                        >
+                            KID
+                        </button>
+                    </div>
+
                     <div className="grid grid-cols-4 gap-3">
                          <div className="col-span-1">
-                            <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Title</label>
+                            <label className={`block text-[10px] uppercase font-bold ${isKid ? 'text-blue-400' : 'text-slate-500'} mb-1`}>Title</label>
                             <select 
                                 value={title} 
                                 onChange={e => setTitle(e.target.value)}
-                                className="w-full bg-slate-950 border border-slate-800 focus:border-orange-500 rounded-lg px-2 py-3 text-white text-sm outline-none"
+                                className={`w-full ${isKid ? 'bg-blue-50 border-blue-200 text-blue-900' : 'bg-slate-950 border-slate-800 text-white focus:border-orange-500'} border rounded-lg px-2 py-3 text-sm outline-none`}
                             >
-                                {['Mr', 'Ms', 'Mrs', 'Dr', 'Er', 'Ar', 'Rs'].map(t => <option key={t} value={t}>{t}</option>)}
+                                {['Mr', 'Ms', 'Mrs', 'Dr', 'Er', 'Ar', 'Rs', 'Master', 'Miss'].map(t => <option key={t} value={t}>{t}</option>)}
                             </select>
                          </div>
                          <div className="col-span-3">
-                            <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Full Name</label>
+                            <label className={`block text-[10px] uppercase font-bold ${isKid ? 'text-blue-400' : 'text-slate-500'} mb-1`}>Full Name</label>
                             <input 
                                 type="text" 
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
-                                className="w-full bg-slate-950 border border-slate-800 focus:border-orange-500 rounded-lg px-4 py-3 text-white text-sm outline-none"
+                                className={`w-full ${isKid ? 'bg-blue-50 border-blue-200 text-blue-900 placeholder:text-blue-300' : 'bg-slate-950 border-slate-800 text-white focus:border-orange-500'} border rounded-lg px-4 py-3 text-sm outline-none`}
                                 placeholder="Darren Tan"
                             />
                          </div>
                     </div>
 
                     <div>
-                         <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Gender</label>
+                         <label className={`block text-[10px] uppercase font-bold ${isKid ? 'text-blue-400' : 'text-slate-500'} mb-1`}>Gender</label>
                          <select 
                             value={gender} 
                             onChange={e => setGender(e.target.value as Gender)}
-                            className="w-full bg-slate-950 border border-slate-800 focus:border-orange-500 rounded-lg px-2 py-3 text-white text-sm outline-none"
+                            className={`w-full ${isKid ? 'bg-blue-50 border-blue-200 text-blue-900' : 'bg-slate-950 border-slate-800 text-white focus:border-orange-500'} border rounded-lg px-2 py-3 text-sm outline-none`}
                         >
                             {Object.values(Gender).map(t => <option key={t} value={t}>{t}</option>)}
                         </select>
                     </div>
 
                     <div>
-                        <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Affiliation Group</label>
+                        <label className={`block text-[10px] uppercase font-bold ${isKid ? 'text-blue-400' : 'text-slate-500'} mb-1`}>Affiliation Group</label>
                         <select 
                             value={group}
                             onChange={(e) => setGroup(e.target.value as GroupType)}
-                            className="w-full bg-slate-950 border border-slate-800 focus:border-orange-500 rounded-lg px-4 py-3 text-white text-sm outline-none"
+                            className={`w-full ${isKid ? 'bg-blue-50 border-blue-200 text-blue-900' : 'bg-slate-950 border-slate-800 text-white focus:border-orange-500'} border rounded-lg px-4 py-3 text-sm outline-none`}
                         >
                             {Object.values(GroupType).map(g => (
                                 <option key={g} value={g}>{g}</option>
@@ -242,11 +267,11 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
                     </div>
 
                     <div>
-                        <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Archetype</label>
+                        <label className={`block text-[10px] uppercase font-bold ${isKid ? 'text-blue-400' : 'text-slate-500'} mb-1`}>Archetype</label>
                         <select 
                             value={athleteType}
                             onChange={(e) => setAthleteType(e.target.value as AthleteType)}
-                            className="w-full bg-slate-950 border border-slate-800 focus:border-orange-500 rounded-lg px-4 py-3 text-white text-sm outline-none"
+                            className={`w-full ${isKid ? 'bg-blue-50 border-blue-200 text-blue-900' : 'bg-slate-950 border-slate-800 text-white focus:border-orange-500'} border rounded-lg px-4 py-3 text-sm outline-none`}
                         >
                             {Object.values(AthleteType).map(a => (
                                 <option key={a} value={a}>{a}</option>
@@ -255,10 +280,10 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
                     </div>
 
                     {/* Avatar Studio */}
-                    <div className="pt-2 border-t border-slate-800">
-                        <label className="block text-[10px] uppercase font-bold text-slate-500 mb-2">Identity Matrix (Avatar)</label>
+                    <div className={`pt-2 border-t ${isKid ? 'border-blue-200' : 'border-slate-800'}`}>
+                        <label className={`block text-[10px] uppercase font-bold ${isKid ? 'text-blue-400' : 'text-slate-500'} mb-2`}>Identity Matrix (Avatar)</label>
                         <div className="flex items-center gap-4">
-                            <div className="w-16 h-16 rounded-full bg-slate-950 border border-slate-700 overflow-hidden shrink-0">
+                            <div className={`w-16 h-16 rounded-full ${isKid ? 'bg-blue-100 border-blue-200' : 'bg-slate-950 border-slate-700'} border overflow-hidden shrink-0`}>
                                 <img src={avatarUrl} alt="avatar preview" className="w-full h-full object-cover" />
                             </div>
                             <div className="flex-1 space-y-2">
@@ -270,9 +295,9 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
                                         value={avatarSeed}
                                         onChange={handleSeedChange}
                                         placeholder="Seed: e.g. 1001"
-                                        className="flex-1 bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white outline-none font-mono"
+                                        className={`flex-1 ${isKid ? 'bg-blue-50 border-blue-200 text-blue-900' : 'bg-slate-950 border-slate-800 text-white'} border rounded px-3 py-2 text-xs outline-none font-mono`}
                                      />
-                                     <button onClick={generateRandomAvatar} className="p-2 bg-slate-800 text-orange-500 rounded hover:bg-slate-700" title="Randomize">
+                                     <button onClick={generateRandomAvatar} className={`p-2 ${isKid ? 'bg-blue-100 text-blue-600 hover:bg-blue-200' : 'bg-slate-800 text-orange-500 hover:bg-slate-700'} rounded`} title="Randomize">
                                         <RefreshCcw size={14} />
                                      </button>
                                 </div>
@@ -280,7 +305,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
                                     <select
                                         value={avatarStyle}
                                         onChange={(e) => setAvatarStyle(e.target.value as AvatarStyle)}
-                                        className="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-[10px] text-slate-300 outline-none"
+                                        className={`w-full ${isKid ? 'bg-blue-50 border-blue-200 text-blue-900' : 'bg-slate-950 border-slate-800 text-slate-300'} border rounded px-2 py-1.5 text-[10px] outline-none`}
                                     >
                                         <option value="avataaars">Human (Standard)</option>
                                         <option value="adventurer">Human (RPG)</option>
@@ -300,7 +325,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
             <button 
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-4 bg-orange-600 hover:bg-orange-500 text-white font-black uppercase italic tracking-wider rounded-lg shadow-lg shadow-orange-900/20 disabled:opacity-50 flex items-center justify-center gap-2 mt-6"
+                className={`w-full py-4 ${isKid && isRegistering ? 'bg-blue-500 hover:bg-blue-400 shadow-blue-500/20' : 'bg-orange-600 hover:bg-orange-500 shadow-orange-900/20'} text-white font-black uppercase italic tracking-wider rounded-lg shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 mt-6`}
             >
                 {isLoading ? (
                     <span>Processing...</span>

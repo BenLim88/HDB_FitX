@@ -1,13 +1,14 @@
 
-import { Log, Notification, User, VerificationStatus, Workout, GroupType, AthleteType, Gender, Venue, PinnedWOD } from '../types';
+import { Log, Notification, User, VerificationStatus, Workout, GroupType, AthleteType, Gender, Venue, PinnedWOD, UserCategory } from '../types';
 import { MOCK_LOGS, MOCK_USERS, MOCK_WORKOUTS, MOCK_VENUES } from '../constants';
 import { auth, googleProvider } from '../firebaseConfig';
 import { signInWithPopup } from 'firebase/auth';
 
 // In-memory storage for the session
-let users = [...MOCK_USERS];
+let users = [...MOCK_USERS].map(u => ({ ...u, category: UserCategory.ADULT })); // Migration: Add category
 let logs = [...MOCK_LOGS];
 let venues = [...MOCK_VENUES];
+let workouts = [...MOCK_WORKOUTS].map(w => ({ ...w, is_kids_friendly: false })); // Migration: Add kids flag
 let pinnedWods: PinnedWOD[] = []; // New mock storage for pinned WODs
 let notifications: Notification[] = [
     {
@@ -43,7 +44,8 @@ export const DataService = {
                   group_id: GroupType.NONE,
                   athlete_type: AthleteType.GENERIC,
                   is_admin: false,
-                  avatar_url: fbUser.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${fbUser.uid}`
+                  avatar_url: fbUser.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${fbUser.uid}`,
+                  category: UserCategory.ADULT
               };
               users.push(user);
           }
@@ -60,7 +62,7 @@ export const DataService = {
     if (!emailOrId || !password) return null;
 
     // MASTER ADMIN CHECK
-    if (emailOrId === 'Admin' && password === 'Administrator123') {
+          if (emailOrId === 'Admin' && password === 'Administrator123') {
         const masterAdmin: User = {
             id: 'master_admin',
             name: 'Master Admin',
@@ -69,7 +71,8 @@ export const DataService = {
             group_id: GroupType.NONE,
             athlete_type: AthleteType.GENERIC,
             is_admin: true,
-            avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=AdminMaster'
+            avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=AdminMaster',
+            category: UserCategory.ADULT
         };
         // Ensure master admin is in the users list if not already
         if (!users.find(u => u.id === masterAdmin.id)) {
@@ -89,7 +92,7 @@ export const DataService = {
     return null; 
   },
 
-  register: async (data: { name: string, title: string, gender: Gender, group_id: GroupType, athlete_type: AthleteType }): Promise<User> => {
+  register: async (data: { name: string, title: string, gender: Gender, group_id: GroupType, athlete_type: AthleteType, category: UserCategory }): Promise<User> => {
     await delay(1200);
     const newUser: User = {
         id: `u_${Date.now()}`,
@@ -99,7 +102,8 @@ export const DataService = {
         group_id: data.group_id,
         athlete_type: data.athlete_type,
         is_admin: false, // Default to user
-        avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.name}`
+        avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.name}`,
+        category: data.category
     };
     users.push(newUser);
     return newUser;
@@ -191,6 +195,29 @@ export const DataService = {
       return pinnedWods[index];
   },
 
+  // --- WORKOUT MANAGEMENT (ADMIN) ---
+  addWorkout: async (workout: Workout): Promise<Workout> => {
+      await delay(500);
+      const newWorkout = { ...workout, id: `w_${Date.now()}` };
+      workouts.push(newWorkout);
+      return newWorkout;
+  },
+
+  updateWorkout: async (workout: Workout): Promise<Workout> => {
+      await delay(500);
+      const index = workouts.findIndex(w => w.id === workout.id);
+      if (index !== -1) {
+          workouts[index] = workout;
+          return workout;
+      }
+      throw new Error("Workout not found");
+  },
+
+  deleteWorkout: async (id: string): Promise<void> => {
+      await delay(300);
+      workouts = workouts.filter(w => w.id !== id);
+  },
+
   // --- EXISTING METHODS ---
   getCurrentUser: async (): Promise<User | null> => {
     await delay(100);
@@ -204,7 +231,7 @@ export const DataService = {
 
   getWorkouts: async (): Promise<Workout[]> => {
     await delay(300);
-    return [...MOCK_WORKOUTS]; // Return copy
+    return [...workouts]; // Return copy
   },
 
   getLogs: async (): Promise<Log[]> => {
@@ -217,7 +244,7 @@ export const DataService = {
   saveLog: async (log: Omit<Log, 'id' | 'user_name' | 'workout_name'>): Promise<Log> => {
     await delay(600);
     const user = users.find(u => u.id === log.user_id);
-    const workout = MOCK_WORKOUTS.find(w => w.id === log.workout_id);
+    const workout = workouts.find(w => w.id === log.workout_id);
     
     const newLog: Log = {
       ...log,

@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { Exercise, Workout, User, GroupType, AthleteType, WorkoutComponent, ScalingTier, WorkoutScheme, Venue } from '../types';
+import { Exercise, Workout, User, GroupType, AthleteType, WorkoutComponent, ScalingTier, WorkoutScheme, Venue, UserCategory } from '../types';
 import { DataService } from '../services/dataService';
 import { MOCK_EXERCISES } from '../constants';
-import { Plus, Trash2, Dumbbell, LayoutList, Users, Edit, Shield, Save, X, Lock, ChevronRight, ArrowLeft, Timer, Settings, MapPin, Star, Calendar, Pin } from 'lucide-react';
+import { Plus, Trash2, Dumbbell, LayoutList, Users, Edit, Shield, Save, X, Lock, ChevronRight, ArrowLeft, Timer, Settings, MapPin, Star, Calendar, Pin, Baby } from 'lucide-react';
 
 interface AdminDashboardProps {
   initialWorkouts: Workout[];
@@ -53,6 +53,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
   const [workoutComponents, setWorkoutComponents] = useState<WorkoutComponent[]>([]);
   const [restType, setRestType] = useState<'fixed' | 'manual' | 'none'>('none');
   const [restSeconds, setRestSeconds] = useState<string>('60');
+  const [isKidsFriendly, setIsKidsFriendly] = useState(false);
   
   // Scaling Builder State
   const [scalingRx, setScalingRx] = useState('');
@@ -175,6 +176,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       setWorkoutTimeCap(workout.time_cap_seconds ? (workout.time_cap_seconds / 60).toString() : '');
       setRestType(workout.rest_type || 'none');
       setRestSeconds(workout.rest_seconds ? workout.rest_seconds.toString() : '60');
+      setIsKidsFriendly(workout.is_kids_friendly || false);
       
       // Deep copy components to avoid mutating the original object during editing
       setWorkoutComponents(JSON.parse(JSON.stringify(workout.components)));
@@ -210,7 +212,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
               [ScalingTier.INTERMEDIATE]: scalingInt || 'Scaled',
               [ScalingTier.BEGINNER]: scalingBeg || 'Foundation'
           },
-          is_featured: existing?.is_featured || false
+          is_featured: existing?.is_featured || false,
+          is_kids_friendly: isKidsFriendly
       };
 
       let updatedWorkouts;
@@ -258,6 +261,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       setScalingAdv('');
       setScalingInt('');
       setScalingBeg('');
+      setIsKidsFriendly(false);
   };
 
   const handleDeleteWorkout = (id: string) => {
@@ -679,6 +683,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                                         onChange={e => setWorkoutTimeCap(e.target.value)}
                                     />
                                 </div>
+                            </div>
+
+                            {/* Kids Friendly Toggle */}
+                            <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
+                                <input 
+                                    type="checkbox"
+                                    id="kidsFriendly"
+                                    checked={isKidsFriendly}
+                                    onChange={(e) => setIsKidsFriendly(e.target.checked)}
+                                    className="w-4 h-4 rounded border-slate-700 bg-slate-950 text-blue-500 focus:ring-blue-500"
+                                />
+                                <label htmlFor="kidsFriendly" className="text-xs font-bold text-slate-500 uppercase cursor-pointer">
+                                    Kids Friendly Workout
+                                </label>
                             </div>
 
                             {/* Rest Configuration */}

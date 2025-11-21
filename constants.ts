@@ -1,14 +1,14 @@
 
-import { AthleteType, GroupType, Log, ScalingTier, User, VerificationStatus, Workout, Exercise, WorkoutScheme, Gender, Venue } from './types';
+import { AthleteType, GroupType, Log, ScalingTier, User, VerificationStatus, Workout, Exercise, WorkoutScheme, Gender, Venue, UserCategory } from './types';
 
 export const APP_NAME = "HDB FitX";
 
 // Mock Users
 export const MOCK_USERS: User[] = [
-  { id: 'u1', name: 'Darren Tan', title: 'Mr', gender: Gender.MALE, group_id: GroupType.EAPG, athlete_type: AthleteType.HYROX, is_admin: true, avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Darren' },
-  { id: 'u2', name: 'Sarah Lim', title: 'Ms', gender: Gender.FEMALE, group_id: GroupType.PLG, athlete_type: AthleteType.CROSSFIT, is_admin: false, avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah' },
-  { id: 'u3', name: 'Uncle Bob', title: 'Er', gender: Gender.MALE, group_id: GroupType.HMG, athlete_type: AthleteType.STRENGTH, is_admin: false, avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Bob' },
-  { id: 'u4', name: 'FitGirl99', title: 'Dr', gender: Gender.FEMALE, group_id: GroupType.ISG, athlete_type: AthleteType.HYBRID, is_admin: false, avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=FitGirl' },
+  { id: 'u1', name: 'Darren Tan', title: 'Mr', gender: Gender.MALE, group_id: GroupType.EAPG, athlete_type: AthleteType.HYROX, is_admin: true, avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Darren', category: UserCategory.ADULT },
+  { id: 'u2', name: 'Sarah Lim', title: 'Ms', gender: Gender.FEMALE, group_id: GroupType.PLG, athlete_type: AthleteType.CROSSFIT, is_admin: false, avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah', category: UserCategory.ADULT },
+  { id: 'u3', name: 'Uncle Bob', title: 'Er', gender: Gender.MALE, group_id: GroupType.HMG, athlete_type: AthleteType.STRENGTH, is_admin: false, avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Bob', category: UserCategory.ADULT },
+  { id: 'u4', name: 'FitGirl99', title: 'Dr', gender: Gender.FEMALE, group_id: GroupType.ISG, athlete_type: AthleteType.HYBRID, is_admin: false, avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=FitGirl', category: UserCategory.ADULT },
 ];
 
 export const CURRENT_USER_ID = 'u1'; 
