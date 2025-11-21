@@ -8,7 +8,7 @@ import { signInWithPopup } from 'firebase/auth';
 let users = [...MOCK_USERS].map(u => ({ ...u, category: UserCategory.ADULT })); // Migration: Add category
 let logs = [...MOCK_LOGS];
 let venues = [...MOCK_VENUES];
-let workouts = [...MOCK_WORKOUTS].map(w => ({ ...w, is_kids_friendly: false })); // Migration: Add kids flag
+let workouts = [...MOCK_WORKOUTS].map(w => ({ ...w, is_kids_friendly: w.is_kids_friendly || false })); // Preserve existing kids_friendly flag
 let pinnedWods: PinnedWOD[] = []; // New mock storage for pinned WODs
 let notifications: Notification[] = [
     {
