@@ -432,7 +432,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
 
                  {/* Venue List */}
                  <div className="space-y-3">
-                    {venues.map(v => (
+                    {venues.length === 0 ? (
+                        <div className="text-center py-8 text-slate-500 text-sm">
+                            No venues registered yet. Add one above.
+                        </div>
+                    ) : (
+                    venues.map(v => (
                         <div key={v.id} className={`bg-slate-900/50 border ${editingVenueId === v.id ? 'border-orange-500/50' : 'border-slate-800'} p-4 rounded-lg flex justify-between items-start`}>
                             <div className="flex items-start gap-3">
                                 <div className="w-10 h-10 rounded bg-slate-800 flex items-center justify-center text-slate-500 shrink-0">
@@ -460,7 +465,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                                 </button>
                             </div>
                         </div>
-                    ))}
+                    )))}
                  </div>
             </div>
         )}
@@ -551,7 +556,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                         </button>
 
                         <div className="space-y-3">
-                            {workouts.map(w => (
+                            {workouts.length === 0 ? (
+                                <div className="text-center py-8 text-slate-500 text-sm">
+                                    No workouts yet. Click "Build New Workout" to create one.
+                                </div>
+                            ) : (
+                            workouts.map(w => (
                                 <div key={w.id} className={`bg-slate-900 border p-4 rounded-xl relative transition-colors ${w.is_featured ? 'border-yellow-500/40 shadow-lg shadow-yellow-500/5' : 'border-slate-800'}`}>
                                     {w.is_featured && (
                                         <div className="absolute -top-2 -left-2 bg-yellow-500 text-black text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
@@ -597,7 +607,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                                         </div>
                                     </div>
                                 </div>
-                            ))}
+                            )))}
                         </div>
 
                         {/* PIN WOD MODAL */}
@@ -891,7 +901,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
 
         {activeTab === 'users' && (
              <div className="p-4 space-y-4">
-                {users.map(user => (
+                {users.length === 0 ? (
+                    <div className="text-center py-8 text-slate-500 text-sm">
+                        Loading users...
+                    </div>
+                ) : (
+                users.map(user => (
                     <div key={user.id} className={`bg-slate-900 border p-4 rounded-xl flex flex-col gap-3 transition-all ${editingUserId === user.id ? 'border-orange-500' : 'border-slate-800'}`}>
                         {editingUserId === user.id ? (
                             // EDIT MODE
@@ -980,7 +995,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                             </>
                         )}
                     </div>
-                ))}
+                )))}
              </div>
         )}
     </div>
