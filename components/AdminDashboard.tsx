@@ -394,15 +394,50 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
   };
 
   const handleSaveUser = async () => {
-      if (editingUserId && editForm) {
-          try {
-              const updated = await DataService.updateUser(editForm as User);
-              setUsers(users.map(u => u.id === updated.id ? updated : u));
-              setEditingUserId(null);
-              setEditForm({});
-          } catch (e) {
-              console.error("Failed to update user", e);
-          }
+      if (!editingUserId || !editForm) {
+          alert('No user selected for editing.');
+          return;
+      }
+      
+      // Find the original user to preserve required fields
+      const originalUser = users.find(u => u.id === editingUserId);
+      if (!originalUser) {
+          alert('User not found.');
+          return;
+      }
+      
+      // Validate required fields
+      if (!editForm.name || !editForm.title) {
+          alert('Please fill in all required fields (name and title).');
+          return;
+      }
+      
+      try {
+          // Merge editForm with original user to ensure all required fields are present
+          const updatedUser: User = {
+              ...originalUser,
+              ...editForm,
+              id: editingUserId, // Ensure ID is set
+              name: editForm.name || originalUser.name,
+              title: editForm.title || originalUser.title,
+              gender: editForm.gender || originalUser.gender,
+              group_id: editForm.group_id || originalUser.group_id,
+              athlete_type: editForm.athlete_type || originalUser.athlete_type,
+              category: editForm.category || originalUser.category,
+              is_admin: editForm.is_admin !== undefined ? editForm.is_admin : originalUser.is_admin,
+              avatar_url: editForm.avatar_url || originalUser.avatar_url
+          };
+          
+          console.log('Saving user:', editingUserId, updatedUser);
+          const updated = await DataService.updateUser(updatedUser);
+          console.log('User updated successfully:', updated);
+          setUsers(users.map(u => u.id === updated.id ? updated : u));
+          setEditingUserId(null);
+          setEditForm({});
+          alert('User updated successfully!');
+      } catch (e) {
+          console.error("Failed to update user", e);
+          alert(`Failed to update user: ${e instanceof Error ? e.message : 'Unknown error'}. Check console for details.`);
       }
   };
 
@@ -422,9 +457,27 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
           alert("Cannot revoke rights from Master Admin.");
           return;
       }
-      const updated = { ...user, is_admin: !user.is_admin };
-      await DataService.updateUser(updated);
-      setUsers(users.map(u => u.id === updated.id ? updated : u));
+      
+      const newAdminStatus = !user.is_admin;
+      const confirmMessage = newAdminStatus 
+          ? `Promote "${user.name}" to Administrator?`
+          : `Revoke Administrator rights from "${user.name}"?`;
+      
+      if (!confirm(confirmMessage)) {
+          return;
+      }
+      
+      try {
+          console.log(`Toggling admin status for ${user.name} to ${newAdminStatus}`);
+          const updated = { ...user, is_admin: newAdminStatus };
+          const result = await DataService.updateUser(updated);
+          console.log('Admin status updated successfully:', result);
+          setUsers(users.map(u => u.id === result.id ? result : u));
+          alert(`${user.name} ${newAdminStatus ? 'promoted to' : 'demoted from'} Administrator.`);
+      } catch (e) {
+          console.error("Failed to toggle admin status", e);
+          alert(`Failed to ${newAdminStatus ? 'promote' : 'demote'} user: ${e instanceof Error ? e.message : 'Unknown error'}. Check console for details.`);
+      }
   };
 
   return (
@@ -1113,38 +1166,71 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                                 <div className="flex gap-2">
                                     <select 
                                         className="bg-slate-950 border border-slate-800 rounded p-2 text-white text-xs"
-                                        value={editForm.title}
+                                        value={editForm.title || ''}
                                         onChange={e => setEditForm({...editForm, title: e.target.value})}
                                     >
-                                        {['Mr', 'Ms', 'Mrs', 'Dr', 'Er', 'Ar', 'Rs'].map(t => <option key={t} value={t}>{t}</option>)}
+                                        {['Mr', 'Ms', 'Mrs', 'Dr', 'Er', 'Ar', 'Rs', 'Master', 'Miss'].map(t => <option key={t} value={t}>{t}</option>)}
                                     </select>
                                     <input 
                                         className="flex-1 bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm"
-                                        value={editForm.name}
+                                        value={editForm.name || ''}
                                         onChange={e => setEditForm({...editForm, name: e.target.value})}
+                                        placeholder="User Name"
                                     />
                                 </div>
                                 <div className="grid grid-cols-2 gap-2">
                                     <select 
                                         className="bg-slate-950 border border-slate-800 rounded p-2 text-white text-xs"
-                                        value={editForm.group_id}
+                                        value={editForm.group_id || GroupType.NONE}
                                         onChange={e => setEditForm({...editForm, group_id: e.target.value as GroupType})}
                                     >
                                         {Object.values(GroupType).map(g => <option key={g} value={g}>{g}</option>)}
                                     </select>
                                     <select 
                                         className="bg-slate-950 border border-slate-800 rounded p-2 text-white text-xs"
-                                        value={editForm.athlete_type}
+                                        value={editForm.athlete_type || AthleteType.GENERIC}
                                         onChange={e => setEditForm({...editForm, athlete_type: e.target.value as AthleteType})}
                                     >
                                         {Object.values(AthleteType).map(a => <option key={a} value={a}>{a}</option>)}
                                     </select>
                                 </div>
+                                <div className="flex gap-2">
+                                    <label className="flex items-center gap-2 text-xs text-slate-400">
+                                        <span>Category:</span>
+                                        <div className="flex gap-1">
+                                            <button
+                                                type="button"
+                                                onClick={() => setEditForm({...editForm, category: UserCategory.ADULT})}
+                                                className={`px-2 py-1 rounded text-[10px] font-bold border transition-colors ${
+                                                    editForm.category === UserCategory.ADULT
+                                                        ? 'bg-orange-600 border-orange-600 text-white'
+                                                        : 'bg-slate-950 border-slate-800 text-slate-400'
+                                                }`}
+                                            >
+                                                ADULT
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setEditForm({...editForm, category: UserCategory.KID})}
+                                                className={`px-2 py-1 rounded text-[10px] font-bold border transition-colors ${
+                                                    editForm.category === UserCategory.KID
+                                                        ? 'bg-blue-500 border-blue-500 text-white'
+                                                        : 'bg-slate-950 border-slate-800 text-slate-400'
+                                                }`}
+                                            >
+                                                KID
+                                            </button>
+                                        </div>
+                                    </label>
+                                </div>
                                 <div className="flex gap-2 pt-2">
-                                    <button onClick={handleSaveUser} className="flex-1 bg-green-600 text-white py-2 rounded text-xs font-bold flex items-center justify-center gap-1">
+                                    <button onClick={handleSaveUser} className="flex-1 bg-green-600 hover:bg-green-500 text-white py-2 rounded text-xs font-bold flex items-center justify-center gap-1">
                                         <Save size={14} /> Save
                                     </button>
-                                    <button onClick={() => setEditingUserId(null)} className="flex-1 bg-slate-800 text-white py-2 rounded text-xs font-bold flex items-center justify-center gap-1">
+                                    <button onClick={() => {
+                                        setEditingUserId(null);
+                                        setEditForm({});
+                                    }} className="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-2 rounded text-xs font-bold flex items-center justify-center gap-1">
                                         <X size={14} /> Cancel
                                     </button>
                                 </div>
