@@ -10,7 +10,7 @@ HDB FitX is a gamified community fitness application. It encourages workouts thr
 *   **Witness Verification**: 'BTO-style' proof-of-work where peers verify your exercise logs.
 *   **Gamification**: Rank up from 'Recruit' to 'Encik' with avatar customization.
 *   **Authentication**: Google Sign-In (Firebase Auth) and guest access.
-*   **Mock Data Layer**: Simulates a backend for rapid prototyping (easily switchable to real Firestore).
+*   **Firestore Database**: Persistent data storage for users, workouts, logs, and notifications.
 
 ---
 
@@ -105,7 +105,18 @@ After deployment, your app will fail to login if you don't set the environment v
 3.  Copy-paste all key-value pairs from your local `.env` file.
 4.  **Redeploy** the application (Deployments > Redeploy) for changes to take effect.
 
-### 4. Authorize Domain in Firebase (Crucial!)
+### 4. Enable Firestore Database (Required for Production!)
+**⚠️ IMPORTANT**: Without Firestore, all user data will be lost on page refresh or deployment!
+
+1.  Go to [Firebase Console](https://console.firebase.google.com/).
+2.  Navigate to **Firestore Database** > **Create Database**.
+3.  Choose **Start in test mode** (for now - you can add security rules later).
+4.  Select a location closest to your users (e.g., `asia-southeast1` for Singapore).
+5.  Click **Enable**.
+
+The app will automatically seed initial data (workouts, venues, sample users) on first load.
+
+### 5. Authorize Domain in Firebase (Crucial!)
 If "Sign in with Google" fails on the live site:
 1.  Go to [Firebase Console](https://console.firebase.google.com/).
 2.  Navigate to **Authentication** > **Settings** > **Authorized domains**.
@@ -141,6 +152,40 @@ hdb-fitx/
 ---
 
 ### Recent Updates
+*   **Firestore Migration**: Migrated from in-memory storage to Firebase Firestore for persistent data storage.
+*   **Data Persistence**: All user data (logs, workouts, profiles) now persists across deployments and page refreshes.
 *   **Auth Integration**: Migrated from pure mock auth to real Firebase Google Sign-In.
 *   **Security**: Moved hardcoded API keys to environment variables.
 *   **Deployment**: Configured for Vercel deployment.
+
+---
+
+## 🔥 Firestore Setup (Production)
+
+### Why Firestore?
+Previously, the app used in-memory storage, which meant:
+- ❌ Data was lost on page refresh
+- ❌ Data was lost on deployment
+- ❌ Each user had isolated data
+
+Now with Firestore:
+- ✅ Data persists across deployments
+- ✅ Data persists across page refreshes
+- ✅ Shared data across all users (leaderboards, pinned WODs)
+
+### Collections Structure
+The app uses the following Firestore collections:
+- `users` - User profiles and settings
+- `workouts` - Workout definitions
+- `logs` - Workout completion logs
+- `venues` - Training locations
+- `pinnedWods` - Pinned Workouts of the Day
+- `notifications` - User notifications
+
+### Automatic Seeding
+On first load, the app automatically seeds Firestore with:
+- Initial workout templates
+- Sample venues
+- Mock user data (for testing)
+
+This only happens if collections are empty, so existing data won't be overwritten.
