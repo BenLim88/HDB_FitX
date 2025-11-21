@@ -338,8 +338,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
   };
 
   const handleDeleteWorkout = async (id: string) => {
+      if (!id) {
+          console.error('No workout ID provided for deletion');
+          alert('Error: No workout ID provided');
+          return;
+      }
+      
       if (window.confirm("Are you sure you want to delete this workout? This cannot be undone.")) {
           try {
+              console.log('Attempting to delete workout with ID:', id, 'Type:', typeof id);
               await DataService.deleteWorkout(id);
               const updatedWorkouts = workouts.filter(w => w.id !== id);
               setWorkouts(updatedWorkouts);
@@ -347,6 +354,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
               alert('Workout deleted successfully!');
           } catch (error) {
               console.error('Error deleting workout:', error);
+              console.error('Workout ID that failed:', id);
               alert(`Failed to delete workout: ${error instanceof Error ? error.message : 'Unknown error'}. Check console for details.`);
           }
       }

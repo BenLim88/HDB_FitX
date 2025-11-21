@@ -481,8 +481,38 @@ export const DataService = {
   },
 
   deleteWorkout: async (id: string): Promise<void> => {
-      const workoutRef = doc(db, COLLECTIONS.WORKOUTS, id);
-      await deleteDoc(workoutRef);
+      try {
+          if (!id || typeof id !== 'string' || id.trim() === '') {
+              throw new Error('Invalid workout ID provided');
+          }
+          
+          // Sanitize ID - remove any invalid characters
+          const sanitizedId = id.trim();
+          
+          console.log('Deleting workout:', sanitizedId);
+          console.log('Collection name:', COLLECTIONS.WORKOUTS);
+          
+          const workoutRef = doc(db, COLLECTIONS.WORKOUTS, sanitizedId);
+          
+          // Check if document exists before deleting
+          const workoutSnap = await getDoc(workoutRef);
+          if (!workoutSnap.exists()) {
+              console.warn('Workout document does not exist:', sanitizedId);
+              throw new Error('Workout not found');
+          }
+          
+          console.log('Document exists, proceeding with deletion...');
+          await deleteDoc(workoutRef);
+          console.log('Workout deleted successfully:', sanitizedId);
+      } catch (error) {
+          console.error('Error deleting workout:', error);
+          console.error('Error details:', {
+              message: error instanceof Error ? error.message : 'Unknown error',
+              stack: error instanceof Error ? error.stack : undefined,
+              id: id
+          });
+          throw error;
+      }
   },
 
   // --- EXISTING METHODS ---
