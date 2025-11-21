@@ -10,7 +10,7 @@ import WitnessInbox from './components/WitnessInbox';
 import AdminDashboard from './components/AdminDashboard';
 import AuthScreen from './components/AuthScreen';
 import DIYWorkout from './components/DIYWorkout';
-import { Trophy, Flame, MapPin, ChevronRight, Bot, Loader2, ShieldAlert, Filter, Dumbbell, Settings, Edit2, Save, X, RefreshCcw, Search, Calendar, Wand2, Star, RotateCcw, Pin, Users, Baby } from 'lucide-react';
+import { Trophy, Flame, MapPin, ChevronRight, Bot, Loader2, ShieldAlert, Filter, Dumbbell, Settings, Edit2, Save, X, RefreshCcw, Search, Calendar, Wand2, Star, RotateCcw, Pin, Users, Baby, Trash2, Check } from 'lucide-react';
 import { MOCK_EXERCISES } from './constants';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth } from './firebaseConfig';
@@ -1128,6 +1128,94 @@ const App: React.FC = () => {
                                             No records found. Log a standard workout!
                                         </div>
                                     )}
+                                </div>
+                            </div>
+
+                            {/* Workout History Section */}
+                            <div className={`mt-6 p-4 ${isKid ? 'bg-blue-50 border-blue-200' : 'bg-slate-900 border-slate-800'} rounded-lg border`}>
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className={`text-sm font-bold ${isKid ? 'text-blue-800' : 'text-slate-300'} uppercase tracking-wider`}>Workout History</h3>
+                                    <button onClick={() => refreshData()} className={`${isKid ? 'text-blue-500 hover:text-blue-700' : 'text-slate-500 hover:text-orange-500'} transition-colors`} title="Refresh History">
+                                        <RotateCcw size={14} />
+                                    </button>
+                                </div>
+                                <div className="space-y-2 max-h-96 overflow-y-auto custom-scrollbar">
+                                    {(() => {
+                                        // Get logs for current user (or all logs if admin)
+                                        const userLogs = currentUser.is_admin 
+                                            ? logs.sort((a, b) => b.timestamp - a.timestamp)
+                                            : logs.filter(l => l.user_id === currentUser.id).sort((a, b) => b.timestamp - a.timestamp);
+                                        
+                                        if (userLogs.length === 0) {
+                                            return (
+                                                <div className={`text-center text-xs ${isKid ? 'text-blue-500' : 'text-slate-500'} italic py-4`}>
+                                                    No workout history yet. Start logging workouts!
+                                                </div>
+                                            );
+                                        }
+                                        
+                                        return userLogs.map(log => {
+                                            const dateObj = new Date(log.timestamp);
+                                            const dateDisplay = `${dateObj.toLocaleDateString()} ${dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+                                            const workout = workouts.find(w => w.id === log.workout_id);
+                                            
+                                            return (
+                                                <div key={log.id} className={`p-3 ${isKid ? 'bg-white border-blue-200' : 'bg-slate-950 border-slate-800'} rounded border flex items-start justify-between gap-3`}>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <h4 className={`text-sm font-bold ${isKid ? 'text-blue-900' : 'text-white'} truncate`}>{log.workout_name}</h4>
+                                                            {currentUser.is_admin && (
+                                                                <span className={`text-[10px] ${isKid ? 'text-blue-600' : 'text-slate-400'} truncate`}>
+                                                                    by {log.user_name}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <div className={`text-lg font-mono font-bold ${isKid ? 'text-blue-800' : 'text-orange-500'} mb-1`}>
+                                                            {log.score_display}
+                                                        </div>
+                                                        <div className="flex flex-wrap gap-2 items-center text-[10px]">
+                                                            <span className={`${isKid ? 'text-blue-600' : 'text-slate-400'} flex items-center gap-1`}>
+                                                                <Calendar size={10} /> {dateDisplay}
+                                                            </span>
+                                                            <span className={`${isKid ? 'text-blue-600' : 'text-slate-400'} flex items-center gap-1 truncate max-w-[120px]`} title={log.location}>
+                                                                <MapPin size={10} /> {log.location}
+                                                            </span>
+                                                            <span className={`${isKid ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-slate-800 text-slate-400 border-slate-700'} border px-1.5 py-0.5 rounded`}>
+                                                                {log.difficulty_tier}
+                                                            </span>
+                                                            {log.verification_status === VerificationStatus.VERIFIED && (
+                                                                <span className="flex items-center gap-1 text-green-500 bg-green-500/10 px-1.5 py-0.5 rounded border border-green-500/20">
+                                                                    <Check size={10} /> Verified
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        {log.notes && (
+                                                            <p className={`text-[10px] ${isKid ? 'text-blue-600' : 'text-slate-500'} italic mt-2 line-clamp-2`}>
+                                                                "{log.notes}"
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                    <button
+                                                        onClick={async () => {
+                                                            if (confirm(`Delete this workout log? This will remove it from the leaderboard.`)) {
+                                                                try {
+                                                                    await DataService.deleteLog(log.id);
+                                                                    refreshData();
+                                                                } catch (error) {
+                                                                    console.error('Error deleting log:', error);
+                                                                    alert('Failed to delete workout log. Please try again.');
+                                                                }
+                                                            }
+                                                        }}
+                                                        className={`p-2 ${isKid ? 'text-red-500 hover:text-red-700 hover:bg-red-50' : 'text-red-400 hover:text-red-300 hover:bg-red-500/20'} rounded transition-colors shrink-0`}
+                                                        title="Delete Workout Log"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
+                                            );
+                                        });
+                                    })()}
                                 </div>
                             </div>
                             

@@ -602,5 +602,17 @@ export const DataService = {
   deleteNotification: async (notificationId: string): Promise<void> => {
       const notifRef = doc(db, COLLECTIONS.NOTIFICATIONS, notificationId);
       await deleteDoc(notifRef);
+  },
+
+  deleteLog: async (logId: string): Promise<void> => {
+      try {
+          console.log('Deleting log:', logId);
+          const logRef = doc(db, COLLECTIONS.LOGS, logId);
+          await deleteDoc(logRef);
+          console.log('Log deleted successfully');
+      } catch (error) {
+          console.error('Error deleting log:', error);
+          throw error;
+      }
   }
 };
