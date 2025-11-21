@@ -66,6 +66,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
   const [targetValue, setTargetValue] = useState('');
   const [targetUnit, setTargetUnit] = useState('Reps');
   const [weightInput, setWeightInput] = useState('');
+  const [exerciseCategoryFilter, setExerciseCategoryFilter] = useState<string>('All');
 
   useEffect(() => {
       if (activeTab === 'users') {
@@ -801,13 +802,37 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                                 {/* Adder */}
                                 <div className="flex gap-2 items-end flex-wrap">
                                     <div className="w-full">
+                                        <label className="text-[10px] text-slate-500 font-bold mb-1 block">Filter by Category</label>
+                                        <select 
+                                            className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-xs outline-none mb-2"
+                                            value={exerciseCategoryFilter}
+                                            onChange={e => {
+                                                setExerciseCategoryFilter(e.target.value);
+                                                // Reset selected exercise if it's not in filtered list
+                                                const filtered = exercises.filter(ex => 
+                                                    e.target.value === 'All' || ex.category === e.target.value
+                                                );
+                                                if (!filtered.find(ex => ex.id === selectedExId)) {
+                                                    setSelectedExId(filtered[0]?.id || '');
+                                                }
+                                            }}
+                                        >
+                                            <option value="All">All Categories</option>
+                                            {Array.from(new Set(exercises.map(e => e.category))).map(cat => (
+                                                <option key={cat} value={cat}>{cat}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="w-full">
                                         <label className="text-[10px] text-slate-500 font-bold mb-1 block">Exercise</label>
                                         <select 
                                             className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-xs outline-none"
                                             value={selectedExId}
                                             onChange={e => setSelectedExId(e.target.value)}
                                         >
-                                            {exercises.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
+                                            {exercises
+                                                .filter(e => exerciseCategoryFilter === 'All' || e.category === exerciseCategoryFilter)
+                                                .map(e => <option key={e.id} value={e.id}>{e.name} ({e.category})</option>)}
                                         </select>
                                     </div>
                                     <div className="flex-[1.5]">
