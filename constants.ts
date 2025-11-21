@@ -14,13 +14,39 @@ export const CURRENT_USER_ID = 'u1';
 
 // Mock Venues
 export const MOCK_VENUES: Venue[] = [
-    { id: 'v1', name: 'HDB AeroGym (Tampines)', type: 'HDB' },
+    { id: 'v1', name: 'HDB Hub Aerogym (Toa Payoh)', type: 'HDB' },
     { id: 'v2', name: 'Bedok Reservoir Fitness Corner', type: 'Outdoor' },
     { id: 'v3', name: 'Jurong West ActiveSG', type: 'Commercial' },
     { id: 'v4', name: 'Home Gym', type: 'Home' },
     { id: 'v5', name: 'External / Commercial Gym', type: 'Commercial' },
     { id: 'v6', name: 'Open Void Deck', type: 'HDB' },
-    { id: 'v_custom', name: 'Other Location', type: 'Other' }
+    { id: 'v_custom', name: 'Other Location', type: 'Other' },
+    
+    // Functional / HYROX Gyms
+    { id: 'v7', name: 'Mobilus (HYROX Lab) - Official HYROX Training Club & CrossFit Affiliate', type: 'Commercial' },
+    { id: 'v8', name: 'UFIT - Official HYROX Training Club (Structured Classes)', type: 'Commercial' },
+    { id: 'v9', name: 'Actualize CrossFit - Official HYROX Affiliate Gym & CrossFit', type: 'Commercial' },
+    { id: 'v10', name: 'Body Fit Training (BFT) - Official HYROX Training Centre', type: 'Commercial' },
+    { id: 'v11', name: 'UNDIVIDED Performance - Dedicated HYROX Training Club', type: 'Commercial' },
+    
+    // CrossFit Gyms
+    { id: 'v12', name: 'Innervate Fitness - Community-driven CrossFit', type: 'Commercial' },
+    { id: 'v13', name: 'CrossFit Urban Edge - Dedicated CrossFit Gym', type: 'Commercial' },
+    { id: 'v14', name: 'Division Athletics - CrossFit & Functional Fitness', type: 'Commercial' },
+    { id: 'v15', name: 'WE ARE ONE Fitness - Singapore\'s Largest Outdoor CrossFit Gym', type: 'Commercial' },
+    { id: 'v16', name: 'CrossFit Unit - Dedicated CrossFit Gym', type: 'Commercial' },
+    { id: 'v17', name: 'MethodX Singapore - CrossFit, Functional Fitness, & HYROX Pump', type: 'Commercial' },
+    
+    // Specialty Gyms
+    { id: 'v18', name: 'ArkBloc - Bouldering, Calisthenics, & Strongman Training', type: 'Commercial' },
+    
+    // Boutique / HIIT Gyms
+    { id: 'v19', name: 'Barry\'s - High-Intensity Interval Training', type: 'Commercial' },
+    { id: 'v20', name: 'Ritual - 30-Minute High-Intensity Strength & Conditioning', type: 'Commercial' },
+    { id: 'v21', name: 'F45 Training - Global Functional HIIT Program', type: 'Commercial' },
+    
+    // Specialty Pods
+    { id: 'v22', name: 'The Gym Pod - 24/7 Pay-per-use Private Pods (HYROX setup available)', type: 'Commercial' }
 ];
 
 // Extensive Exercise List - Organized by Category
