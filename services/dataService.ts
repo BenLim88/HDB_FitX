@@ -614,5 +614,50 @@ export const DataService = {
           console.error('Error deleting log:', error);
           throw error;
       }
+  },
+
+  updateLogWitness: async (logId: string, witnessId: string | null): Promise<void> => {
+      try {
+          console.log(`Updating witness for log ${logId} to ${witnessId || 'null'}`);
+          const logRef = doc(db, COLLECTIONS.LOGS, logId);
+          const logSnap = await getDoc(logRef);
+          
+          if (!logSnap.exists()) {
+              throw new Error("Log not found");
+          }
+          
+          const logData = logSnap.data();
+          const updateData: any = {
+              witness_id: witnessId,
+              verification_status: witnessId ? VerificationStatus.PENDING : VerificationStatus.UNVERIFIED
+          };
+          
+          // If removing witness, also remove witness_name
+          if (!witnessId) {
+              updateData.witness_name = null;
+          }
+          
+          await updateDoc(logRef, updateData);
+          
+          // If adding a witness, create notification
+          if (witnessId) {
+              const workout = await getDoc(doc(db, COLLECTIONS.WORKOUTS, logData.workout_id));
+              const workoutData = workout.data() as Workout | undefined;
+              
+              await DataService.addNotification({
+                  target_user_id: witnessId,
+                  type: 'witness_request',
+                  message: `${logData.user_name || 'Unknown'} requests verification for "${workoutData?.name || logData.workout_name || 'Workout'}"`,
+                  payload: { log_id: logId },
+                  read: false
+              });
+              console.log('Witness notification created');
+          }
+          
+          console.log('Log witness updated successfully');
+      } catch (error) {
+          console.error('Error updating log witness:', error);
+          throw error;
+      }
   }
 };

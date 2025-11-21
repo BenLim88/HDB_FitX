@@ -1194,24 +1194,65 @@ const App: React.FC = () => {
                                                                 "{log.notes}"
                                                             </p>
                                                         )}
+                                                        {/* Witness Selection */}
+                                                        <div className={`mt-3 pt-2 border-t ${isKid ? 'border-blue-200' : 'border-slate-700'}`}>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className={`text-[10px] ${isKid ? 'text-blue-600' : 'text-slate-400'} font-bold`}>Witness:</span>
+                                                                <select
+                                                                    value={log.witness_id || ''}
+                                                                    onChange={async (e) => {
+                                                                        const newWitnessId = e.target.value || null;
+                                                                        try {
+                                                                            await DataService.updateLogWitness(log.id, newWitnessId);
+                                                                            refreshData();
+                                                                        } catch (error) {
+                                                                            console.error('Error updating witness:', error);
+                                                                            alert('Failed to update witness. Please try again.');
+                                                                        }
+                                                                    }}
+                                                                    className={`flex-1 text-[10px] ${isKid ? 'bg-white border-blue-200 text-blue-900' : 'bg-slate-800 border-slate-700 text-white'} border rounded px-2 py-1 outline-none`}
+                                                                >
+                                                                    <option value="">No Witness (Unverified)</option>
+                                                                    {allUsers
+                                                                        .filter(u => u.id !== log.user_id && !u.is_admin)
+                                                                        .map(u => (
+                                                                            <option key={u.id} value={u.id}>
+                                                                                {u.name} {log.witness_id === u.id ? '(Current)' : ''}
+                                                                            </option>
+                                                                        ))}
+                                                                </select>
+                                                            </div>
+                                                            {log.witness_name && (
+                                                                <p className={`text-[10px] ${isKid ? 'text-blue-600' : 'text-slate-400'} mt-1`}>
+                                                                    Verified by: {log.witness_name}
+                                                                </p>
+                                                            )}
+                                                            {log.witness_id && !log.witness_name && log.verification_status === VerificationStatus.PENDING && (
+                                                                <p className={`text-[10px] ${isKid ? 'text-blue-500' : 'text-orange-400'} mt-1 italic`}>
+                                                                    Awaiting verification...
+                                                                </p>
+                                                            )}
+                                                        </div>
                                                     </div>
-                                                    <button
-                                                        onClick={async () => {
-                                                            if (confirm(`Delete this workout log? This will remove it from the leaderboard.`)) {
-                                                                try {
-                                                                    await DataService.deleteLog(log.id);
-                                                                    refreshData();
-                                                                } catch (error) {
-                                                                    console.error('Error deleting log:', error);
-                                                                    alert('Failed to delete workout log. Please try again.');
+                                                    <div className="flex flex-col gap-2 shrink-0">
+                                                        <button
+                                                            onClick={async () => {
+                                                                if (confirm(`Delete this workout log? This will remove it from the leaderboard.`)) {
+                                                                    try {
+                                                                        await DataService.deleteLog(log.id);
+                                                                        refreshData();
+                                                                    } catch (error) {
+                                                                        console.error('Error deleting log:', error);
+                                                                        alert('Failed to delete workout log. Please try again.');
+                                                                    }
                                                                 }
-                                                            }
-                                                        }}
-                                                        className={`p-2 ${isKid ? 'text-red-500 hover:text-red-700 hover:bg-red-50' : 'text-red-400 hover:text-red-300 hover:bg-red-500/20'} rounded transition-colors shrink-0`}
-                                                        title="Delete Workout Log"
-                                                    >
-                                                        <Trash2 size={16} />
-                                                    </button>
+                                                            }}
+                                                            className={`p-2 ${isKid ? 'text-red-500 hover:text-red-700 hover:bg-red-50' : 'text-red-400 hover:text-red-300 hover:bg-red-500/20'} rounded transition-colors`}
+                                                            title="Delete Workout Log"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             );
                                         });
