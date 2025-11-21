@@ -78,14 +78,14 @@ const HomeTab: React.FC<{
                              const fullWorkout = workouts.find(w => w.id === pw.workout_id);
 
                              return (
-                                 <div key={pw.id} className={`${isKid ? 'bg-white border-blue-300' : 'bg-slate-900 border-blue-500/30'} border rounded-xl p-4 relative overflow-hidden`}>
-                                     <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full -mr-10 -mt-10 blur-2xl"></div>
+                                 <div key={pw.id} className={`${isKid ? 'bg-white border-4 border-yellow-500 shadow-lg shadow-yellow-500/30' : 'bg-slate-900 border-4 border-yellow-500 shadow-lg shadow-yellow-500/30'} rounded-xl p-4 relative overflow-hidden`}>
+                                     <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/10 rounded-full -mr-10 -mt-10 blur-2xl"></div>
                                      
                                      <div className="relative z-10">
                                          <div className="flex justify-between items-start mb-2">
                                              <div>
-                                                 <span className="text-[10px] font-bold bg-blue-500/20 text-blue-400 px-2 py-1 rounded mb-2 inline-block">
-                                                     PRIORITY MISSION
+                                                 <span className="text-[10px] font-bold bg-yellow-500/30 text-yellow-600 px-2 py-1 rounded mb-2 inline-block border border-yellow-500/50">
+                                                     ⚡ PRIORITY MISSION ⚡
                                                  </span>
                                                  <h3 className={`text-xl font-black ${isKid ? 'text-blue-900' : 'text-white'} italic uppercase`}>{pw.workout_name}</h3>
                                              </div>

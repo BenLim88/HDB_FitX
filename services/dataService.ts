@@ -15,7 +15,7 @@ let notifications: Notification[] = [
         id: 'n1',
         target_user_id: 'u1',
         type: 'witness_request',
-        message: 'Sarah Lim requests verification for "Void Deck Sprint"',
+        message: 'Lauren Weeks requests verification for "Void Deck Sprint"',
         payload: { log_id: 'l_pending_1' },
         read: false
     }
@@ -62,7 +62,7 @@ export const DataService = {
     if (!emailOrId || !password) return null;
 
     // MASTER ADMIN CHECK
-          if (emailOrId === 'Admin' && password === 'Administrator123') {
+    if (emailOrId === 'Admin' && password === 'Administrator123') {
         const masterAdmin: User = {
             id: 'master_admin',
             name: 'Master Admin',
@@ -79,6 +79,26 @@ export const DataService = {
             users.push(masterAdmin);
         }
         return masterAdmin;
+    }
+
+    // GUEST ACCOUNT CHECK
+    if (emailOrId === 'Guest' && password === 'guest123') {
+        const guestUser: User = {
+            id: 'guest',
+            name: 'Guest',
+            title: 'Mr',
+            gender: Gender.UNSPECIFIED,
+            group_id: GroupType.NONE,
+            athlete_type: AthleteType.GENERIC,
+            is_admin: false,
+            avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Guest',
+            category: UserCategory.ADULT
+        };
+        // Ensure guest is in the users list if not already
+        if (!users.find(u => u.id === guestUser.id)) {
+            users.push(guestUser);
+        }
+        return guestUser;
     }
 
     // Normal User Check (Mock)

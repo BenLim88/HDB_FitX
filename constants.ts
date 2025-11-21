@@ -5,10 +5,9 @@ export const APP_NAME = "HDB FitX";
 
 // Mock Users
 export const MOCK_USERS: User[] = [
-  { id: 'u1', name: 'Darren Tan', title: 'Mr', gender: Gender.MALE, group_id: GroupType.EAPG, athlete_type: AthleteType.HYROX, is_admin: true, avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Darren', category: UserCategory.ADULT },
-  { id: 'u2', name: 'Sarah Lim', title: 'Ms', gender: Gender.FEMALE, group_id: GroupType.PLG, athlete_type: AthleteType.CROSSFIT, is_admin: false, avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah', category: UserCategory.ADULT },
-  { id: 'u3', name: 'Uncle Bob', title: 'Er', gender: Gender.MALE, group_id: GroupType.HMG, athlete_type: AthleteType.STRENGTH, is_admin: false, avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Bob', category: UserCategory.ADULT },
-  { id: 'u4', name: 'FitGirl99', title: 'Dr', gender: Gender.FEMALE, group_id: GroupType.ISG, athlete_type: AthleteType.HYBRID, is_admin: false, avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=FitGirl', category: UserCategory.ADULT },
+  { id: 'u1', name: 'Hunter McIntyre', title: 'Mr', gender: Gender.MALE, group_id: GroupType.EAPG, athlete_type: AthleteType.HYROX, is_admin: true, avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=HunterMcIntyre', category: UserCategory.ADULT },
+  { id: 'u2', name: 'Lauren Weeks', title: 'Ms', gender: Gender.FEMALE, group_id: GroupType.PLG, athlete_type: AthleteType.HYROX, is_admin: false, avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=LaurenWeeks', category: UserCategory.ADULT },
+  { id: 'u3', name: 'Hong Beom-seok', title: 'Mr', gender: Gender.MALE, group_id: GroupType.HMG, athlete_type: AthleteType.HYROX, is_admin: false, avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=HongBeomseok', category: UserCategory.ADULT },
 ];
 
 export const CURRENT_USER_ID = 'u1'; 
@@ -184,49 +183,66 @@ export const MOCK_WORKOUTS: Workout[] = [
 export const MOCK_LOGS: Log[] = [
   {
     id: 'l1',
-    user_id: 'u2',
-    user_name: 'Sarah Lim',
-    workout_id: 'w_murph',
-    workout_name: 'Murph',
-    timestamp: Date.now() - 86400000,
-    location: 'Tampines Green MPH',
-    total_time_seconds: 2450, // ~40 mins
-    score_display: '40:50',
-    notes: 'Hot weather today.',
-    difficulty_tier: ScalingTier.ADVANCED,
-    verification_status: VerificationStatus.VERIFIED,
-    witness_id: 'u1',
-    witness_name: 'Darren Tan'
-  },
-  {
-    id: 'l2',
-    user_id: 'u3',
-    user_name: 'Uncle Bob',
-    workout_id: 'w_murph',
-    workout_name: 'Murph',
-    timestamp: Date.now() - 100000,
-    location: 'Bedok Reservoir Gym',
-    total_time_seconds: 3600,
-    score_display: '60:00',
-    notes: 'Scaled pullups.',
-    difficulty_tier: ScalingTier.BEGINNER,
-    verification_status: VerificationStatus.UNVERIFIED,
-    witness_id: null
-  },
-   {
-    id: 'l3',
     user_id: 'u1',
-    user_name: 'Darren Tan',
+    user_name: 'Hunter McIntyre',
     workout_id: 'w_hyrox_pro',
     workout_name: 'HYROX Simulation (RX)',
-    timestamp: Date.now() - 200000,
-    location: 'Jurong West ActiveSG',
-    total_time_seconds: 3900,
-    score_display: '1:05:00',
-    notes: 'Sleds were heavy.',
+    timestamp: Date.now() - 86400000,
+    location: 'Singapore HYROX Arena',
+    total_time_seconds: 3202, // 53:22
+    score_display: '53:22',
+    notes: 'Men\'s Pro Division - World Record Pace',
     difficulty_tier: ScalingTier.RX,
     verification_status: VerificationStatus.VERIFIED,
     witness_id: 'u2',
-    witness_name: 'Sarah Lim'
+    witness_name: 'Lauren Weeks'
+  },
+  {
+    id: 'l2',
+    user_id: 'u2',
+    user_name: 'Lauren Weeks',
+    workout_id: 'w_hyrox_pro',
+    workout_name: 'HYROX Simulation (RX)',
+    timestamp: Date.now() - 100000,
+    location: 'Singapore HYROX Arena',
+    total_time_seconds: 3382, // 56:22
+    score_display: '56:22',
+    notes: 'Women\'s Pro Division - Elite Performance',
+    difficulty_tier: ScalingTier.RX,
+    verification_status: VerificationStatus.VERIFIED,
+    witness_id: 'u1',
+    witness_name: 'Hunter McIntyre'
+  },
+   {
+    id: 'l3',
+    user_id: 'u3',
+    user_name: 'Hong Beom-seok',
+    workout_id: 'w_hyrox_pro',
+    workout_name: 'HYROX Simulation (RX)',
+    timestamp: Date.now() - 200000,
+    location: 'Seoul HYROX Arena',
+    total_time_seconds: 3515, // 58:35
+    score_display: '58:35',
+    notes: 'Best Solo HYROX Time - Men\'s Open, Seoul 2025',
+    difficulty_tier: ScalingTier.RX,
+    verification_status: VerificationStatus.VERIFIED,
+    witness_id: 'u1',
+    witness_name: 'Hunter McIntyre'
+  },
+  {
+    id: 'l4',
+    user_id: 'u3',
+    user_name: 'Hong Beom-seok',
+    workout_id: 'w_hyrox_pro',
+    workout_name: 'HYROX Simulation (RX)',
+    timestamp: Date.now() - 300000,
+    location: 'Singapore HYROX Arena',
+    total_time_seconds: 3626, // 1:00:26
+    score_display: '1:00:26',
+    notes: 'Men\'s Pro Division (Single Race) - Singapore 2025',
+    difficulty_tier: ScalingTier.RX,
+    verification_status: VerificationStatus.VERIFIED,
+    witness_id: 'u1',
+    witness_name: 'Hunter McIntyre'
   }
 ];
