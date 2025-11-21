@@ -62,42 +62,83 @@ const seedDatabase = async (): Promise<void> => {
       const workoutsSnapshot = await getDocs(collection(db, COLLECTIONS.WORKOUTS));
       if (workoutsSnapshot.empty) {
         console.log('Seeding database with initial data...');
-        const batch = writeBatch(db);
         
-        // Seed Users
-        for (const user of MOCK_USERS.map(u => ({ ...u, category: UserCategory.ADULT }))) {
-          const userRef = doc(db, COLLECTIONS.USERS, user.id);
-          batch.set(userRef, user);
+        // Seed in smaller batches to avoid hitting limits
+        try {
+          // Seed Workouts first (most important)
+          const workoutsBatch = writeBatch(db);
+          let batchCount = 0;
+          for (const workout of MOCK_WORKOUTS.map(w => ({ ...w, is_kids_friendly: w.is_kids_friendly || false }))) {
+            const workoutRef = doc(db, COLLECTIONS.WORKOUTS, workout.id);
+            workoutsBatch.set(workoutRef, workout);
+            batchCount++;
+            // Firestore batch limit is 500, commit in chunks if needed
+            if (batchCount >= 450) {
+              await workoutsBatch.commit();
+              batchCount = 0;
+            }
+          }
+          if (batchCount > 0) {
+            await workoutsBatch.commit();
+          }
+          console.log('Workouts seeded');
+        } catch (error) {
+          console.error('Error seeding workouts:', error);
         }
         
-        // Seed Workouts
-        for (const workout of MOCK_WORKOUTS.map(w => ({ ...w, is_kids_friendly: w.is_kids_friendly || false }))) {
-          const workoutRef = doc(db, COLLECTIONS.WORKOUTS, workout.id);
-          batch.set(workoutRef, workout);
+        try {
+          // Seed Venues
+          const venuesBatch = writeBatch(db);
+          for (const venue of MOCK_VENUES) {
+            const venueRef = doc(db, COLLECTIONS.VENUES, venue.id);
+            venuesBatch.set(venueRef, venue);
+          }
+          await venuesBatch.commit();
+          console.log('Venues seeded');
+        } catch (error) {
+          console.error('Error seeding venues:', error);
         }
         
-        // Seed Venues
-        for (const venue of MOCK_VENUES) {
-          const venueRef = doc(db, COLLECTIONS.VENUES, venue.id);
-          batch.set(venueRef, venue);
+        try {
+          // Seed Users (skip if admin/guest already exist)
+          const usersBatch = writeBatch(db);
+          for (const user of MOCK_USERS.map(u => ({ ...u, category: UserCategory.ADULT }))) {
+            // Skip if user already exists (like master_admin or guest)
+            const userRef = doc(db, COLLECTIONS.USERS, user.id);
+            const userSnap = await getDoc(userRef);
+            if (!userSnap.exists()) {
+              usersBatch.set(userRef, user);
+            }
+          }
+          await usersBatch.commit();
+          console.log('Users seeded');
+        } catch (error) {
+          console.error('Error seeding users:', error);
         }
         
-        // Seed Logs
-        for (const log of MOCK_LOGS) {
-          const logRef = doc(db, COLLECTIONS.LOGS, log.id);
-          batch.set(logRef, {
-            ...log,
-            timestamp: numberToTimestamp(log.timestamp)
-          });
+        try {
+          // Seed Logs
+          const logsBatch = writeBatch(db);
+          for (const log of MOCK_LOGS) {
+            const logRef = doc(db, COLLECTIONS.LOGS, log.id);
+            logsBatch.set(logRef, {
+              ...log,
+              timestamp: numberToTimestamp(log.timestamp)
+            });
+          }
+          await logsBatch.commit();
+          console.log('Logs seeded');
+        } catch (error) {
+          console.error('Error seeding logs:', error);
         }
         
-        await batch.commit();
         console.log('Database seeded successfully!');
+      } else {
+        console.log('Database already has data, skipping seed');
       }
     } catch (error) {
-      console.error('Error seeding database:', error);
+      console.error('Error checking/seeding database:', error);
       // Don't throw - allow app to continue even if seeding fails
-      // This might happen if Firestore rules prevent writes
     }
   })();
   
@@ -142,8 +183,6 @@ export const DataService = {
   },
 
   login: async (emailOrId: string, password: string): Promise<User | null> => {
-    await seedDatabase(); // Ensure database is seeded
-    
     if (!emailOrId || !password) return null;
 
     // MASTER ADMIN CHECK
@@ -160,12 +199,21 @@ export const DataService = {
             category: UserCategory.ADULT
         };
         // Ensure master admin exists in Firestore
-        const adminRef = doc(db, COLLECTIONS.USERS, 'master_admin');
-        const adminSnap = await getDoc(adminRef);
-        if (!adminSnap.exists()) {
-            await setDoc(adminRef, masterAdmin);
+        try {
+            const adminRef = doc(db, COLLECTIONS.USERS, 'master_admin');
+            const adminSnap = await getDoc(adminRef);
+            if (!adminSnap.exists()) {
+                await setDoc(adminRef, masterAdmin);
+                console.log('Master Admin created in Firestore');
+            }
+            // Try to seed database after admin is created
+            await seedDatabase();
+            return masterAdmin;
+        } catch (error) {
+            console.error('Error creating/accessing admin user:', error);
+            // Return admin anyway for local fallback
+            return masterAdmin;
         }
-        return masterAdmin;
     }
 
     // GUEST ACCOUNT CHECK
@@ -182,12 +230,19 @@ export const DataService = {
             category: UserCategory.ADULT
         };
         // Ensure guest exists in Firestore
-        const guestRef = doc(db, COLLECTIONS.USERS, 'guest');
-        const guestSnap = await getDoc(guestRef);
-        if (!guestSnap.exists()) {
-            await setDoc(guestRef, guestUser);
+        try {
+            const guestRef = doc(db, COLLECTIONS.USERS, 'guest');
+            const guestSnap = await getDoc(guestRef);
+            if (!guestSnap.exists()) {
+                await setDoc(guestRef, guestUser);
+                console.log('Guest user created in Firestore');
+            }
+            return guestUser;
+        } catch (error) {
+            console.error('Error creating/accessing guest user:', error);
+            // Return guest anyway for local fallback
+            return guestUser;
         }
-        return guestUser;
     }
 
     // Normal User Check - search by name or id in Firestore
