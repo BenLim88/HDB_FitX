@@ -594,11 +594,19 @@ const LeaderboardTab: React.FC<{ logs: Log[], workouts: Workout[], allUsers: Use
                             minute: '2-digit'
                         });
 
+                        // Find user for avatar
+                        const user = allUsers.find(u => u.id === log.user_id);
+
                         return (
                             <div key={log.id} className="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center gap-3">
-                                <div className="w-8 h-8 flex items-center justify-center text-lg font-black text-slate-500 italic">
+                                <div className="w-8 h-8 flex items-center justify-center text-lg font-black text-slate-500 italic shrink-0">
                                     #{idx + 1}
                                 </div>
+                                {user && (
+                                    <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 overflow-hidden shrink-0">
+                                        <img src={user.avatar_url} alt={user.name} className="w-full h-full object-cover" />
+                                    </div>
+                                )}
                                 <div className="flex-1 min-w-0">
                                     <h4 className="text-white font-bold text-sm truncate">{log.user_name}</h4>
                                     <p className="text-xs text-orange-500 truncate">{log.workout_name}</p>
