@@ -1424,6 +1424,17 @@ const App: React.FC = () => {
                                 </div>
 
                                 <div>
+                                    <label className={`text-[10px] font-bold ${isKid ? 'text-blue-600' : 'text-slate-500'} uppercase block mb-1`}>Gender</label>
+                                    <select 
+                                        className={`w-full ${isKid ? 'bg-white border-blue-200 text-blue-900' : 'bg-slate-950 border-slate-800 text-white'} border rounded px-3 py-2 text-sm outline-none`}
+                                        value={editProfileForm.gender}
+                                        onChange={e => setEditProfileForm({...editProfileForm, gender: e.target.value as Gender})}
+                                    >
+                                        {Object.values(Gender).map(g => <option key={g} value={g}>{g}</option>)}
+                                    </select>
+                                </div>
+
+                                <div>
                                     <label className={`text-[10px] font-bold ${isKid ? 'text-blue-600' : 'text-slate-500'} uppercase block mb-1`}>Group</label>
                                     <select 
                                         className={`w-full ${isKid ? 'bg-white border-blue-200 text-blue-900' : 'bg-slate-950 border-slate-800 text-white'} border rounded px-3 py-2 text-sm outline-none`}
