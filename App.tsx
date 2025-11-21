@@ -11,6 +11,8 @@ import AdminDashboard from './components/AdminDashboard';
 import AuthScreen from './components/AuthScreen';
 import DIYWorkout from './components/DIYWorkout';
 import { Trophy, Flame, MapPin, ChevronRight, Bot, Loader2, ShieldAlert, Filter, Dumbbell, Settings, Edit2, Save, X, RefreshCcw, Search, Calendar, Wand2, Star, RotateCcw, Pin, Users } from 'lucide-react';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { auth } from './firebaseConfig';
 
 // --- SUB-COMPONENTS (Inline for single-file simplicity requirement where possible) ---
 
@@ -504,6 +506,7 @@ const LeaderboardTab: React.FC<{ logs: Log[], workouts: Workout[], allUsers: Use
 
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true); // Track auth loading state
   const [activeTab, setActiveTab] = useState('home');
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [logs, setLogs] = useState<Log[]>([]);
@@ -522,9 +525,76 @@ const App: React.FC = () => {
   const [avatarPrompt, setAvatarPrompt] = useState('');
   const [avatarStyle, setAvatarStyle] = useState('avataaars'); // Default
 
-  // Initialize data when user logs in
+  // Restore user session on mount
+  useEffect(() => {
+    let unsubscribe: (() => void) | null = null;
+
+    const restoreSession = async () => {
+      try {
+        // Check localStorage for saved user first
+        const savedUser = localStorage.getItem('hdb_fitx_user');
+        if (savedUser) {
+          const user = JSON.parse(savedUser) as User;
+          setCurrentUser(user);
+          setIsLoadingAuth(false);
+          return;
+        }
+
+        // Check Firebase auth state (for Google sign-in users)
+        unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+          if (firebaseUser) {
+            // User is signed in with Google, restore their session
+            const allUsers = await DataService.getAllUsers();
+            let user = allUsers.find(u => u.id === firebaseUser.uid);
+            
+            if (!user) {
+              // Create user if doesn't exist
+              user = {
+                id: firebaseUser.uid,
+                name: firebaseUser.displayName || 'Unknown Athlete',
+                title: 'Mr',
+                gender: Gender.UNSPECIFIED,
+                group_id: GroupType.NONE,
+                athlete_type: AthleteType.GENERIC,
+                is_admin: false,
+                avatar_url: firebaseUser.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${firebaseUser.uid}`,
+                category: UserCategory.ADULT
+              };
+            }
+            
+            setCurrentUser(user);
+            localStorage.setItem('hdb_fitx_user', JSON.stringify(user));
+          }
+          setIsLoadingAuth(false);
+        });
+      } catch (error) {
+        console.error('Error restoring session:', error);
+        setIsLoadingAuth(false);
+      }
+    };
+
+    restoreSession();
+
+    // Cleanup subscription on unmount
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, []);
+
+  // Save user to localStorage whenever it changes
   useEffect(() => {
     if (currentUser) {
+      localStorage.setItem('hdb_fitx_user', JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem('hdb_fitx_user');
+    }
+  }, [currentUser]);
+
+  // Initialize data when user logs in
+  useEffect(() => {
+    if (currentUser && !isLoadingAuth) {
         const initData = async () => {
             const w = await DataService.getWorkouts();
             setWorkouts(w);
@@ -536,7 +606,7 @@ const App: React.FC = () => {
         };
         initData();
     }
-  }, [currentUser]);
+  }, [currentUser, isLoadingAuth]);
 
   const refreshData = async () => {
     const l = await DataService.getLogs();
@@ -675,6 +745,18 @@ const App: React.FC = () => {
       await DataService.unjoinPinnedWOD(wodId, currentUser.id);
       refreshData();
   };
+
+  // Show loading state while checking auth
+  if (isLoadingAuth) {
+      return (
+          <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+              <div className="text-center">
+                  <Loader2 className="animate-spin text-orange-500 mx-auto mb-4" size={48} />
+                  <p className="text-slate-400 text-sm">Loading...</p>
+              </div>
+          </div>
+      );
+  }
 
   // If no user, show Auth Screen
   if (!currentUser) {
@@ -825,7 +907,17 @@ const App: React.FC = () => {
                             </div>
                             
                             <button 
-                                onClick={() => setCurrentUser(null)}
+                                onClick={async () => {
+                                    // Sign out from Firebase if signed in
+                                    try {
+                                        await signOut(auth);
+                                    } catch (error) {
+                                        console.error('Firebase sign out error:', error);
+                                    }
+                                    // Clear local state
+                                    setCurrentUser(null);
+                                    localStorage.removeItem('hdb_fitx_user');
+                                }}
                                 className={`mt-12 ${isKid ? 'text-blue-500' : 'text-slate-600'} text-sm font-bold hover:${isKid ? 'text-blue-700' : 'text-white'} flex items-center justify-center gap-2 w-full`}
                             >
                                 Log Out
