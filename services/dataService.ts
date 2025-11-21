@@ -580,5 +580,10 @@ export const DataService = {
       await updateDoc(notifRef, {
           read: true
       });
+  },
+
+  deleteNotification: async (notificationId: string): Promise<void> => {
+      const notifRef = doc(db, COLLECTIONS.NOTIFICATIONS, notificationId);
+      await deleteDoc(notifRef);
   }
 };

@@ -21,12 +21,27 @@ const WitnessInbox: React.FC<WitnessInboxProps> = ({ notifications, currentUserI
   };
 
   const handleMarkAsRead = async (notifId: string) => {
-    await DataService.markNotificationAsRead(notifId);
-    refreshData();
+    try {
+      await DataService.markNotificationAsRead(notifId);
+      refreshData();
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      alert('Failed to dismiss notification. Please try again.');
+    }
   };
 
-  const witnessRequests = notifications.filter(n => n.type === 'witness_request');
-  const pinnedInvitations = notifications.filter(n => n.type === 'pinned_wod_invitation');
+  const handleDismiss = async (notifId: string) => {
+    try {
+      await DataService.deleteNotification(notifId);
+      refreshData();
+    } catch (error) {
+      console.error('Error dismissing notification:', error);
+      alert('Failed to dismiss notification. Please try again.');
+    }
+  };
+
+  const witnessRequests = notifications.filter(n => n.type === 'witness_request' && !n.read);
+  const pinnedInvitations = notifications.filter(n => n.type === 'pinned_wod_invitation' && !n.read);
 
   if (notifications.length === 0) {
     return (
@@ -71,7 +86,7 @@ const WitnessInbox: React.FC<WitnessInboxProps> = ({ notifications, currentUserI
                     </button>
                   )}
                   <button 
-                    onClick={() => handleMarkAsRead(notif.id)}
+                    onClick={() => handleDismiss(notif.id)}
                     className="px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold py-2 rounded-lg"
                   >
                     Dismiss

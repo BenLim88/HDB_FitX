@@ -26,8 +26,9 @@ const HomeTab: React.FC<{
   onStartDIY: () => void,
   onJoinPinned: (id: string) => void,
   onUnjoinPinned: (id: string) => void,
+  onUnpinWOD?: (id: string) => void, // Add unpin handler
   allUsers: User[]
-}> = ({ user, workouts, pinnedWods, onStartWorkout, onStartDIY, onJoinPinned, onUnjoinPinned, allUsers }) => {
+}> = ({ user, workouts, pinnedWods, onStartWorkout, onStartDIY, onJoinPinned, onUnjoinPinned, onUnpinWOD, allUsers }) => {
     const [aiTip, setAiTip] = useState<string>('');
     const [loadingTip, setLoadingTip] = useState(false);
     const [showParticipants, setShowParticipants] = useState<string | null>(null); // ID of WOD to show list for
@@ -123,24 +124,39 @@ const HomeTab: React.FC<{
                                      
                                      <div className="relative z-10">
                                          <div className="flex justify-between items-start mb-2">
-                                             <div>
+                                             <div className="flex-1">
                                                  <span className="text-[10px] font-bold bg-yellow-500/30 text-yellow-600 px-2 py-1 rounded mb-2 inline-block border border-yellow-500/50">
                                                      ⚡ PRIORITY MISSION ⚡
                                                  </span>
                                                  <h3 className={`text-xl font-black ${isKid ? 'text-blue-900' : 'text-white'} italic uppercase`}>{pw.workout_name}</h3>
                                              </div>
-                                             {isJoined ? (
-                                                 <div className="bg-green-500 text-black text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1">
-                                                     COMMITTED
-                                                 </div>
-                                             ) : (
-                                                 <button 
-                                                    onClick={() => onJoinPinned(pw.id)}
-                                                    className={`${isKid ? 'bg-blue-100 hover:bg-blue-200 text-blue-800 border-blue-300' : 'bg-slate-800 hover:bg-blue-600 text-white border-slate-700'} text-[10px] font-bold px-3 py-1.5 rounded border transition-colors`}
-                                                 >
-                                                     ACCEPT
-                                                 </button>
-                                             )}
+                                             <div className="flex items-center gap-2">
+                                                 {user.is_admin && onUnpinWOD && (
+                                                     <button 
+                                                        onClick={() => {
+                                                            if (confirm(`Unpin "${pw.workout_name}"? This will remove it from all users' Home tabs.`)) {
+                                                                onUnpinWOD(pw.id);
+                                                            }
+                                                        }}
+                                                        className="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/20 rounded transition-colors"
+                                                        title="Unpin Workout"
+                                                     >
+                                                         <Pin size={16} className="rotate-45" />
+                                                     </button>
+                                                 )}
+                                                 {isJoined ? (
+                                                     <div className="bg-green-500 text-black text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1">
+                                                         COMMITTED
+                                                     </div>
+                                                 ) : (
+                                                     <button 
+                                                        onClick={() => onJoinPinned(pw.id)}
+                                                        className={`${isKid ? 'bg-blue-100 hover:bg-blue-200 text-blue-800 border-blue-300' : 'bg-slate-800 hover:bg-blue-600 text-white border-slate-700'} text-[10px] font-bold px-3 py-1.5 rounded border transition-colors`}
+                                                     >
+                                                         ACCEPT
+                                                     </button>
+                                                 )}
+                                             </div>
                                          </div>
 
                                          <div className="flex flex-col gap-1 mb-4">
@@ -932,6 +948,17 @@ const App: React.FC = () => {
       refreshData();
   };
 
+  const handleUnpinWOD = async (wodId: string) => {
+      if (!currentUser || !currentUser.is_admin) return;
+      try {
+          await DataService.deletePinnedWOD(wodId);
+          refreshData();
+      } catch (error) {
+          console.error('Error unpinning WOD:', error);
+          alert('Failed to unpin workout. Please try again.');
+      }
+  };
+
   // Show loading state while checking auth
   if (isLoadingAuth) {
       return (
@@ -1012,6 +1039,7 @@ const App: React.FC = () => {
                     onStartDIY={handleStartDIY} 
                     onJoinPinned={handleJoinPinned}
                     onUnjoinPinned={handleUnjoinPinned}
+                    onUnpinWOD={currentUser.is_admin ? handleUnpinWOD : undefined}
                     allUsers={allUsers}
                 />
             )}
