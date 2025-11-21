@@ -161,11 +161,23 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       const newComponent: WorkoutComponent = {
           exercise_id: selectedExId,
           target: fullTarget,
-          weight: weightInput || undefined,
-          sets: setsInput && setsInput.trim() !== '' ? parseInt(setsInput) : 1,
-          round: componentRound && componentRound.trim() !== '' ? parseInt(componentRound) : 1,
           order: workoutComponents.length + 1
       };
+      
+      // Only add optional fields if they have values
+      if (weightInput && weightInput.trim() !== '') {
+          newComponent.weight = weightInput;
+      }
+      if (setsInput && setsInput.trim() !== '') {
+          newComponent.sets = parseInt(setsInput);
+      } else {
+          newComponent.sets = 1; // Default to 1 if not specified
+      }
+      if (componentRound && componentRound.trim() !== '') {
+          newComponent.round = parseInt(componentRound);
+      } else {
+          newComponent.round = 1; // Default to 1 if not specified
+      }
       setWorkoutComponents([...workoutComponents, newComponent]);
       setTargetValue('');
       setWeightInput('');
@@ -217,13 +229,26 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       const existing = workouts.find(w => w.id === editingWorkoutId);
       
       // Build workout object, filtering out undefined values for Firestore
+      // Clean components to remove undefined fields
+      const cleanedComponents = workoutComponents.map(comp => {
+          const cleaned: any = {
+              exercise_id: comp.exercise_id,
+              target: comp.target,
+              order: comp.order
+          };
+          if (comp.weight) cleaned.weight = comp.weight;
+          if (comp.sets) cleaned.sets = comp.sets;
+          if (comp.round) cleaned.round = comp.round;
+          return cleaned;
+      });
+      
       const workoutData: any = {
           name: workoutName,
           description: workoutDesc,
           scheme: workoutScheme,
           rest_type: restType,
           rounds: workoutRounds ? parseInt(workoutRounds) : 1,
-          components: workoutComponents,
+          components: cleanedComponents,
           scaling: {
               [ScalingTier.RX]: scalingRx || 'RX',
               [ScalingTier.ADVANCED]: scalingAdv || 'Scaled',

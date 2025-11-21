@@ -420,16 +420,43 @@ export const DataService = {
       };
   },
 
+  // Helper function to recursively remove undefined values (Firestore doesn't accept undefined)
+  const removeUndefined = (obj: any): any => {
+      if (obj === undefined) {
+          return undefined; // Return undefined to signal it should be omitted
+      }
+      if (obj === null) {
+          return null; // Keep null values
+      }
+      if (Array.isArray(obj)) {
+          const cleaned = obj.map(item => removeUndefined(item)).filter(item => item !== undefined);
+          return cleaned; // Always return array (even if empty)
+      }
+      if (typeof obj === 'object' && obj.constructor === Object) {
+          const cleaned: any = {};
+          Object.keys(obj).forEach(key => {
+              const value = obj[key];
+              if (value !== undefined) {
+                  const cleanedValue = removeUndefined(value);
+                  // Only add if cleaned value is not undefined
+                  if (cleanedValue !== undefined) {
+                      cleaned[key] = cleanedValue;
+                  }
+              }
+          });
+          return cleaned; // Always return object (even if empty)
+      }
+      return obj;
+  };
+
   // --- WORKOUT MANAGEMENT (ADMIN) ---
   addWorkout: async (workout: Omit<Workout, 'id'>): Promise<Workout> => {
-      // Filter out undefined values before saving to Firestore
-      const workoutData: any = {};
-      Object.keys(workout).forEach(key => {
-          const value = workout[key as keyof typeof workout];
-          if (value !== undefined) {
-              workoutData[key] = value;
-          }
-      });
+      // Filter out undefined values recursively before saving to Firestore
+      const workoutData = removeUndefined(workout);
+      // Ensure we have a valid object
+      if (!workoutData || typeof workoutData !== 'object' || Array.isArray(workoutData)) {
+          throw new Error('Invalid workout data after cleaning undefined values');
+      }
       const docRef = await addDoc(collection(db, COLLECTIONS.WORKOUTS), workoutData);
       const newWorkout = { ...workout, id: docRef.id };
       console.log('Workout added successfully:', newWorkout.id);
@@ -442,13 +469,13 @@ export const DataService = {
       if (!workoutSnap.exists()) {
           throw new Error("Workout not found");
       }
-      // Filter out undefined values before updating
-      const updateData: any = {};
-      Object.keys(workout).forEach(key => {
-          if (workout[key as keyof Workout] !== undefined) {
-              updateData[key] = workout[key as keyof Workout];
-          }
-      });
+      // Filter out undefined values recursively before updating
+      const { id, ...workoutWithoutId } = workout;
+      const updateData = removeUndefined(workoutWithoutId);
+      // Ensure we have a valid object
+      if (!updateData || typeof updateData !== 'object' || Array.isArray(updateData)) {
+          throw new Error('Invalid workout data after cleaning undefined values');
+      }
       await updateDoc(workoutRef, updateData);
       return workout;
   },
