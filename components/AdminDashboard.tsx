@@ -54,6 +54,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
   const [restType, setRestType] = useState<'fixed' | 'manual' | 'none'>('none');
   const [restSeconds, setRestSeconds] = useState<string>('60');
   const [isKidsFriendly, setIsKidsFriendly] = useState(false);
+  const [workoutCategory, setWorkoutCategory] = useState<string>('General');
   
   // Scaling Builder State
   const [scalingRx, setScalingRx] = useState('');
@@ -178,6 +179,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       setRestType(workout.rest_type || 'none');
       setRestSeconds(workout.rest_seconds ? workout.rest_seconds.toString() : '60');
       setIsKidsFriendly(workout.is_kids_friendly || false);
+      setWorkoutCategory(workout.category || 'General');
       
       // Deep copy components to avoid mutating the original object during editing
       setWorkoutComponents(JSON.parse(JSON.stringify(workout.components)));
@@ -186,7 +188,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       setScalingAdv(workout.scaling[ScalingTier.ADVANCED] || '');
       setScalingInt(workout.scaling[ScalingTier.INTERMEDIATE] || '');
       setScalingBeg(workout.scaling[ScalingTier.BEGINNER] || '');
-
+      
       setIsCreatingWorkout(true);
   };
 
@@ -214,7 +216,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
               [ScalingTier.BEGINNER]: scalingBeg || 'Foundation'
           },
           is_featured: existing?.is_featured || false,
-          is_kids_friendly: isKidsFriendly
+          is_kids_friendly: isKidsFriendly,
+          category: workoutCategory
       };
 
       let updatedWorkouts;
@@ -263,6 +266,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       setScalingInt('');
       setScalingBeg('');
       setIsKidsFriendly(false);
+      setWorkoutCategory('General');
   };
 
   const handleDeleteWorkout = (id: string) => {
@@ -671,6 +675,24 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                                     value={workoutDesc}
                                     onChange={e => setWorkoutDesc(e.target.value)}
                                 />
+                            </div>
+                            
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Category</label>
+                                <select 
+                                    className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-xs outline-none focus:border-orange-500"
+                                    value={workoutCategory}
+                                    onChange={e => setWorkoutCategory(e.target.value)}
+                                >
+                                    <option value="General">General</option>
+                                    <option value="CrossFit">CrossFit</option>
+                                    <option value="Hyrox">Hyrox</option>
+                                    <option value="Cardio">Cardio</option>
+                                    <option value="Hybrid">Hybrid</option>
+                                    <option value="Strength">Strength</option>
+                                    <option value="Calisthenics">Calisthenics</option>
+                                    <option value="Kids Friendly">Kids Friendly</option>
+                                </select>
                             </div>
                             
                             <div className="grid grid-cols-2 gap-2">

@@ -97,6 +97,7 @@ export interface Workout {
   scaling: Record<ScalingTier, string>; // Description of scaling
   is_featured?: boolean;
   is_kids_friendly?: boolean;
+  category?: string; // Workout category: General, CrossFit, Hyrox, Cardio, Hybrid, Strength, Calisthenics, Kids Friendly
 }
 
 export interface Log {

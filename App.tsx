@@ -44,7 +44,13 @@ const HomeTab: React.FC<{
     
     // Helper function to categorize workouts
     const getWorkoutCategory = (workout: Workout): string => {
+        // Priority 1: Use explicit category if set
+        if (workout.category) return workout.category;
+        
+        // Priority 2: Kids Friendly flag
         if (workout.is_kids_friendly) return 'Kids Friendly';
+        
+        // Priority 3: Fallback to auto-detection
         const name = workout.name.toLowerCase();
         if (name.includes('hyrox')) return 'Hyrox';
         if (name.includes('murph') || name.includes('fran') || name.includes('grace') || name.includes('cindy')) return 'CrossFit';
