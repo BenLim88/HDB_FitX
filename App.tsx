@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { MOCK_USERS, CURRENT_USER_ID } from './constants';
-import { User, Log, Notification, Workout, VerificationStatus, Gender, GroupType, AthleteType, ScalingTier, Venue } from './types';
+import { User, Log, Notification, Workout, VerificationStatus, Gender, GroupType, AthleteType, ScalingTier, Venue, PinnedWOD } from './types';
 import { DataService } from './services/dataService';
 import { GeminiService } from './services/geminiService';
 import Navbar from './components/Navbar';
@@ -10,14 +10,24 @@ import WitnessInbox from './components/WitnessInbox';
 import AdminDashboard from './components/AdminDashboard';
 import AuthScreen from './components/AuthScreen';
 import DIYWorkout from './components/DIYWorkout';
-import { Trophy, Flame, MapPin, ChevronRight, Bot, Loader2, ShieldAlert, Filter, Dumbbell, Settings, Edit2, Save, X, RefreshCcw, Search, Calendar, Wand2, Star, RotateCcw } from 'lucide-react';
+import { Trophy, Flame, MapPin, ChevronRight, Bot, Loader2, ShieldAlert, Filter, Dumbbell, Settings, Edit2, Save, X, RefreshCcw, Search, Calendar, Wand2, Star, RotateCcw, Pin, Users } from 'lucide-react';
 
 // --- SUB-COMPONENTS (Inline for single-file simplicity requirement where possible) ---
 
 // 1. Home Tab
-const HomeTab: React.FC<{ user: User, workouts: Workout[], onStartWorkout: (w: Workout) => void, onStartDIY: () => void }> = ({ user, workouts, onStartWorkout, onStartDIY }) => {
+const HomeTab: React.FC<{ 
+  user: User, 
+  workouts: Workout[], 
+  pinnedWods: PinnedWOD[], 
+  onStartWorkout: (w: Workout) => void, 
+  onStartDIY: () => void,
+  onJoinPinned: (id: string) => void,
+  onUnjoinPinned: (id: string) => void,
+  allUsers: User[]
+}> = ({ user, workouts, pinnedWods, onStartWorkout, onStartDIY, onJoinPinned, onUnjoinPinned, allUsers }) => {
     const [aiTip, setAiTip] = useState<string>('');
     const [loadingTip, setLoadingTip] = useState(false);
+    const [showParticipants, setShowParticipants] = useState<string | null>(null); // ID of WOD to show list for
 
     const handleGetTip = async () => {
         setLoadingTip(true);
@@ -43,6 +53,112 @@ const HomeTab: React.FC<{ user: User, workouts: Workout[], onStartWorkout: (w: W
                     <img src={user.avatar_url} alt="avatar" className="w-full h-full object-cover" />
                 </div>
             </header>
+
+            {/* PINNED WOD SECTION */}
+            {pinnedWods.length > 0 && (
+                <section>
+                     <h2 className="text-white font-bold text-lg mb-3 flex items-center gap-2">
+                        <Pin size={20} className="text-blue-500" fill="currentColor" />
+                        Command Directives
+                    </h2>
+                    <div className="space-y-3">
+                        {pinnedWods.map(pw => {
+                             const isJoined = pw.participants.includes(user.id);
+                             const startDate = new Date(pw.intended_date);
+                             const endDate = new Date(pw.deadline);
+                             
+                             // Find actual workout obj
+                             const fullWorkout = workouts.find(w => w.id === pw.workout_id);
+
+                             return (
+                                 <div key={pw.id} className="bg-slate-900 border border-blue-500/30 rounded-xl p-4 relative overflow-hidden">
+                                     <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full -mr-10 -mt-10 blur-2xl"></div>
+                                     
+                                     <div className="relative z-10">
+                                         <div className="flex justify-between items-start mb-2">
+                                             <div>
+                                                 <span className="text-[10px] font-bold bg-blue-500/20 text-blue-400 px-2 py-1 rounded mb-2 inline-block">
+                                                     PRIORITY MISSION
+                                                 </span>
+                                                 <h3 className="text-xl font-black text-white italic uppercase">{pw.workout_name}</h3>
+                                             </div>
+                                             {isJoined ? (
+                                                 <div className="bg-green-500 text-black text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1">
+                                                     COMMITTED
+                                                 </div>
+                                             ) : (
+                                                 <button 
+                                                    onClick={() => onJoinPinned(pw.id)}
+                                                    className="bg-slate-800 hover:bg-blue-600 text-white text-[10px] font-bold px-3 py-1.5 rounded border border-slate-700 transition-colors"
+                                                 >
+                                                     ACCEPT
+                                                 </button>
+                                             )}
+                                         </div>
+
+                                         <div className="flex flex-col gap-1 mb-4">
+                                             <div className="flex items-center gap-2 text-xs text-slate-400">
+                                                 <Calendar size={12} /> 
+                                                 <span className="font-bold text-slate-300">Start:</span> {startDate.toLocaleDateString()} {startDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                             </div>
+                                             <div className="flex items-center gap-2 text-xs text-slate-400">
+                                                 <Calendar size={12} /> 
+                                                 <span className="font-bold text-slate-300">Deadline:</span> {endDate.toLocaleDateString()} {endDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                             </div>
+                                         </div>
+
+                                         {/* Participants Preview */}
+                                         <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-800">
+                                             <button 
+                                                onClick={() => setShowParticipants(showParticipants === pw.id ? null : pw.id)}
+                                                className="flex items-center gap-2 text-xs text-slate-400 hover:text-white"
+                                             >
+                                                 <Users size={14} /> 
+                                                 <span className="font-bold">{pw.participants.length}</span> Soldiers Committed
+                                             </button>
+                                             
+                                             <div className="flex gap-2">
+                                                 {isJoined && (
+                                                     <button onClick={() => onUnjoinPinned(pw.id)} className="text-[10px] text-red-400 hover:underline">
+                                                         Abort
+                                                     </button>
+                                                 )}
+                                                 <button 
+                                                    onClick={() => fullWorkout && onStartWorkout(fullWorkout)}
+                                                    className="flex items-center gap-1 text-xs font-bold text-blue-400 hover:text-blue-300"
+                                                >
+                                                     Execute <ChevronRight size={14} />
+                                                 </button>
+                                             </div>
+                                         </div>
+
+                                         {/* Participant List Expansion */}
+                                         {showParticipants === pw.id && (
+                                             <div className="mt-3 p-3 bg-slate-950 rounded-lg animate-in slide-in-from-top-2">
+                                                 <h4 className="text-[10px] font-bold text-slate-500 uppercase mb-2">Roster</h4>
+                                                 <div className="space-y-2 max-h-32 overflow-y-auto">
+                                                     {pw.participants.map(uid => {
+                                                         const u = allUsers.find(user => user.id === uid);
+                                                         return u ? (
+                                                             <div key={uid} className="flex items-center gap-2">
+                                                                 <div className="w-5 h-5 rounded-full bg-slate-800 overflow-hidden">
+                                                                     <img src={u.avatar_url} className="w-full h-full object-cover" />
+                                                                 </div>
+                                                                 <span className="text-xs text-slate-300">{u.name}</span>
+                                                             </div>
+                                                         ) : null;
+                                                     })}
+                                                     {pw.participants.length === 0 && <span className="text-xs text-slate-600 italic">No personnel yet.</span>}
+                                                 </div>
+                                             </div>
+                                         )}
+                                     </div>
+                                 </div>
+                             );
+                        })}
+                    </div>
+                </section>
+            )}
 
             {/* AI Coach Section */}
             <div className="bg-gradient-to-br from-indigo-900/40 to-slate-900 border border-indigo-500/30 p-4 rounded-xl relative overflow-hidden">
@@ -365,6 +481,7 @@ const App: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [venues, setVenues] = useState<Venue[]>([]); // New Venue State
+  const [pinnedWods, setPinnedWods] = useState<PinnedWOD[]>([]); // New Pinned WOD State
 
   // Workout State
   const [activeWorkout, setActiveWorkout] = useState<Workout | null>(null);
@@ -395,6 +512,8 @@ const App: React.FC = () => {
   const refreshData = async () => {
     const l = await DataService.getLogs();
     setLogs(l);
+    const pw = await DataService.getPinnedWODs();
+    setPinnedWods(pw);
     if (currentUser) {
         const n = await DataService.getNotifications(currentUser.id);
         setNotifications(n);
@@ -516,6 +635,18 @@ const App: React.FC = () => {
       setVenues(updatedVenues);
   }
 
+  const handleJoinPinned = async (wodId: string) => {
+      if (!currentUser) return;
+      await DataService.joinPinnedWOD(wodId, currentUser.id);
+      refreshData();
+  };
+
+  const handleUnjoinPinned = async (wodId: string) => {
+      if (!currentUser) return;
+      await DataService.unjoinPinnedWOD(wodId, currentUser.id);
+      refreshData();
+  };
+
   // If no user, show Auth Screen
   if (!currentUser) {
       return <AuthScreen onAuthSuccess={(user) => setCurrentUser(user)} />;
@@ -571,8 +702,12 @@ const App: React.FC = () => {
                 <HomeTab 
                     user={currentUser} 
                     workouts={workouts} 
+                    pinnedWods={pinnedWods}
                     onStartWorkout={handleStartWorkout} 
                     onStartDIY={handleStartDIY} 
+                    onJoinPinned={handleJoinPinned}
+                    onUnjoinPinned={handleUnjoinPinned}
+                    allUsers={allUsers}
                 />
             )}
             

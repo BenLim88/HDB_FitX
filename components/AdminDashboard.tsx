@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Exercise, Workout, User, GroupType, AthleteType, WorkoutComponent, ScalingTier, WorkoutScheme, Venue } from '../types';
 import { DataService } from '../services/dataService';
 import { MOCK_EXERCISES } from '../constants';
-import { Plus, Trash2, Dumbbell, LayoutList, Users, Edit, Shield, Save, X, Lock, ChevronRight, ArrowLeft, Timer, Settings, MapPin, Star } from 'lucide-react';
+import { Plus, Trash2, Dumbbell, LayoutList, Users, Edit, Shield, Save, X, Lock, ChevronRight, ArrowLeft, Timer, Settings, MapPin, Star, Calendar, Pin } from 'lucide-react';
 
 interface AdminDashboardProps {
   initialWorkouts: Workout[];
@@ -23,6 +23,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
   const [activeTab, setActiveTab] = useState<'exercises' | 'workouts' | 'users' | 'venues'>('exercises');
   const [isCreatingWorkout, setIsCreatingWorkout] = useState(false);
   const [editingWorkoutId, setEditingWorkoutId] = useState<string | null>(null);
+
+  // Pin WOD State
+  const [pinningWorkoutId, setPinningWorkoutId] = useState<string | null>(null);
+  const [intendedDate, setIntendedDate] = useState('');
+  const [intendedTime, setIntendedTime] = useState('');
+  const [deadlineDate, setDeadlineDate] = useState('');
+  const [deadlineTime, setDeadlineTime] = useState('');
 
   // Exercise Form State
   const [newExerciseName, setNewExerciseName] = useState('');
@@ -259,6 +266,41 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
           setWorkouts(updatedWorkouts);
           onUpdateWorkouts(updatedWorkouts); // Propagate
       }
+  };
+
+  // --- PIN WOD HANDLERS ---
+  const handleStartPinning = (workoutId: string) => {
+      setPinningWorkoutId(workoutId);
+      // Set default dates (today and tomorrow)
+      const now = new Date();
+      setIntendedDate(now.toISOString().split('T')[0]);
+      setIntendedTime("08:00");
+      
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      setDeadlineDate(tomorrow.toISOString().split('T')[0]);
+      setDeadlineTime("23:59");
+  };
+
+  const handleConfirmPin = async () => {
+      if (!pinningWorkoutId || !intendedDate || !deadlineDate) return;
+
+      const workout = workouts.find(w => w.id === pinningWorkoutId);
+      if (!workout) return;
+
+      // Combine date and time to timestamp
+      const start = new Date(`${intendedDate}T${intendedTime || '00:00'}`).getTime();
+      const end = new Date(`${deadlineDate}T${deadlineTime || '23:59'}`).getTime();
+
+      await DataService.addPinnedWOD({
+          workout_id: workout.id,
+          workout_name: workout.name,
+          intended_date: start,
+          deadline: end
+      });
+
+      alert(`Pinned "${workout.name}" to the Home Board!`);
+      setPinningWorkoutId(null);
   };
 
   // --- USER MANAGEMENT HANDLERS ---
@@ -529,6 +571,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                                                 <Star size={18} fill={w.is_featured ? 'currentColor' : 'none'} />
                                             </button>
                                             <button 
+                                                onClick={() => handleStartPinning(w.id)}
+                                                className="p-2 text-slate-600 hover:text-blue-400 hover:bg-slate-800 rounded transition-colors"
+                                                title="Pin WOD"
+                                            >
+                                                <Pin size={18} />
+                                            </button>
+                                            <button 
                                                 onClick={() => startEditingWorkout(w)}
                                                 className="p-2 text-slate-600 hover:text-orange-500 hover:bg-slate-800 rounded transition-colors"
                                             >
@@ -545,6 +594,38 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                                 </div>
                             ))}
                         </div>
+
+                        {/* PIN WOD MODAL */}
+                        {pinningWorkoutId && (
+                            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                                <div className="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-2xl p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+                                    <h3 className="text-white font-bold text-lg mb-4 flex items-center gap-2">
+                                        <Pin className="text-blue-500" /> Pin Workout
+                                    </h3>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Intended Start</label>
+                                            <div className="flex gap-2">
+                                                <input type="date" className="bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm w-full" value={intendedDate} onChange={e => setIntendedDate(e.target.value)} />
+                                                <input type="time" className="bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm w-full" value={intendedTime} onChange={e => setIntendedTime(e.target.value)} />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Deadline (Completion)</label>
+                                            <div className="flex gap-2">
+                                                <input type="date" className="bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm w-full" value={deadlineDate} onChange={e => setDeadlineDate(e.target.value)} />
+                                                <input type="time" className="bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm w-full" value={deadlineTime} onChange={e => setDeadlineTime(e.target.value)} />
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-2 mt-4">
+                                            <button onClick={() => setPinningWorkoutId(null)} className="flex-1 py-3 bg-slate-800 text-slate-400 font-bold rounded-lg text-xs">CANCEL</button>
+                                            <button onClick={handleConfirmPin} className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-lg text-xs hover:bg-blue-500">CONFIRM PIN</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                     </div>
                 ) : (
                     // WORKOUT BUILDER UI

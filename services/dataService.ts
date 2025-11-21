@@ -1,5 +1,5 @@
 
-import { Log, Notification, User, VerificationStatus, Workout, GroupType, AthleteType, Gender, Venue } from '../types';
+import { Log, Notification, User, VerificationStatus, Workout, GroupType, AthleteType, Gender, Venue, PinnedWOD } from '../types';
 import { MOCK_LOGS, MOCK_USERS, MOCK_WORKOUTS, MOCK_VENUES } from '../constants';
 import { auth, googleProvider } from '../firebaseConfig';
 import { signInWithPopup } from 'firebase/auth';
@@ -8,6 +8,7 @@ import { signInWithPopup } from 'firebase/auth';
 let users = [...MOCK_USERS];
 let logs = [...MOCK_LOGS];
 let venues = [...MOCK_VENUES];
+let pinnedWods: PinnedWOD[] = []; // New mock storage for pinned WODs
 let notifications: Notification[] = [
     {
         id: 'n1',
@@ -146,6 +147,48 @@ export const DataService = {
   deleteVenue: async (venueId: string): Promise<void> => {
       await delay(300);
       venues = venues.filter(v => v.id !== venueId);
+  },
+
+  // --- PINNED WOD MANAGEMENT ---
+  getPinnedWODs: async (): Promise<PinnedWOD[]> => {
+      await delay(300);
+      return [...pinnedWods];
+  },
+
+  addPinnedWOD: async (wod: Omit<PinnedWOD, 'id' | 'participants'>): Promise<PinnedWOD> => {
+      await delay(500);
+      const newWod: PinnedWOD = {
+          ...wod,
+          id: `pw_${Date.now()}`,
+          participants: []
+      };
+      pinnedWods.unshift(newWod); // Add to top
+      return newWod;
+  },
+
+  deletePinnedWOD: async (id: string): Promise<void> => {
+      await delay(300);
+      pinnedWods = pinnedWods.filter(w => w.id !== id);
+  },
+
+  joinPinnedWOD: async (pinnedWodId: string, userId: string): Promise<PinnedWOD> => {
+      await delay(400);
+      const index = pinnedWods.findIndex(w => w.id === pinnedWodId);
+      if (index === -1) throw new Error("WOD not found");
+      
+      if (!pinnedWods[index].participants.includes(userId)) {
+          pinnedWods[index].participants.push(userId);
+      }
+      return pinnedWods[index];
+  },
+
+  unjoinPinnedWOD: async (pinnedWodId: string, userId: string): Promise<PinnedWOD> => {
+      await delay(300);
+      const index = pinnedWods.findIndex(w => w.id === pinnedWodId);
+      if (index === -1) throw new Error("WOD not found");
+
+      pinnedWods[index].participants = pinnedWods[index].participants.filter(id => id !== userId);
+      return pinnedWods[index];
   },
 
   // --- EXISTING METHODS ---

@@ -119,3 +119,12 @@ export interface Notification {
   };
   read: boolean;
 }
+
+export interface PinnedWOD {
+  id: string;
+  workout_id: string;
+  workout_name: string;
+  intended_date: number; // Timestamp
+  deadline: number; // Timestamp
+  participants: string[]; // Array of User IDs
+}
