@@ -208,7 +208,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       setIsCreatingWorkout(true);
   };
 
-  const handleSaveWorkout = () => {
+  const handleSaveWorkout = async () => {
       if (!workoutName || workoutComponents.length === 0) {
           alert("Please provide a name and at least one exercise.");
           return;
@@ -237,17 +237,29 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
           category: workoutCategory
       };
 
-      let updatedWorkouts;
-      if (editingWorkoutId) {
-          updatedWorkouts = workouts.map(w => w.id === editingWorkoutId ? newWorkout : w);
-      } else {
-          updatedWorkouts = [...workouts, newWorkout];
+      try {
+          let savedWorkout: Workout;
+          if (editingWorkoutId) {
+              // Update existing workout in Firestore
+              savedWorkout = await DataService.updateWorkout(newWorkout);
+              const updatedWorkouts = workouts.map(w => w.id === editingWorkoutId ? savedWorkout : w);
+              setWorkouts(updatedWorkouts);
+              onUpdateWorkouts(updatedWorkouts);
+              alert('Workout updated successfully!');
+          } else {
+              // Create new workout in Firestore (remove id, let Firestore generate it)
+              const { id, ...workoutWithoutId } = newWorkout;
+              savedWorkout = await DataService.addWorkout(workoutWithoutId);
+              const updatedWorkouts = [...workouts, savedWorkout];
+              setWorkouts(updatedWorkouts);
+              onUpdateWorkouts(updatedWorkouts);
+              alert('Workout created successfully!');
+          }
+          closeBuilder();
+      } catch (error) {
+          console.error('Error saving workout:', error);
+          alert(`Failed to save workout: ${error instanceof Error ? error.message : 'Unknown error'}. Check console for details.`);
       }
-      
-      setWorkouts(updatedWorkouts);
-      onUpdateWorkouts(updatedWorkouts); // Propagate to parent
-
-      closeBuilder();
   };
 
   const toggleFeaturedWorkout = (id: string) => {
@@ -1153,12 +1165,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                                                 .map(e => <option key={e.id} value={e.id}>{e.name} ({e.category})</option>)}
                                         </select>
                                     </div>
-                                    <div className="flex-[2.5] min-w-[200px]">
+                                    <div className="flex-[1.8]">
                                         <label className="text-[10px] text-slate-500 font-bold mb-1 block">Amount</label>
                                         <div className="flex gap-1">
                                             <input 
                                                 type="number"
-                                                className="flex-[2] min-w-[120px] bg-slate-950 border border-slate-800 rounded p-2 text-white text-xs outline-none"
+                                                className="flex-[1.5] bg-slate-950 border border-slate-800 rounded p-2 text-white text-xs outline-none"
                                                 value={targetValue}
                                                 onChange={e => setTargetValue(e.target.value)}
                                                 placeholder="10"

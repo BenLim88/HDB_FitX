@@ -421,10 +421,10 @@ export const DataService = {
   },
 
   // --- WORKOUT MANAGEMENT (ADMIN) ---
-  addWorkout: async (workout: Workout): Promise<Workout> => {
-      const newWorkout = { ...workout, id: `w_${Date.now()}` };
-      const workoutRef = doc(db, COLLECTIONS.WORKOUTS, newWorkout.id);
-      await setDoc(workoutRef, newWorkout);
+  addWorkout: async (workout: Omit<Workout, 'id'>): Promise<Workout> => {
+      const docRef = await addDoc(collection(db, COLLECTIONS.WORKOUTS), workout);
+      const newWorkout = { ...workout, id: docRef.id };
+      console.log('Workout added successfully:', newWorkout.id);
       return newWorkout;
   },
 

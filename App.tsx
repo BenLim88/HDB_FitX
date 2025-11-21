@@ -1084,8 +1084,16 @@ const App: React.FC = () => {
   }
 
   // Callback when Admin adds/removes workouts
-  const handleUpdateWorkouts = (updatedWorkouts: Workout[]) => {
+  const handleUpdateWorkouts = async (updatedWorkouts: Workout[]) => {
       setWorkouts(updatedWorkouts);
+      // Also refresh from Firestore to ensure we have the latest data
+      try {
+          const refreshedWorkouts = await DataService.getWorkouts();
+          setWorkouts(refreshedWorkouts);
+      } catch (error) {
+          console.error('Error refreshing workouts:', error);
+          // Keep the updated workouts even if refresh fails
+      }
   };
 
   // Callback when Admin adds/removes venues
