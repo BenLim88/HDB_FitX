@@ -439,8 +439,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                  {/* Venue List */}
                  <div className="space-y-3">
                     {venues.length === 0 ? (
-                        <div className="text-center py-8 text-slate-500 text-sm">
-                            No venues registered yet. Add one above.
+                        <div className="text-center py-8 text-slate-500 text-sm bg-slate-900/50 border border-slate-800 rounded-lg">
+                            <p className="text-white font-bold mb-2">No venues registered yet.</p>
+                            <p className="text-slate-400">Add one using the form above.</p>
                         </div>
                     ) : (
                     venues.map(v => (
@@ -700,8 +701,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
 
                         <div className="space-y-3">
                             {workouts.length === 0 ? (
-                                <div className="text-center py-8 text-slate-500 text-sm">
-                                    No workouts yet. Click "Build New Workout" to create one.
+                                <div className="text-center py-8 text-slate-500 text-sm bg-slate-900/50 border border-slate-800 rounded-lg">
+                                    <p className="text-white font-bold mb-2">No workouts yet.</p>
+                                    <p className="text-slate-400">Click "Build New Workout" above to create one.</p>
                                 </div>
                             ) : (
                             workouts.map(w => (
@@ -1045,8 +1047,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
         {activeTab === 'users' && (
              <div className="p-4 space-y-4">
                 {users.length === 0 ? (
-                    <div className="text-center py-8 text-slate-500 text-sm">
-                        Loading users...
+                    <div className="text-center py-8 text-slate-500 text-sm bg-slate-900/50 border border-slate-800 rounded-lg">
+                        <p className="text-white font-bold mb-2">Loading users...</p>
+                        <p className="text-slate-400 text-xs">If this persists, check the browser console for errors.</p>
                     </div>
                 ) : (
                 users.map(user => (
