@@ -83,6 +83,7 @@ export interface WorkoutComponent {
   exercise_id: string;
   target: string; // e.g., "100 reps" or "Run 1km"
   weight?: string; // e.g. "20kg" or "BW"
+  sets?: number; // Number of sets to complete (defaults to 1 if not specified)
   order: number;
 }
 

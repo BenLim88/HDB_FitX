@@ -70,6 +70,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
   const [targetValue, setTargetValue] = useState('');
   const [targetUnit, setTargetUnit] = useState('Reps');
   const [weightInput, setWeightInput] = useState('');
+  const [setsInput, setSetsInput] = useState<string>('1');
   const [exerciseCategoryFilter, setExerciseCategoryFilter] = useState<string>('All');
 
   useEffect(() => {
@@ -159,11 +160,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
           exercise_id: selectedExId,
           target: fullTarget,
           weight: weightInput || undefined,
+          sets: setsInput ? parseInt(setsInput) : 1,
           order: workoutComponents.length + 1
       };
       setWorkoutComponents([...workoutComponents, newComponent]);
       setTargetValue('');
       setWeightInput('');
+      setSetsInput('1');
   };
 
   const removeComponent = (idx: number) => {
@@ -269,6 +272,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       setScalingInt('');
       setScalingBeg('');
       setIsKidsFriendly(false);
+      setSetsInput('1');
       setWorkoutCategory('General');
   };
 
@@ -1046,7 +1050,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                                                         <span className="text-slate-600 font-mono font-bold text-xs">#{idx + 1}</span>
                                                         <div>
                                                             <p className="text-white text-xs font-bold">{ex?.name || 'Unknown'}</p>
-                                                            <div className="flex gap-2">
+                                                            <div className="flex gap-2 items-center flex-wrap">
+                                                                {(comp.sets && comp.sets > 1) && (
+                                                                    <span className="text-[10px] text-blue-400 font-bold">{comp.sets}x</span>
+                                                                )}
                                                                 <span className="text-[10px] text-orange-500">{comp.target}</span>
                                                                 {comp.weight && <span className="text-[10px] text-slate-400">@ {comp.weight}</span>}
                                                             </div>
@@ -1128,6 +1135,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                                             value={weightInput}
                                             onChange={e => setWeightInput(e.target.value)}
                                             placeholder="20kg"
+                                        />
+                                    </div>
+                                    <div className="flex-1">
+                                        <label className="text-[10px] text-slate-500 font-bold mb-1 block">Sets</label>
+                                        <input 
+                                            type="number"
+                                            min="1"
+                                            className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-xs outline-none"
+                                            value={setsInput}
+                                            onChange={e => setSetsInput(e.target.value || '1')}
+                                            placeholder="1"
                                         />
                                     </div>
                                     <button 
