@@ -18,6 +18,7 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
   // Mode State
   const [isStarted, setIsStarted] = useState(false);
   const [showQuitModal, setShowQuitModal] = useState(false);
+  const [showLogWithoutTimer, setShowLogWithoutTimer] = useState(false);
 
   // Global Workout State
   const [isPlaying, setIsPlaying] = useState(false);
@@ -42,6 +43,10 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
   const [selectedWitness, setSelectedWitness] = useState<string>('');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Manual Log State (for logging without timer)
+  const [manualTimeMinutes, setManualTimeMinutes] = useState('');
+  const [manualTimeSeconds, setManualTimeSeconds] = useState('');
 
   // Refs
   const intervalRef = useRef<number | null>(null);
@@ -192,7 +197,7 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
     setTimeout(() => playBeep(783.99, 0.4), 300); // G5
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (manualTime?: number) => {
     setIsSubmitting(true);
     
     // Determine Final Location String
@@ -208,14 +213,17 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
         }
     }
 
+    // Use manual time if provided, otherwise use elapsed time
+    const finalTimeSeconds = manualTime !== undefined ? manualTime : elapsedSeconds;
+
     try {
       await DataService.saveLog({
         user_id: currentUser.id,
         workout_id: workout.id,
         timestamp: Date.now(),
         location: locationString,
-        total_time_seconds: elapsedSeconds,
-        score_display: formatTime(elapsedSeconds),
+        total_time_seconds: finalTimeSeconds,
+        score_display: formatTime(finalTimeSeconds),
         notes,
         difficulty_tier: selectedTier,
         verification_status: selectedWitness ? VerificationStatus.PENDING : VerificationStatus.UNVERIFIED,
@@ -227,6 +235,28 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleLogWithoutTimer = () => {
+    if (!selectedVenueId) {
+      alert("Please select a deployment location first.");
+      return;
+    }
+    setShowLogWithoutTimer(true);
+  };
+
+  const handleSubmitManualLog = () => {
+    // Parse manual time input
+    const minutes = parseInt(manualTimeMinutes) || 0;
+    const seconds = parseInt(manualTimeSeconds) || 0;
+    const totalSeconds = (minutes * 60) + seconds;
+
+    if (totalSeconds === 0) {
+      alert("Please enter a valid time.");
+      return;
+    }
+
+    handleSubmit(totalSeconds);
   };
 
   const startMission = async () => {
@@ -263,8 +293,137 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
   const currentComponent = workout.components[activeComponentIndex];
   const exerciseDetail = MOCK_EXERCISES.find(e => e.id === currentComponent.exercise_id);
 
+  // --- SCREEN 1A: MANUAL LOG FORM ---
+  if (showLogWithoutTimer && !isStarted && !showFinishScreen) {
+    const selectedVenue = venues.find(v => v.id === selectedVenueId);
+    const showCustomInput = selectedVenue && (selectedVenue.type === 'Commercial' || selectedVenue.type === 'Other' || selectedVenue.type === 'Home');
+
+    return (
+      <div className="h-full flex flex-col bg-slate-950 text-white p-5 relative pb-24">
+        <button onClick={() => setShowLogWithoutTimer(false)} className="absolute top-5 right-5 text-slate-500 hover:text-white z-50">
+          <XIcon size={24} />
+        </button>
+        
+        <h2 className="text-2xl font-black uppercase italic mb-6">Log Workout</h2>
+        <p className="text-slate-400 text-sm mb-6">Log your workout result without using the timer. Perfect for workouts completed on a separate device.</p>
+
+        <div className="space-y-4 flex-1 overflow-y-auto">
+          {/* Time Input */}
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Completion Time</label>
+            <div className="flex gap-2 items-center">
+              <div className="flex-1">
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="Minutes"
+                  value={manualTimeMinutes}
+                  onChange={(e) => setManualTimeMinutes(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded p-3 text-white text-lg font-mono outline-none text-center"
+                />
+                <p className="text-[10px] text-slate-500 text-center mt-1">Minutes</p>
+              </div>
+              <span className="text-2xl font-bold text-slate-500">:</span>
+              <div className="flex-1">
+                <input
+                  type="number"
+                  min="0"
+                  max="59"
+                  placeholder="Seconds"
+                  value={manualTimeSeconds}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === '' || (parseInt(val) >= 0 && parseInt(val) <= 59)) {
+                      setManualTimeSeconds(val);
+                    }
+                  }}
+                  className="w-full bg-slate-950 border border-slate-800 rounded p-3 text-white text-lg font-mono outline-none text-center"
+                />
+                <p className="text-[10px] text-slate-500 text-center mt-1">Seconds</p>
+              </div>
+            </div>
+            {manualTimeMinutes || manualTimeSeconds ? (
+              <p className="text-sm text-orange-500 font-bold mt-2 text-center">
+                Total: {formatTime((parseInt(manualTimeMinutes) || 0) * 60 + (parseInt(manualTimeSeconds) || 0))}
+              </p>
+            ) : null}
+          </div>
+
+          {/* Tier Display */}
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Completed Tier</label>
+            <div className="p-3 bg-slate-900 border border-slate-800 rounded text-white font-bold text-sm">
+              {selectedTier}
+            </div>
+          </div>
+
+          {/* Venue Display/Edit */}
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase mb-2 flex items-center gap-2">
+              <MapPin size={12} /> Deployment Location
+            </label>
+            <select 
+              className="w-full bg-slate-950 border border-slate-800 rounded p-3 text-white text-sm outline-none mb-2"
+              value={selectedVenueId}
+              onChange={(e) => setSelectedVenueId(e.target.value)}
+            >
+              <option value="">-- Select Training Venue --</option>
+              {venues.map(v => <option key={v.id} value={v.id}>{v.name} ({v.type})</option>)}
+            </select>
+            
+            {showCustomInput && (
+              <input 
+                type="text"
+                className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-xs outline-none"
+                placeholder="Enter specific location name..."
+                value={customVenueName}
+                onChange={(e) => setCustomVenueName(e.target.value)}
+              />
+            )}
+          </div>
+
+          {/* Witness */}
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Witness (Optional)</label>
+            <select 
+              className="w-full bg-slate-950 border border-slate-800 rounded p-3 text-white text-sm outline-none"
+              value={selectedWitness}
+              onChange={(e) => setSelectedWitness(e.target.value)}
+            >
+              <option value="">No Witness (Unverified)</option>
+              {allUsers.filter(u => u.id !== currentUser.id).map(u => (
+                <option key={u.id} value={u.id}>{u.name}</option>
+              ))}
+            </select>
+            {selectedWitness && <p className="text-[10px] text-green-500 mt-1">Verification request will be sent.</p>}
+          </div>
+
+          {/* Notes */}
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Notes</label>
+            <textarea 
+              className="w-full bg-slate-950 border border-slate-800 rounded p-3 text-white text-sm outline-none"
+              placeholder="How did it feel?"
+              rows={3}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <button 
+          onClick={handleSubmitManualLog}
+          disabled={isSubmitting || !selectedVenueId || (!manualTimeMinutes && !manualTimeSeconds)}
+          className="mt-4 w-full py-4 bg-green-600 hover:bg-green-500 text-white font-black uppercase italic tracking-wider rounded-lg shadow-lg shadow-green-900/20 disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          <Save size={20} /> {isSubmitting ? 'Saving...' : 'Log Result'}
+        </button>
+      </div>
+    );
+  }
+
   // --- SCREEN 1: MISSION BRIEFING (PREVIEW) ---
-  if (!isStarted && !showFinishScreen) {
+  if (!isStarted && !showFinishScreen && !showLogWithoutTimer) {
       const selectedVenue = venues.find(v => v.id === selectedVenueId);
       const showCustomInput = selectedVenue && (selectedVenue.type === 'Commercial' || selectedVenue.type === 'Other' || selectedVenue.type === 'Home');
 
@@ -390,14 +549,24 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
                 })}
             </div>
 
-            {/* Start Button */}
-            <button 
-                onClick={startMission}
-                disabled={!selectedVenueId}
-                className="w-full py-4 bg-orange-600 hover:bg-orange-500 text-white font-black uppercase italic tracking-wider rounded-xl shadow-lg shadow-orange-900/20 flex items-center justify-center gap-2 animate-pulse mb-4 shrink-0 disabled:opacity-50 disabled:animate-none"
-            >
-                <Play size={20} fill="currentColor" /> Start Mission
-            </button>
+            {/* Action Buttons */}
+            <div className="space-y-3 shrink-0">
+                <button 
+                    onClick={startMission}
+                    disabled={!selectedVenueId}
+                    className="w-full py-4 bg-orange-600 hover:bg-orange-500 text-white font-black uppercase italic tracking-wider rounded-xl shadow-lg shadow-orange-900/20 flex items-center justify-center gap-2 animate-pulse disabled:opacity-50 disabled:animate-none"
+                >
+                    <Play size={20} fill="currentColor" /> Start Mission
+                </button>
+                
+                <button 
+                    onClick={handleLogWithoutTimer}
+                    disabled={!selectedVenueId}
+                    className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold uppercase text-xs tracking-wider rounded-lg border border-slate-700 flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                    <Save size={16} /> Log Without Timer
+                </button>
+            </div>
         </div>
       )
   }

@@ -148,7 +148,7 @@ export const MOCK_WORKOUTS: Workout[] = [
     description: 'The ultimate fitness race simulation. 8 x 1km runs alternating with 8 functional stations.',
     scheme: WorkoutScheme.FOR_TIME,
     time_cap_seconds: 5400, // 90 mins
-    rest_type: 'manual',
+    rest_type: 'none',
     is_featured: true,
     components: [
       { exercise_id: 'run', target: '1km Run', order: 1 },
