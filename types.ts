@@ -49,7 +49,8 @@ export enum WorkoutScheme {
   AMRAP = 'AMRAP',
   EMOM = 'EMOM',
   TABATA = 'Tabata',
-  MIXED = 'Mixed'
+  MIXED = 'Mixed',
+  ONE_RM = '1RM'
 }
 
 export interface User {

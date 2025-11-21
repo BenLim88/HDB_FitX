@@ -365,7 +365,7 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
             /* Weight Input for Street Lift */
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase mb-2">1 Rep Max Weight</label>
-              <div className="flex gap-2 items-center">
+              <div className="flex gap-2 items-center w-full">
                 <input
                   type="number"
                   step="0.5"
@@ -373,12 +373,12 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
                   placeholder="0"
                   value={weightInput}
                   onChange={(e) => setWeightInput(e.target.value)}
-                  className="flex-1 bg-slate-950 border border-slate-800 rounded p-3 text-white text-2xl font-mono font-bold text-center outline-none"
+                  className="flex-1 min-w-0 bg-slate-950 border border-slate-800 rounded p-3 text-white text-2xl font-mono font-bold text-center outline-none"
                 />
                 <select
                   value={weightUnit}
                   onChange={(e) => setWeightUnit(e.target.value)}
-                  className="bg-slate-950 border border-slate-800 rounded p-3 text-white text-lg font-bold outline-none"
+                  className="bg-slate-950 border border-slate-800 rounded p-3 text-white text-lg font-bold outline-none shrink-0"
                 >
                   <option value="kg">kg</option>
                   <option value="lbs">lbs</option>
@@ -684,7 +684,7 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
            // Street Lift (1RM) - Show Weight Input
            <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 mb-6">
              <label className="block text-slate-400 text-sm font-bold uppercase mb-3">1 Rep Max Weight</label>
-             <div className="flex gap-2 items-center">
+             <div className="flex gap-2 items-center w-full">
                <input
                  type="number"
                  step="0.5"
@@ -692,12 +692,12 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
                  placeholder="0"
                  value={weightInput}
                  onChange={(e) => setWeightInput(e.target.value)}
-                 className="flex-1 bg-slate-950 border border-slate-800 rounded p-4 text-white text-3xl font-mono font-bold text-center outline-none focus:border-orange-500"
+                 className="flex-1 min-w-0 bg-slate-950 border border-slate-800 rounded p-4 text-white text-3xl font-mono font-bold text-center outline-none focus:border-orange-500"
                />
                <select
                  value={weightUnit}
                  onChange={(e) => setWeightUnit(e.target.value)}
-                 className="bg-slate-950 border border-slate-800 rounded p-4 text-white text-lg font-bold outline-none focus:border-orange-500"
+                 className="bg-slate-950 border border-slate-800 rounded p-4 text-white text-lg font-bold outline-none focus:border-orange-500 shrink-0"
                >
                  <option value="kg">kg</option>
                  <option value="lbs">lbs</option>
