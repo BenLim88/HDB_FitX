@@ -95,6 +95,7 @@ export const MOCK_EXERCISES: Exercise[] = [
     // === BODYWEIGHT / CALISTHENICS - PULL ===
     { id: 'pullup', name: 'Standard Pull-ups (Overhand)', type: 'reps', category: 'Bodyweight' },
     { id: 'chinup', name: 'Chin-ups (Underhand)', type: 'reps', category: 'Bodyweight' },
+    { id: 'chest_to_bar', name: 'Chest-to-Bar Pull-ups', type: 'reps', category: 'Bodyweight' },
     { id: 'australian_pullup', name: 'Australian Pull-ups (Inverted Rows)', type: 'reps', category: 'Bodyweight' },
     { id: 'scapular_pulls', name: 'Scapular Pulls (Shrugs)', type: 'reps', category: 'Bodyweight' },
     { id: 'negative_pullup', name: 'Negative Pull-ups (Controlled Lowering)', type: 'reps', category: 'Bodyweight' },
@@ -425,6 +426,7 @@ export const MOCK_WORKOUTS: Workout[] = [
     time_cap_seconds: 1800, // 30 mins cap
     rest_type: 'none',
     is_featured: true,
+    category: 'Cardio',
     components: [
       { exercise_id: 'run', target: '5KM Run', order: 1 },
     ],
@@ -443,6 +445,7 @@ export const MOCK_WORKOUTS: Workout[] = [
     time_cap_seconds: 3600, // 60 mins cap
     rest_type: 'none',
     is_featured: true,
+    category: 'Cardio',
     components: [
       { exercise_id: 'run', target: '10KM Run', order: 1 },
     ],
@@ -461,6 +464,7 @@ export const MOCK_WORKOUTS: Workout[] = [
     time_cap_seconds: 600, // 10 mins cap
     rest_type: 'none',
     is_featured: false,
+    category: 'Cardio',
     components: [
       { exercise_id: 'row', target: '1KM Row', order: 1 },
     ],
@@ -479,6 +483,7 @@ export const MOCK_WORKOUTS: Workout[] = [
     time_cap_seconds: 600, // 10 mins cap
     rest_type: 'none',
     is_featured: false,
+    category: 'Cardio',
     components: [
       { exercise_id: 'ski', target: '1KM Ski Erg', order: 1 },
     ],
@@ -487,6 +492,89 @@ export const MOCK_WORKOUTS: Workout[] = [
       [ScalingTier.ADVANCED]: '1KM ski with 30s rest at 500m',
       [ScalingTier.INTERMEDIATE]: '750m ski - fastest time',
       [ScalingTier.BEGINNER]: '500m ski - fastest time',
+    }
+  },
+  // === CALISTHENICS WORKOUTS ===
+  {
+    id: 'w_calisthenics_cup_endurance',
+    name: 'Calisthenics Cup Endurance Qualification Routine 2025',
+    description: 'Elite calisthenics endurance challenge. Complete 5 sets with increasing difficulty, followed by finishers.',
+    scheme: WorkoutScheme.FOR_TIME,
+    time_cap_seconds: 3600, // 60 mins cap
+    rest_type: 'manual',
+    is_featured: false,
+    category: 'Calisthenics',
+    components: [
+      // Set 1
+      { exercise_id: 'parallel_bar_dips', target: '50 Dips', order: 1 },
+      { exercise_id: 'pullup', target: '5 Pull-ups', order: 2 },
+      { exercise_id: 'muscle_up', target: '1 Muscle-up', order: 3 },
+      // Set 2
+      { exercise_id: 'pushup', target: '40 Push-ups', order: 4 },
+      { exercise_id: 'pullup', target: '10 Pull-ups', order: 5 },
+      { exercise_id: 'muscle_up', target: '2 Muscle-ups', order: 6 },
+      // Set 3
+      { exercise_id: 'air_squat', target: '30 Squats', order: 7 },
+      { exercise_id: 'pullup', target: '15 Pull-ups', order: 8 },
+      { exercise_id: 'muscle_up', target: '3 Muscle-ups', order: 9 },
+      // Set 4
+      { exercise_id: 'air_squat', target: '20 Squats', order: 10 },
+      { exercise_id: 'pullup', target: '20 Pull-ups', order: 11 },
+      { exercise_id: 'muscle_up', target: '4 Muscle-ups', order: 12 },
+      // Set 5
+      { exercise_id: 'air_squat', target: '10 Squats', order: 13 },
+      { exercise_id: 'pullup', target: '25 Pull-ups', order: 14 },
+      { exercise_id: 'muscle_up', target: '5 Muscle-ups', order: 15 },
+      // Finisher 1
+      { exercise_id: 'parallel_bar_dips', target: '30 Dips', order: 16 },
+      // Finisher 2
+      { exercise_id: 'pushup', target: '30 Push-ups', order: 17 },
+      // Final
+      { exercise_id: 'muscle_up', target: '5 Muscle-ups', order: 18 },
+    ],
+    scaling: {
+      [ScalingTier.RX]: 'All exercises as written',
+      [ScalingTier.ADVANCED]: 'Reduce reps by 20%',
+      [ScalingTier.INTERMEDIATE]: 'Reduce reps by 40%, substitute muscle-ups with pull-ups',
+      [ScalingTier.BEGINNER]: 'Reduce reps by 60%, use assisted variations',
+    }
+  },
+  {
+    id: 'w_saiyan_requirements',
+    name: 'Saiyan Requirements',
+    description: 'Elite calisthenics challenge. Four sets of progressive difficulty testing upper body, lower body, and core strength.',
+    scheme: WorkoutScheme.FOR_TIME,
+    time_cap_seconds: 2400, // 40 mins cap
+    rest_type: 'manual',
+    is_featured: false,
+    category: 'Calisthenics',
+    components: [
+      // Set 1
+      { exercise_id: 'pullup', target: '20 Pull-ups', order: 1 },
+      { exercise_id: 'parallel_bar_dips', target: '5 Dips', order: 2 },
+      { exercise_id: 'pushup', target: '40 Push-ups', order: 3 },
+      { exercise_id: 'air_squat', target: '20 Squats', order: 4 },
+      // Set 2
+      { exercise_id: 'chest_to_bar', target: '15 Chest-to-Bars', order: 5 },
+      { exercise_id: 'parallel_bar_dips', target: '10 Dips', order: 6 },
+      { exercise_id: 'diamond_pushup', target: '30 Diamond Push-ups', order: 7 },
+      { exercise_id: 'forward_lunge', target: '20 Lunges', order: 8 },
+      // Set 3
+      { exercise_id: 'australian_pullup', target: '10 Inverted Rows', order: 9 },
+      { exercise_id: 'parallel_bar_dips', target: '15 Dips', order: 10 },
+      { exercise_id: 'pike_pushup', target: '20 Pike Push-ups', order: 11 },
+      { exercise_id: 'jump_squat', target: '20 Jump Squats', order: 12 },
+      // Set 4
+      { exercise_id: 'muscle_up', target: '5 Muscle-ups', order: 13 },
+      { exercise_id: 'parallel_bar_dips', target: '20 Dips', order: 14 },
+      { exercise_id: 'handstand_pushup', target: '10 Handstand Push-ups', order: 15 },
+      { exercise_id: 'pistol_squat', target: '20 Pistol Squats', order: 16 },
+    ],
+    scaling: {
+      [ScalingTier.RX]: 'All exercises as written',
+      [ScalingTier.ADVANCED]: 'Reduce reps by 25%',
+      [ScalingTier.INTERMEDIATE]: 'Reduce reps by 50%, substitute advanced movements with regressions',
+      [ScalingTier.BEGINNER]: 'Reduce reps by 75%, use assisted variations and progressions',
     }
   }
 ];
