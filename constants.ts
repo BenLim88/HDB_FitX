@@ -792,7 +792,7 @@ export const WORLD_RECORDS: WorldRecord[] = [
     workout_id: 'w_street_lift_pullup',
     workout_name: 'Pull Up 1RM',
     athlete_name: 'Liu Weiqiang',
-    record_display: '146.64 kg (323.28 lb)',
+    record_display: '146.64 kg',
     gender: Gender.MALE,
     division: "Men's 1RM",
     category: 'Calisthenics'
@@ -802,7 +802,7 @@ export const WORLD_RECORDS: WorldRecord[] = [
     workout_id: 'w_street_lift_muscleup',
     workout_name: 'Muscle Up 1RM',
     athlete_name: 'Liu Weiqiang',
-    record_display: '54.30 kg (119.71 lb)',
+    record_display: '54.30 kg',
     gender: Gender.MALE,
     division: "Men's 1RM",
     category: 'Calisthenics'

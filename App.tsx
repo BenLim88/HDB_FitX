@@ -10,7 +10,7 @@ import WitnessInbox from './components/WitnessInbox';
 import AdminDashboard from './components/AdminDashboard';
 import AuthScreen from './components/AuthScreen';
 import DIYWorkout from './components/DIYWorkout';
-import { Trophy, Flame, MapPin, ChevronRight, Bot, Loader2, ShieldAlert, Filter, Dumbbell, Settings, Edit2, Save, X, RefreshCcw, Search, Calendar, Wand2, Star, RotateCcw, Pin, Users, Baby, Trash2, Check } from 'lucide-react';
+import { Trophy, Flame, MapPin, ChevronRight, ChevronDown, ChevronUp, Bot, Loader2, ShieldAlert, Filter, Dumbbell, Settings, Edit2, Save, X, RefreshCcw, Search, Calendar, Wand2, Star, RotateCcw, Pin, Users, Baby, Trash2, Check } from 'lucide-react';
 import { MOCK_EXERCISES, WORLD_RECORDS } from './constants';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth, storage } from './firebaseConfig';
@@ -444,6 +444,7 @@ const LeaderboardTab: React.FC<{ logs: Log[], workouts: Workout[], allUsers: Use
     const [selectedVerification, setSelectedVerification] = useState<string>('all');
     const [selectedTier, setSelectedTier] = useState<string>('all');
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
+    const [isWorldRecordsExpanded, setIsWorldRecordsExpanded] = useState<boolean>(false);
 
     const filteredLogs = useMemo(() => {
         let tempLogs = logs;
@@ -627,41 +628,56 @@ const LeaderboardTab: React.FC<{ logs: Log[], workouts: Workout[], allUsers: Use
                 {/* World Records Section */}
                 {filteredWorldRecords.length > 0 && (
                     <div className="mb-6">
-                        <h3 className="text-sm font-bold text-yellow-400 uppercase mb-3 flex items-center gap-2">
-                            <Star size={16} className="fill-yellow-400" /> World Records
-                        </h3>
-                        <div className="space-y-2">
-                            {filteredWorldRecords.map((wr) => (
-                                <div key={wr.id} className="bg-gradient-to-r from-yellow-900/30 to-yellow-800/20 border-2 border-yellow-500/50 p-3 rounded-xl flex items-center gap-3 shadow-lg shadow-yellow-500/10">
-                                    <div className="w-8 h-8 flex items-center justify-center text-lg font-black text-yellow-400 italic shrink-0">
-                                        <Star size={20} className="fill-yellow-400" />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <h4 className="text-white font-bold text-sm truncate">{wr.athlete_name}</h4>
-                                            <span className="text-[10px] text-yellow-400 bg-yellow-500/20 px-1.5 py-0.5 rounded border border-yellow-500/30 font-bold">
-                                                WR
-                                            </span>
+                        <button
+                            onClick={() => setIsWorldRecordsExpanded(!isWorldRecordsExpanded)}
+                            className="w-full text-left mb-3"
+                        >
+                            <h3 className="text-sm font-bold text-yellow-400 uppercase flex items-center gap-2 hover:text-yellow-300 transition-colors">
+                                <Star size={16} className="fill-yellow-400" /> World Records
+                                <span className="text-[10px] text-yellow-500/70 ml-auto">
+                                    {filteredWorldRecords.length} record{filteredWorldRecords.length !== 1 ? 's' : ''}
+                                </span>
+                                {isWorldRecordsExpanded ? (
+                                    <ChevronUp size={16} className="ml-auto" />
+                                ) : (
+                                    <ChevronDown size={16} className="ml-auto" />
+                                )}
+                            </h3>
+                        </button>
+                        {isWorldRecordsExpanded && (
+                            <div className="space-y-2 animate-in slide-in-from-top-2">
+                                {filteredWorldRecords.map((wr) => (
+                                    <div key={wr.id} className="bg-gradient-to-r from-yellow-900/30 to-yellow-800/20 border-2 border-yellow-500/50 p-3 rounded-xl flex items-center gap-3 shadow-lg shadow-yellow-500/10">
+                                        <div className="w-8 h-8 flex items-center justify-center text-lg font-black text-yellow-400 italic shrink-0">
+                                            <Star size={20} className="fill-yellow-400" />
                                         </div>
-                                        <p className="text-xs text-yellow-300 truncate">{wr.workout_name}</p>
-                                        <div className="flex flex-wrap gap-2 mt-1 items-center">
-                                            {wr.division && (
-                                                <span className="text-[10px] text-yellow-400 border border-yellow-500/30 px-1 rounded" title="Division">{wr.division}</span>
-                                            )}
-                                            <span className="text-[10px] text-yellow-300/70 border border-yellow-500/20 px-1 rounded" title="Category">{wr.category}</span>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <h4 className="text-white font-bold text-sm truncate">{wr.athlete_name}</h4>
+                                                <span className="text-[10px] text-yellow-400 bg-yellow-500/20 px-1.5 py-0.5 rounded border border-yellow-500/30 font-bold">
+                                                    WR
+                                                </span>
+                                            </div>
+                                            <p className="text-xs text-yellow-300 truncate">{wr.workout_name}</p>
+                                            <div className="flex flex-wrap gap-2 mt-1 items-center">
+                                                {wr.division && (
+                                                    <span className="text-[10px] text-yellow-400 border border-yellow-500/30 px-1 rounded" title="Division">{wr.division}</span>
+                                                )}
+                                                <span className="text-[10px] text-yellow-300/70 border border-yellow-500/20 px-1 rounded" title="Category">{wr.category}</span>
+                                            </div>
+                                        </div>
+                                        <div className="text-right shrink-0 ml-2">
+                                            <div className="text-yellow-400 font-mono font-bold text-lg">{wr.record_display}</div>
+                                            <div className="flex items-center justify-end gap-1 mt-1">
+                                                <span className="flex items-center gap-1 text-[10px] text-yellow-400 bg-yellow-500/20 px-1.5 py-0.5 rounded border border-yellow-500/30 font-bold">
+                                                    World Record
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="text-right shrink-0 ml-2">
-                                        <div className="text-yellow-400 font-mono font-bold text-lg">{wr.record_display}</div>
-                                        <div className="flex items-center justify-end gap-1 mt-1">
-                                            <span className="flex items-center gap-1 text-[10px] text-yellow-400 bg-yellow-500/20 px-1.5 py-0.5 rounded border border-yellow-500/30 font-bold">
-                                                World Record
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 )}
                 
