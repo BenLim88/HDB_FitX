@@ -582,7 +582,7 @@ export const MOCK_WORKOUTS: Workout[] = [
     id: 'w_street_lift_pullup',
     name: 'Pull Up 1RM',
     description: 'Maximum weight pull-up competition. Add weight via belt/dumbbell. Record your 1 Rep Max weight.',
-    scheme: WorkoutScheme.FOR_TIME,
+    scheme: WorkoutScheme.ONE_RM,
     time_cap_seconds: 1800, // 30 mins cap for warm-up and attempts
     rest_type: 'manual',
     is_featured: true,
@@ -601,7 +601,7 @@ export const MOCK_WORKOUTS: Workout[] = [
     id: 'w_street_lift_muscleup',
     name: 'Muscle Up 1RM',
     description: 'Maximum weight muscle-up competition. Add weight via belt/dumbbell. Record your 1 Rep Max weight.',
-    scheme: WorkoutScheme.FOR_TIME,
+    scheme: WorkoutScheme.ONE_RM,
     time_cap_seconds: 1800, // 30 mins cap for warm-up and attempts
     rest_type: 'manual',
     is_featured: false,
@@ -620,7 +620,7 @@ export const MOCK_WORKOUTS: Workout[] = [
     id: 'w_street_lift_dip',
     name: 'Dip 1RM',
     description: 'Maximum weight dip competition. Add weight via belt/dumbbell. Record your 1 Rep Max weight.',
-    scheme: WorkoutScheme.FOR_TIME,
+    scheme: WorkoutScheme.ONE_RM,
     time_cap_seconds: 1800, // 30 mins cap for warm-up and attempts
     rest_type: 'manual',
     is_featured: false,
@@ -639,7 +639,7 @@ export const MOCK_WORKOUTS: Workout[] = [
     id: 'w_street_lift_squat',
     name: 'Squat 1RM',
     description: 'Maximum weight back squat competition. Record your 1 Rep Max weight.',
-    scheme: WorkoutScheme.FOR_TIME,
+    scheme: WorkoutScheme.ONE_RM,
     time_cap_seconds: 3600, // 60 mins cap for warm-up and attempts
     rest_type: 'manual',
     is_featured: true,
@@ -658,7 +658,7 @@ export const MOCK_WORKOUTS: Workout[] = [
     id: 'w_street_lift_deadlift',
     name: 'Deadlift 1RM',
     description: 'Maximum weight deadlift competition. Record your 1 Rep Max weight.',
-    scheme: WorkoutScheme.FOR_TIME,
+    scheme: WorkoutScheme.ONE_RM,
     time_cap_seconds: 3600, // 60 mins cap for warm-up and attempts
     rest_type: 'manual',
     is_featured: true,

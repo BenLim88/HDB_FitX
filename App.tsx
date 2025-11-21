@@ -1070,7 +1070,7 @@ const App: React.FC = () => {
 
                             <div className={`mt-8 p-4 ${isKid ? 'bg-blue-50 border-blue-200' : 'bg-slate-900 border-slate-800'} rounded-lg border`}>
                                 <div className="flex justify-between items-center mb-4">
-                                    <h3 className={`text-sm font-bold ${isKid ? 'text-blue-800' : 'text-slate-300'} uppercase tracking-wider`}>Personal Bests (All Statuses)</h3>
+                                    <h3 className={`text-sm font-bold ${isKid ? 'text-blue-800' : 'text-slate-300'} uppercase tracking-wider`}>Personal Bests</h3>
                                     <button onClick={() => refreshData()} className={`${isKid ? 'text-blue-500 hover:text-blue-700' : 'text-slate-500 hover:text-orange-500'} transition-colors`} title="Refresh Stats">
                                         <RotateCcw size={14} />
                                     </button>
