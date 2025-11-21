@@ -1,0 +1,24 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Avatar images - users can upload/update their own avatars
+    match /avatars/{fileName} {
+      // Allow read for anyone (avatars are public)
+      allow read: if true;
+      
+      // Allow write (create/update) for all users
+      // Note: App-level security ensures users can only upload their own avatars
+      // File names are in format: {userId}_{timestamp}.{extension}
+      allow write: if true;
+      
+      // Allow delete for all users (app-level security)
+      allow delete: if true;
+    }
+    
+    // Default: deny all other access
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
+

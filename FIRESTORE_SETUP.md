@@ -11,6 +11,13 @@ If you're having trouble logging in with Admin credentials or seeding data in pr
 3. Copy and paste the rules from `firestore.rules` file
 4. Click **Publish**
 
+### Step 1b: Update Firebase Storage Security Rules
+
+1. Go to [Firebase Console](https://console.firebase.google.com/)
+2. Navigate to **Storage** → **Rules** tab
+3. Copy and paste the rules from `storage.rules` file
+4. Click **Publish**
+
 ### Step 2: Manually Create Admin User (If Needed)
 
 If Admin login still doesn't work, manually create the admin user:

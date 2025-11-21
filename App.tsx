@@ -13,7 +13,8 @@ import DIYWorkout from './components/DIYWorkout';
 import { Trophy, Flame, MapPin, ChevronRight, Bot, Loader2, ShieldAlert, Filter, Dumbbell, Settings, Edit2, Save, X, RefreshCcw, Search, Calendar, Wand2, Star, RotateCcw, Pin, Users, Baby, Trash2, Check } from 'lucide-react';
 import { MOCK_EXERCISES } from './constants';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { auth } from './firebaseConfig';
+import { auth, storage } from './firebaseConfig';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 // --- SUB-COMPONENTS (Inline for single-file simplicity requirement where possible) ---
 
@@ -694,6 +695,7 @@ const App: React.FC = () => {
   const [avatarStyle, setAvatarStyle] = useState('avataaars'); // Default
   const [uploadedAvatarFile, setUploadedAvatarFile] = useState<File | null>(null);
   const [uploadedAvatarPreview, setUploadedAvatarPreview] = useState<string | null>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   // Restore user session on mount
   useEffect(() => {
@@ -928,20 +930,40 @@ const App: React.FC = () => {
   const handleSaveProfile = async () => {
       if (!currentUser || !editProfileForm) return;
       
+      setIsUploadingAvatar(true);
       let updatedUser = { ...currentUser, ...editProfileForm };
       
-      // Priority 1: Uploaded file (highest priority) - convert to base64
-      if (uploadedAvatarFile && uploadedAvatarPreview) {
-          updatedUser.avatar_url = uploadedAvatarPreview; // Store base64 string
-      }
-      // Priority 2: Generated avatar (if no file uploaded and prompt/style changed)
-      else if (avatarPrompt || avatarStyle) {
-          const seed = avatarPrompt || currentUser.name;
-          updatedUser.avatar_url = getAvatarUrl(avatarStyle, seed);
-      }
-      // Priority 3: Keep existing avatar_url if nothing changed
-
       try {
+          // Priority 1: Uploaded file (highest priority) - upload to Firebase Storage
+          if (uploadedAvatarFile) {
+              try {
+                  // Create a reference to the storage location
+                  const fileExtension = uploadedAvatarFile.name.split('.').pop() || 'jpg';
+                  const fileName = `avatars/${currentUser.id}_${Date.now()}.${fileExtension}`;
+                  const storageRef = ref(storage, fileName);
+                  
+                  // Upload the file
+                  await uploadBytes(storageRef, uploadedAvatarFile);
+                  
+                  // Get the download URL
+                  const downloadURL = await getDownloadURL(storageRef);
+                  updatedUser.avatar_url = downloadURL;
+                  
+                  console.log('Avatar uploaded to Firebase Storage:', downloadURL);
+              } catch (uploadError) {
+                  console.error('Error uploading avatar:', uploadError);
+                  alert('Failed to upload photo. Please try again.');
+                  setIsUploadingAvatar(false);
+                  return;
+              }
+          }
+          // Priority 2: Generated avatar (if no file uploaded and prompt/style changed)
+          else if (avatarPrompt || avatarStyle) {
+              const seed = avatarPrompt || currentUser.name;
+              updatedUser.avatar_url = getAvatarUrl(avatarStyle, seed);
+          }
+          // Priority 3: Keep existing avatar_url if nothing changed
+
           await DataService.updateUser(updatedUser as User);
           setCurrentUser(updatedUser as User);
           localStorage.setItem('hdb_fitx_user', JSON.stringify(updatedUser));
@@ -949,8 +971,12 @@ const App: React.FC = () => {
           // Reset upload state
           setUploadedAvatarFile(null);
           setUploadedAvatarPreview(null);
-      } catch (e) {
-          alert("Failed to update profile.");
+      } catch (e: any) {
+          const errorMessage = e?.message || "Failed to update profile. Please try again.";
+          alert(errorMessage);
+          console.error("Profile update error:", e);
+      } finally {
+          setIsUploadingAvatar(false);
       }
   }
 
@@ -1488,9 +1514,18 @@ const App: React.FC = () => {
                                 </button>
                                 <button 
                                     onClick={handleSaveProfile}
-                                    className="flex-1 py-3 bg-green-600 text-white font-bold rounded-lg uppercase text-xs hover:bg-green-500 flex items-center justify-center gap-2"
+                                    disabled={isUploadingAvatar}
+                                    className="flex-1 py-3 bg-green-600 text-white font-bold rounded-lg uppercase text-xs hover:bg-green-500 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    <Save size={16} /> Save
+                                    {isUploadingAvatar ? (
+                                        <>
+                                            <Loader2 size={16} className="animate-spin" /> Uploading...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Save size={16} /> Save
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         </div>
