@@ -790,6 +790,13 @@ const App: React.FC = () => {
     if (currentUser) {
         const n = await DataService.getNotifications(currentUser.id);
         setNotifications(n);
+        // Refresh current user data from Firestore (in case admin status changed)
+        const allUsers = await DataService.getAllUsers();
+        const updatedUser = allUsers.find(u => u.id === currentUser.id);
+        if (updatedUser) {
+            setCurrentUser(updatedUser);
+            localStorage.setItem('hdb_fitx_user', JSON.stringify(updatedUser));
+        }
     }
   };
 
@@ -800,6 +807,21 @@ const App: React.FC = () => {
         return () => clearInterval(interval);
     }
   }, [currentUser]);
+
+  // Refresh current user when profile tab is opened (to catch admin status changes)
+  useEffect(() => {
+    if (activeTab === 'profile' && currentUser) {
+        const refreshCurrentUser = async () => {
+            const allUsers = await DataService.getAllUsers();
+            const updatedUser = allUsers.find(u => u.id === currentUser.id);
+            if (updatedUser) {
+                setCurrentUser(updatedUser);
+                localStorage.setItem('hdb_fitx_user', JSON.stringify(updatedUser));
+            }
+        };
+        refreshCurrentUser();
+    }
+  }, [activeTab, currentUser?.id]);
 
   const handleStartWorkout = (workout: Workout) => {
     setActiveWorkout(workout);
