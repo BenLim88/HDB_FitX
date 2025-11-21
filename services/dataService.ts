@@ -49,6 +49,35 @@ const numberToTimestamp = (num: number): Timestamp => {
   return Timestamp.fromMillis(num);
 };
 
+// Helper function to recursively remove undefined values (Firestore doesn't accept undefined)
+const removeUndefined = (obj: any): any => {
+  if (obj === undefined) {
+      return undefined; // Signal to omit this field
+  }
+  if (obj === null) {
+      return null; // Keep null values
+  }
+  if (Array.isArray(obj)) {
+      const cleaned = obj.map(item => removeUndefined(item)).filter(item => item !== undefined);
+      return cleaned; // Always return array (even if empty)
+  }
+  if (typeof obj === 'object' && obj.constructor === Object) {
+      const cleaned: any = {};
+      Object.keys(obj).forEach(key => {
+          const value = obj[key];
+          if (value !== undefined) {
+              const cleanedValue = removeUndefined(value);
+              // Only add if cleaned value is not undefined
+              if (cleanedValue !== undefined) {
+                  cleaned[key] = cleanedValue;
+              }
+          }
+      });
+      return cleaned; // Always return object (even if empty)
+  }
+  return obj;
+};
+
 // Seed initial data if collections are empty
 const seedDatabase = async (): Promise<void> => {
   // If already seeding, wait for that promise
@@ -419,35 +448,6 @@ export const DataService = {
           participants
       };
   },
-
-  // Helper function to recursively remove undefined values (Firestore doesn't accept undefined)
-  const removeUndefined = (obj: any): any => {
-      if (obj === undefined) {
-          return undefined; // Return undefined to signal it should be omitted
-      }
-      if (obj === null) {
-          return null; // Keep null values
-      }
-      if (Array.isArray(obj)) {
-          const cleaned = obj.map(item => removeUndefined(item)).filter(item => item !== undefined);
-          return cleaned; // Always return array (even if empty)
-      }
-      if (typeof obj === 'object' && obj.constructor === Object) {
-          const cleaned: any = {};
-          Object.keys(obj).forEach(key => {
-              const value = obj[key];
-              if (value !== undefined) {
-                  const cleanedValue = removeUndefined(value);
-                  // Only add if cleaned value is not undefined
-                  if (cleanedValue !== undefined) {
-                      cleaned[key] = cleanedValue;
-                  }
-              }
-          });
-          return cleaned; // Always return object (even if empty)
-      }
-      return obj;
-  };
 
   // --- WORKOUT MANAGEMENT (ADMIN) ---
   addWorkout: async (workout: Omit<Workout, 'id'>): Promise<Workout> => {
