@@ -162,8 +162,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
           exercise_id: selectedExId,
           target: fullTarget,
           weight: weightInput || undefined,
-          sets: setsInput ? parseInt(setsInput) : 1,
-          round: componentRound ? parseInt(componentRound) : 1,
+          sets: setsInput && setsInput.trim() !== '' ? parseInt(setsInput) : 1,
+          round: componentRound && componentRound.trim() !== '' ? parseInt(componentRound) : 1,
           order: workoutComponents.length + 1
       };
       setWorkoutComponents([...workoutComponents, newComponent]);
@@ -1153,18 +1153,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                                                 .map(e => <option key={e.id} value={e.id}>{e.name} ({e.category})</option>)}
                                         </select>
                                     </div>
-                                    <div className="flex-[1.5]">
+                                    <div className="flex-[2.5] min-w-[200px]">
                                         <label className="text-[10px] text-slate-500 font-bold mb-1 block">Amount</label>
                                         <div className="flex gap-1">
                                             <input 
                                                 type="number"
-                                                className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-xs outline-none"
+                                                className="flex-[2] min-w-[120px] bg-slate-950 border border-slate-800 rounded p-2 text-white text-xs outline-none"
                                                 value={targetValue}
                                                 onChange={e => setTargetValue(e.target.value)}
                                                 placeholder="10"
                                             />
                                             <select 
-                                                className="bg-slate-950 border border-slate-800 rounded p-2 text-white text-xs outline-none"
+                                                className="flex-1 bg-slate-950 border border-slate-800 rounded p-2 text-white text-xs outline-none"
                                                 value={targetUnit}
                                                 onChange={e => setTargetUnit(e.target.value)}
                                             >
@@ -1193,7 +1193,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                                             min="1"
                                             className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-xs outline-none"
                                             value={setsInput}
-                                            onChange={e => setSetsInput(e.target.value || '1')}
+                                            onChange={e => setSetsInput(e.target.value)}
                                             placeholder="1"
                                         />
                                     </div>
@@ -1204,7 +1204,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                                             min="1"
                                             className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-xs outline-none"
                                             value={componentRound}
-                                            onChange={e => setComponentRound(e.target.value || '1')}
+                                            onChange={e => setComponentRound(e.target.value)}
                                             placeholder="1"
                                         />
                                     </div>
