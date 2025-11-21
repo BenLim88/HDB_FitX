@@ -137,7 +137,9 @@ export const DataService = {
         users[index] = updatedUser;
         return updatedUser;
     }
-    throw new Error("User not found");
+    // If user not found, add them (e.g., restored from localStorage or Firebase)
+    users.push(updatedUser);
+    return updatedUser;
   },
 
   deleteUser: async (userId: string): Promise<void> => {

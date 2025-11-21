@@ -535,6 +535,8 @@ const App: React.FC = () => {
         const savedUser = localStorage.getItem('hdb_fitx_user');
         if (savedUser) {
           const user = JSON.parse(savedUser) as User;
+          // Ensure user exists in the users array for updates to work
+          await DataService.updateUser(user); // This will add user if not exists
           setCurrentUser(user);
           setIsLoadingAuth(false);
           return;
@@ -560,6 +562,8 @@ const App: React.FC = () => {
                 avatar_url: firebaseUser.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${firebaseUser.uid}`,
                 category: UserCategory.ADULT
               };
+              // Add to users array
+              await DataService.updateUser(user);
             }
             
             setCurrentUser(user);
