@@ -337,11 +337,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       setComponentRound('1');
   };
 
-  const handleDeleteWorkout = (id: string) => {
-      if(confirm("Delete this workout?")) {
-          const updatedWorkouts = workouts.filter(w => w.id !== id);
-          setWorkouts(updatedWorkouts);
-          onUpdateWorkouts(updatedWorkouts); // Propagate
+  const handleDeleteWorkout = async (id: string) => {
+      if (window.confirm("Are you sure you want to delete this workout? This cannot be undone.")) {
+          try {
+              await DataService.deleteWorkout(id);
+              const updatedWorkouts = workouts.filter(w => w.id !== id);
+              setWorkouts(updatedWorkouts);
+              onUpdateWorkouts(updatedWorkouts);
+              alert('Workout deleted successfully!');
+          } catch (error) {
+              console.error('Error deleting workout:', error);
+              alert(`Failed to delete workout: ${error instanceof Error ? error.message : 'Unknown error'}. Check console for details.`);
+          }
       }
   };
 
