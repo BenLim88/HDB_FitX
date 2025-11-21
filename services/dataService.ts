@@ -348,7 +348,8 @@ export const DataService = {
   addPinnedWOD: async (wod: Omit<PinnedWOD, 'id' | 'participants'>): Promise<PinnedWOD> => {
       const newWod: Omit<PinnedWOD, 'id'> = {
           ...wod,
-          participants: []
+          participants: [],
+          invited_user_ids: wod.invited_user_ids || []
       };
       const docRef = await addDoc(collection(db, COLLECTIONS.PINNED_WODS), newWod);
       return {

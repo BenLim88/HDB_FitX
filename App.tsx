@@ -1035,6 +1035,7 @@ const App: React.FC = () => {
                     onUpdateWorkouts={handleUpdateWorkouts} 
                     initialVenues={venues}
                     onUpdateVenues={handleUpdateVenues}
+                    currentUser={currentUser}
                 />
             )}
 

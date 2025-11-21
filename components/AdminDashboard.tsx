@@ -10,9 +10,10 @@ interface AdminDashboardProps {
   onUpdateWorkouts: (workouts: Workout[]) => void;
   initialVenues: Venue[];
   onUpdateVenues: (venues: Venue[]) => void;
+  currentUser: User; // Add currentUser prop
 }
 
-const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpdateWorkouts, initialVenues, onUpdateVenues }) => {
+const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpdateWorkouts, initialVenues, onUpdateVenues, currentUser }) => {
   // Data States
   const [exercises, setExercises] = useState<Exercise[]>(MOCK_EXERCISES);
   const [workouts, setWorkouts] = useState<Workout[]>(initialWorkouts);
@@ -303,22 +304,36 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
   };
 
   const handleConfirmPin = async () => {
-      if (!pinningWorkoutId || !intendedDate || !deadlineDate) return;
+      if (!pinningWorkoutId || !intendedDate || !deadlineDate) {
+          alert('Please fill in all required fields (intended date and deadline date).');
+          return;
+      }
+
+      // Check if user is admin
+      if (!currentUser || !currentUser.is_admin) {
+          alert('Only administrators can pin workouts.');
+          return;
+      }
 
       const workout = workouts.find(w => w.id === pinningWorkoutId);
-      if (!workout) return;
+      if (!workout) {
+          alert('Workout not found.');
+          return;
+      }
 
       // Combine date and time to timestamp
       const start = new Date(`${intendedDate}T${intendedTime || '00:00'}`).getTime();
       const end = new Date(`${deadlineDate}T${deadlineTime || '23:59'}`).getTime();
 
-      // Create pinned WOD
-      const pinnedWod = await DataService.addPinnedWOD({
-          workout_id: workout.id,
-          workout_name: workout.name,
-          intended_date: start,
-          deadline: end
-      });
+      try {
+          // Create pinned WOD
+          const pinnedWod = await DataService.addPinnedWOD({
+              workout_id: workout.id,
+              workout_name: workout.name,
+              intended_date: start,
+              deadline: end,
+              invited_user_ids: Array.from(selectedUserIds)
+          });
 
       // Determine which users to invite
       let usersToInvite: User[] = [];
@@ -339,26 +354,34 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
           usersToInvite = users.filter(u => selectedUserIds.has(u.id));
       }
 
-      // Send notifications to selected users
-      const dateStr = new Date(start).toLocaleDateString();
-      const timeStr = new Date(start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      
-      for (const user of usersToInvite) {
-          await DataService.addNotification({
-              target_user_id: user.id,
-              type: 'pinned_wod_invitation',
-              message: `New Priority Mission: "${workout.name}" scheduled for ${dateStr} at ${timeStr}`,
-              payload: {
-                  pinned_wod_id: pinnedWod.id
-              },
-              read: false
-          });
-      }
+          // Send notifications to selected users
+          const dateStr = new Date(start).toLocaleDateString();
+          const timeStr = new Date(start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          
+          for (const user of usersToInvite) {
+              try {
+                  await DataService.addNotification({
+                      target_user_id: user.id,
+                      type: 'pinned_wod_invitation',
+                      message: `New Priority Mission: "${workout.name}" scheduled for ${dateStr} at ${timeStr}`,
+                      payload: {
+                          pinned_wod_id: pinnedWod.id
+                      },
+                      read: false
+                  });
+              } catch (notifError) {
+                  console.error(`Failed to send notification to ${user.name}:`, notifError);
+              }
+          }
 
-      alert(`Pinned "${workout.name}" to the Home Board! ${usersToInvite.length > 0 ? `Invitations sent to ${usersToInvite.length} user(s).` : ''}`);
-      setPinningWorkoutId(null);
-      setSelectedUserIds(new Set());
-      setInviteFilter('all');
+          alert(`Pinned "${workout.name}" to the Home Board! ${usersToInvite.length > 0 ? `Invitations sent to ${usersToInvite.length} user(s).` : ''}`);
+          setPinningWorkoutId(null);
+          setSelectedUserIds(new Set());
+          setInviteFilter('all');
+      } catch (error) {
+          console.error('Error pinning workout:', error);
+          alert(`Failed to pin workout: ${error instanceof Error ? error.message : 'Unknown error'}. Check browser console for details.`);
+      }
   };
 
   // --- USER MANAGEMENT HANDLERS ---
