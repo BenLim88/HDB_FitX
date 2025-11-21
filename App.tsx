@@ -664,6 +664,8 @@ const App: React.FC = () => {
   const [editProfileForm, setEditProfileForm] = useState<Partial<User>>({});
   const [avatarPrompt, setAvatarPrompt] = useState('');
   const [avatarStyle, setAvatarStyle] = useState('avataaars'); // Default
+  const [uploadedAvatarFile, setUploadedAvatarFile] = useState<File | null>(null);
+  const [uploadedAvatarPreview, setUploadedAvatarPreview] = useState<string | null>(null);
 
   // Restore user session on mount
   useEffect(() => {
@@ -822,6 +824,8 @@ const App: React.FC = () => {
       if (!currentUser) return;
       setEditProfileForm({ ...currentUser });
       setAvatarPrompt(''); 
+      setUploadedAvatarFile(null);
+      setUploadedAvatarPreview(null);
       
       // Attempt to parse style from current avatar URL to pre-select the dropdown
       const url = currentUser.avatar_url || '';
@@ -841,6 +845,29 @@ const App: React.FC = () => {
       setIsEditingProfile(true);
   }
 
+  const handleAvatarFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+          // Validate file type
+          if (!file.type.startsWith('image/')) {
+              alert('Please select an image file');
+              return;
+          }
+          // Validate file size (max 5MB)
+          if (file.size > 5 * 1024 * 1024) {
+              alert('Image size must be less than 5MB');
+              return;
+          }
+          setUploadedAvatarFile(file);
+          // Create preview using FileReader (base64)
+          const reader = new FileReader();
+          reader.onloadend = () => {
+              setUploadedAvatarPreview(reader.result as string);
+          };
+          reader.readAsDataURL(file);
+      }
+  }
+
   const getAvatarUrl = (style: string, seed: string) => {
       const s = encodeURIComponent(seed);
       if (style === 'cats') return `https://robohash.org/${s}.png?set=set4`;
@@ -853,16 +880,25 @@ const App: React.FC = () => {
       
       let updatedUser = { ...currentUser, ...editProfileForm };
       
-      // If prompt was entered OR style changed, regenerate avatar
-      if (avatarPrompt || avatarStyle) {
+      // Priority 1: Uploaded file (highest priority) - convert to base64
+      if (uploadedAvatarFile && uploadedAvatarPreview) {
+          updatedUser.avatar_url = uploadedAvatarPreview; // Store base64 string
+      }
+      // Priority 2: Generated avatar (if no file uploaded and prompt/style changed)
+      else if (avatarPrompt || avatarStyle) {
           const seed = avatarPrompt || currentUser.name;
           updatedUser.avatar_url = getAvatarUrl(avatarStyle, seed);
       }
+      // Priority 3: Keep existing avatar_url if nothing changed
 
       try {
           await DataService.updateUser(updatedUser as User);
           setCurrentUser(updatedUser as User);
+          localStorage.setItem('hdb_fitx_user', JSON.stringify(updatedUser));
           setIsEditingProfile(false);
+          // Reset upload state
+          setUploadedAvatarFile(null);
+          setUploadedAvatarPreview(null);
       } catch (e) {
           alert("Failed to update profile.");
       }
@@ -1076,48 +1112,87 @@ const App: React.FC = () => {
                              <div className={`flex items-center gap-4 mb-6 ${isKid ? 'bg-blue-50 border-blue-200' : 'bg-slate-900 border-slate-800'} p-3 rounded-lg border`}>
                                 <div className={`w-16 h-16 rounded-full ${isKid ? 'bg-white border-blue-300' : 'bg-slate-950 border-slate-700'} border overflow-hidden shrink-0`}>
                                     <img 
-                                        src={avatarPrompt ? getAvatarUrl(avatarStyle, avatarPrompt) : (editProfileForm.avatar_url || '')} 
+                                        src={
+                                            uploadedAvatarPreview 
+                                                ? uploadedAvatarPreview 
+                                                : (avatarPrompt ? getAvatarUrl(avatarStyle, avatarPrompt) : (editProfileForm.avatar_url || ''))
+                                        } 
                                         alt="avatar preview" 
                                         className="w-full h-full object-cover" 
                                     />
                                 </div>
-                                <div className="flex-1">
-                                     <label className={`text-[10px] font-bold ${isKid ? 'text-blue-600' : 'text-slate-500'} block mb-1 text-left`}>New Avatar Seed (Number)</label>
-                                     <div className="flex gap-2">
-                                        <input 
-                                            type="text"
-                                            inputMode="numeric"
-                                            pattern="[0-9]*"
-                                            value={avatarPrompt}
-                                            onChange={(e) => {
-                                                const val = e.target.value;
-                                                if (/^\d*$/.test(val)) setAvatarPrompt(val);
-                                            }}
-                                            placeholder="e.g. 98765"
-                                            className={`flex-1 ${isKid ? 'bg-white border-blue-200 text-blue-900' : 'bg-slate-950 border-slate-800 text-white'} border rounded px-3 py-2 text-xs outline-none font-mono`}
+                                <div className="flex-1 space-y-2">
+                                    {/* Upload Photo Option */}
+                                    <div>
+                                        <label className={`text-[10px] font-bold ${isKid ? 'text-blue-600' : 'text-slate-500'} block mb-1 text-left`}>Upload Photo</label>
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleAvatarFileSelect}
+                                            className="hidden"
+                                            id="avatar-upload"
                                         />
-                                        <button 
-                                            onClick={() => setAvatarPrompt(Math.floor(Math.random() * 1000000).toString())} 
-                                            className={`p-2 ${isKid ? 'bg-blue-100 text-blue-600 hover:bg-blue-200' : 'bg-slate-800 text-orange-500 hover:bg-slate-700'} rounded`}
+                                        <label
+                                            htmlFor="avatar-upload"
+                                            className={`block w-full ${isKid ? 'bg-blue-100 hover:bg-blue-200 text-blue-700 border-blue-300' : 'bg-slate-800 hover:bg-slate-700 text-white border-slate-700'} border rounded px-3 py-2 text-xs font-bold cursor-pointer text-center transition-colors`}
                                         >
-                                            <RefreshCcw size={14} />
-                                        </button>
-                                     </div>
-                                     <div className="mt-2">
-                                        <select
-                                            value={avatarStyle}
-                                            onChange={(e) => setAvatarStyle(e.target.value)}
-                                            className={`w-full ${isKid ? 'bg-white border-blue-200 text-blue-900' : 'bg-slate-950 border-slate-800 text-slate-300'} border rounded px-2 py-1.5 text-[10px] outline-none`}
-                                        >
-                                            <option value="avataaars">Human (Standard)</option>
-                                            <option value="adventurer">Human (RPG)</option>
-                                            <option value="fun-emoji">Emoji (Expressive)</option>
-                                            <option value="bottts">Mecha (Robots)</option>
-                                            <option value="pixel-art">Retro (Pixel)</option>
-                                            <option value="cats">Animal (Cats)</option>
-                                            <option value="monsters">Creature (Monsters)</option>
-                                        </select>
-                                     </div>
+                                            {uploadedAvatarFile ? 'Change Photo' : 'Choose Photo'}
+                                        </label>
+                                        {uploadedAvatarFile && (
+                                            <button
+                                                onClick={() => {
+                                                    setUploadedAvatarFile(null);
+                                                    setUploadedAvatarPreview(null);
+                                                }}
+                                                className="mt-1 w-full text-[10px] text-red-400 hover:text-red-300"
+                                            >
+                                                Remove Uploaded Photo
+                                            </button>
+                                        )}
+                                    </div>
+                                    
+                                    {/* Divider */}
+                                    <div className={`text-center text-[8px] ${isKid ? 'text-blue-400' : 'text-slate-600'} uppercase font-bold`}>OR</div>
+                                    
+                                    {/* Generated Avatar Options */}
+                                    <div>
+                                        <label className={`text-[10px] font-bold ${isKid ? 'text-blue-600' : 'text-slate-500'} block mb-1 text-left`}>Generate Avatar</label>
+                                        <div className="flex gap-2">
+                                            <input 
+                                                type="text"
+                                                inputMode="numeric"
+                                                pattern="[0-9]*"
+                                                value={avatarPrompt}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    if (/^\d*$/.test(val)) setAvatarPrompt(val);
+                                                }}
+                                                placeholder="Seed number"
+                                                className={`flex-1 ${isKid ? 'bg-white border-blue-200 text-blue-900' : 'bg-slate-950 border-slate-800 text-white'} border rounded px-3 py-2 text-xs outline-none font-mono`}
+                                            />
+                                            <button 
+                                                onClick={() => setAvatarPrompt(Math.floor(Math.random() * 1000000).toString())} 
+                                                className={`p-2 ${isKid ? 'bg-blue-100 text-blue-600 hover:bg-blue-200' : 'bg-slate-800 text-orange-500 hover:bg-slate-700'} rounded`}
+                                            >
+                                                <RefreshCcw size={14} />
+                                            </button>
+                                        </div>
+                                        <div className="mt-2">
+                                            <select
+                                                value={avatarStyle}
+                                                onChange={(e) => setAvatarStyle(e.target.value)}
+                                                className={`w-full ${isKid ? 'bg-white border-blue-200 text-blue-900' : 'bg-slate-950 border-slate-800 text-slate-300'} border rounded px-2 py-1.5 text-[10px] outline-none`}
+                                            >
+                                                <option value="avataaars">Human (Standard)</option>
+                                                <option value="adventurer">Human (RPG)</option>
+                                                <option value="fun-emoji">Emoji (Expressive)</option>
+                                                <option value="bottts">Mecha (Robots)</option>
+                                                <option value="pixel-art">Retro (Pixel)</option>
+                                                <option value="cats">Animal (Cats)</option>
+                                                <option value="monsters">Creature (Monsters)</option>
+                                            </select>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
