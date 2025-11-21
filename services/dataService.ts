@@ -162,25 +162,37 @@ const seedDatabase = async (): Promise<void> => {
           console.error('Error seeding logs:', error);
         }
         
-        try {
-          // Seed Exercises
-          const exercisesSnapshot = await getDocs(collection(db, COLLECTIONS.EXERCISES));
-          if (exercisesSnapshot.empty) {
-            const exercisesBatch = writeBatch(db);
-            for (const exercise of MOCK_EXERCISES) {
-              const exerciseRef = doc(db, COLLECTIONS.EXERCISES, exercise.id);
-              exercisesBatch.set(exerciseRef, exercise);
-            }
-            await exercisesBatch.commit();
-            console.log('Exercises seeded');
-          }
-        } catch (error) {
-          console.error('Error seeding exercises:', error);
-        }
-        
         console.log('Database seeded successfully!');
       } else {
         console.log('Database already has data, skipping seed');
+      }
+      
+      // Always check and seed exercises independently (they might be missing even if other data exists)
+      try {
+        const exercisesSnapshot = await getDocs(collection(db, COLLECTIONS.EXERCISES));
+        if (exercisesSnapshot.empty) {
+          console.log('Seeding exercises...');
+          const exercisesBatch = writeBatch(db);
+          let batchCount = 0;
+          for (const exercise of MOCK_EXERCISES) {
+            const exerciseRef = doc(db, COLLECTIONS.EXERCISES, exercise.id);
+            exercisesBatch.set(exerciseRef, exercise);
+            batchCount++;
+            // Firestore batch limit is 500, commit in chunks if needed
+            if (batchCount >= 450) {
+              await exercisesBatch.commit();
+              batchCount = 0;
+            }
+          }
+          if (batchCount > 0) {
+            await exercisesBatch.commit();
+          }
+          console.log('Exercises seeded successfully');
+        } else {
+          console.log('Exercises already exist, skipping seed');
+        }
+      } catch (error) {
+        console.error('Error seeding exercises:', error);
       }
     } catch (error) {
       console.error('Error checking/seeding database:', error);
