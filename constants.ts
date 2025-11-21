@@ -15,7 +15,7 @@ export const CURRENT_USER_ID = 'u1';
 // Mock Venues
 export const MOCK_VENUES: Venue[] = [
     // Priority venues (always at top)
-    { id: 'v1', name: 'HDB Hub Aerogym (Toa Payoh)', type: 'HDB' },
+    { id: 'v1', name: 'HDB Hub Aerogym', type: 'HDB' },
     { id: 'v4', name: 'Home Gym', type: 'Home' },
     { id: 'v_custom', name: 'Other Location', type: 'Other' },
     { id: 'v5', name: 'External / Commercial Gym', type: 'Commercial' },
@@ -73,6 +73,7 @@ export const MOCK_EXERCISES: Exercise[] = [
     { id: 'clean_jerk', name: 'Clean & Jerk', type: 'reps', category: 'Strength' },
     { id: 'snatch', name: 'Snatch', type: 'reps', category: 'Strength' },
     { id: 'deadlift', name: 'Deadlift', type: 'reps', category: 'Strength' },
+    { id: 'squat', name: 'Back Squat', type: 'reps', category: 'Strength' },
     { id: 'bench', name: 'Bench Press', type: 'reps', category: 'Strength' },
     
     // === BODYWEIGHT / CALISTHENICS - PUSH ===
@@ -574,6 +575,102 @@ export const MOCK_WORKOUTS: Workout[] = [
       [ScalingTier.ADVANCED]: 'Reduce reps by 25%',
       [ScalingTier.INTERMEDIATE]: 'Reduce reps by 50%, substitute advanced movements with regressions',
       [ScalingTier.BEGINNER]: 'Reduce reps by 75%, use assisted variations and progressions',
+    }
+  },
+  // === STREET LIFT (1RM COMPETITIONS) ===
+  {
+    id: 'w_street_lift_pullup',
+    name: 'Pull Up 1RM',
+    description: 'Maximum weight pull-up competition. Add weight via belt/dumbbell. Record your 1 Rep Max weight.',
+    scheme: WorkoutScheme.FOR_TIME,
+    time_cap_seconds: 1800, // 30 mins cap for warm-up and attempts
+    rest_type: 'manual',
+    is_featured: true,
+    category: 'Street Lift',
+    components: [
+      { exercise_id: 'pullup', target: '1 Rep Max', order: 1 },
+    ],
+    scaling: {
+      [ScalingTier.RX]: 'Weighted Pull-up (add weight via belt/dumbbell)',
+      [ScalingTier.ADVANCED]: 'Bodyweight Pull-up (strict form)',
+      [ScalingTier.INTERMEDIATE]: 'Assisted Pull-up with bands',
+      [ScalingTier.BEGINNER]: 'Negative Pull-ups or Ring Rows',
+    }
+  },
+  {
+    id: 'w_street_lift_muscleup',
+    name: 'Muscle Up 1RM',
+    description: 'Maximum weight muscle-up competition. Add weight via belt/dumbbell. Record your 1 Rep Max weight.',
+    scheme: WorkoutScheme.FOR_TIME,
+    time_cap_seconds: 1800, // 30 mins cap for warm-up and attempts
+    rest_type: 'manual',
+    is_featured: false,
+    category: 'Street Lift',
+    components: [
+      { exercise_id: 'muscle_up', target: '1 Rep Max', order: 1 },
+    ],
+    scaling: {
+      [ScalingTier.RX]: 'Weighted Muscle-up (add weight via belt/dumbbell)',
+      [ScalingTier.ADVANCED]: 'Bodyweight Muscle-up (strict form)',
+      [ScalingTier.INTERMEDIATE]: 'Assisted Muscle-up with bands',
+      [ScalingTier.BEGINNER]: 'Muscle-up progressions (transition practice)',
+    }
+  },
+  {
+    id: 'w_street_lift_dip',
+    name: 'Dip 1RM',
+    description: 'Maximum weight dip competition. Add weight via belt/dumbbell. Record your 1 Rep Max weight.',
+    scheme: WorkoutScheme.FOR_TIME,
+    time_cap_seconds: 1800, // 30 mins cap for warm-up and attempts
+    rest_type: 'manual',
+    is_featured: false,
+    category: 'Street Lift',
+    components: [
+      { exercise_id: 'parallel_bar_dips', target: '1 Rep Max', order: 1 },
+    ],
+    scaling: {
+      [ScalingTier.RX]: 'Weighted Dip (add weight via belt/dumbbell)',
+      [ScalingTier.ADVANCED]: 'Bodyweight Dip (strict form)',
+      [ScalingTier.INTERMEDIATE]: 'Assisted Dip with bands',
+      [ScalingTier.BEGINNER]: 'Bench Dips or Negative Dips',
+    }
+  },
+  {
+    id: 'w_street_lift_squat',
+    name: 'Squat 1RM',
+    description: 'Maximum weight back squat competition. Record your 1 Rep Max weight.',
+    scheme: WorkoutScheme.FOR_TIME,
+    time_cap_seconds: 3600, // 60 mins cap for warm-up and attempts
+    rest_type: 'manual',
+    is_featured: true,
+    category: 'Street Lift',
+    components: [
+      { exercise_id: 'squat', target: '1 Rep Max', order: 1 },
+    ],
+    scaling: {
+      [ScalingTier.RX]: 'Full depth back squat (hip crease below knee)',
+      [ScalingTier.ADVANCED]: 'Parallel depth back squat',
+      [ScalingTier.INTERMEDIATE]: 'Box squat or reduced range of motion',
+      [ScalingTier.BEGINNER]: 'Goblet squat or bodyweight squat',
+    }
+  },
+  {
+    id: 'w_street_lift_deadlift',
+    name: 'Deadlift 1RM',
+    description: 'Maximum weight deadlift competition. Record your 1 Rep Max weight.',
+    scheme: WorkoutScheme.FOR_TIME,
+    time_cap_seconds: 3600, // 60 mins cap for warm-up and attempts
+    rest_type: 'manual',
+    is_featured: true,
+    category: 'Street Lift',
+    components: [
+      { exercise_id: 'deadlift', target: '1 Rep Max', order: 1 },
+    ],
+    scaling: {
+      [ScalingTier.RX]: 'Conventional or Sumo deadlift (full lockout)',
+      [ScalingTier.ADVANCED]: 'Romanian Deadlift (RDL)',
+      [ScalingTier.INTERMEDIATE]: 'Trap bar deadlift or reduced range',
+      [ScalingTier.BEGINNER]: 'Kettlebell deadlift or bodyweight hinge',
     }
   }
 ];

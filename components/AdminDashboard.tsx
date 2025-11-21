@@ -691,6 +691,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                                     <option value="Hybrid">Hybrid</option>
                                     <option value="Strength">Strength</option>
                                     <option value="Calisthenics">Calisthenics</option>
+                                    <option value="Street Lift">Street Lift</option>
                                     <option value="Kids Friendly">Kids Friendly</option>
                                 </select>
                             </div>
