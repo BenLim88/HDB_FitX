@@ -15,7 +15,7 @@ interface AdminDashboardProps {
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpdateWorkouts, initialVenues, onUpdateVenues, currentUser }) => {
   // Data States
-  const [exercises, setExercises] = useState<Exercise[]>(MOCK_EXERCISES);
+  const [exercises, setExercises] = useState<Exercise[]>([]);
   const [workouts, setWorkouts] = useState<Workout[]>(initialWorkouts);
   const [users, setUsers] = useState<User[]>([]);
   const [venues, setVenues] = useState<Venue[]>(initialVenues);
@@ -68,7 +68,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
   const [scalingBeg, setScalingBeg] = useState('');
 
   // Component Adder State
-  const [selectedExId, setSelectedExId] = useState<string>(MOCK_EXERCISES[0]?.id || '');
+  const [selectedExId, setSelectedExId] = useState<string>('');
   const [targetValue, setTargetValue] = useState('');
   const [targetUnit, setTargetUnit] = useState('Reps');
   const [weightInput, setWeightInput] = useState('');
@@ -79,11 +79,33 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       if (activeTab === 'users') {
           loadUsers();
       }
+      if (activeTab === 'exercises') {
+          loadExercises();
+      }
   }, [activeTab]);
+
+  // Load exercises on component mount
+  useEffect(() => {
+      loadExercises();
+  }, []);
 
   const loadUsers = async () => {
       const allUsers = await DataService.getAllUsers();
       setUsers(allUsers);
+  };
+
+  const loadExercises = async () => {
+      try {
+          const allExercises = await DataService.getExercises();
+          setExercises(allExercises);
+          // Set default selected exercise if none selected and exercises exist
+          if (!selectedExId && allExercises.length > 0) {
+              setSelectedExId(allExercises[0].id);
+          }
+      } catch (error) {
+          console.error('Error loading exercises:', error);
+          alert('Failed to load exercises. Please try again.');
+      }
   };
 
   // --- VENUE HANDLERS ---
@@ -136,20 +158,39 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
   };
 
   // --- EXERCISE HANDLERS ---
-  const handleAddExercise = () => {
-    if(!newExerciseName) return;
-    const newEx: Exercise = {
-        id: `e_${Date.now()}`,
-        name: newExerciseName,
-        type: newExerciseType,
-        category: newExerciseCategory
-    };
-    setExercises([...exercises, newEx]);
-    setNewExerciseName('');
+  const handleAddExercise = async () => {
+      if (!newExerciseName || !newExerciseType || !newExerciseCategory) {
+          alert('Please fill in all exercise fields.');
+          return;
+      }
+      try {
+          const newEx = await DataService.addExercise({
+              name: newExerciseName,
+              type: newExerciseType,
+              category: newExerciseCategory
+          });
+          setExercises([...exercises, newEx]);
+          setNewExerciseName('');
+          setNewExerciseType('reps');
+          setNewExerciseCategory('General');
+          alert('Exercise added successfully!');
+      } catch (error) {
+          console.error('Error adding exercise:', error);
+          alert(`Failed to add exercise: ${error instanceof Error ? error.message : 'Unknown error'}. Check console for details.`);
+      }
   };
 
-  const handleDeleteExercise = (id: string) => {
-    setExercises(exercises.filter(e => e.id !== id));
+  const handleDeleteExercise = async (id: string) => {
+      if (window.confirm("Are you sure you want to delete this exercise? This cannot be undone.")) {
+          try {
+              await DataService.deleteExercise(id);
+              setExercises(exercises.filter(e => e.id !== id));
+              alert('Exercise deleted successfully!');
+          } catch (error) {
+              console.error('Error deleting exercise:', error);
+              alert(`Failed to delete exercise: ${error instanceof Error ? error.message : 'Unknown error'}. Check console for details.`);
+          }
+      }
   };
 
   // --- WORKOUT BUILDER HANDLERS ---

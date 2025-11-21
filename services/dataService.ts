@@ -1,6 +1,6 @@
 
-import { Log, Notification, User, VerificationStatus, Workout, GroupType, AthleteType, Gender, Venue, PinnedWOD, UserCategory } from '../types';
-import { MOCK_LOGS, MOCK_USERS, MOCK_WORKOUTS, MOCK_VENUES } from '../constants';
+import { Log, Notification, User, VerificationStatus, Workout, GroupType, AthleteType, Gender, Venue, PinnedWOD, UserCategory, Exercise } from '../types';
+import { MOCK_LOGS, MOCK_USERS, MOCK_WORKOUTS, MOCK_VENUES, MOCK_EXERCISES } from '../constants';
 import { auth, googleProvider, db } from '../firebaseConfig';
 import { signInWithPopup } from 'firebase/auth';
 import { 
@@ -26,7 +26,8 @@ const COLLECTIONS = {
   WORKOUTS: 'workouts',
   VENUES: 'venues',
   PINNED_WODS: 'pinnedWods',
-  NOTIFICATIONS: 'notifications'
+  NOTIFICATIONS: 'notifications',
+  EXERCISES: 'exercises'
 };
 
 // Seed flag to prevent multiple seed operations
@@ -159,6 +160,22 @@ const seedDatabase = async (): Promise<void> => {
           console.log('Logs seeded');
         } catch (error) {
           console.error('Error seeding logs:', error);
+        }
+        
+        try {
+          // Seed Exercises
+          const exercisesSnapshot = await getDocs(collection(db, COLLECTIONS.EXERCISES));
+          if (exercisesSnapshot.empty) {
+            const exercisesBatch = writeBatch(db);
+            for (const exercise of MOCK_EXERCISES) {
+              const exerciseRef = doc(db, COLLECTIONS.EXERCISES, exercise.id);
+              exercisesBatch.set(exerciseRef, exercise);
+            }
+            await exercisesBatch.commit();
+            console.log('Exercises seeded');
+          }
+        } catch (error) {
+          console.error('Error seeding exercises:', error);
         }
         
         console.log('Database seeded successfully!');
@@ -684,6 +701,42 @@ export const DataService = {
           console.log('Log deleted successfully');
       } catch (error) {
           console.error('Error deleting log:', error);
+          throw error;
+      }
+  },
+
+  // --- EXERCISE MANAGEMENT ---
+  getExercises: async (): Promise<Exercise[]> => {
+      try {
+          await seedDatabase(); // Ensure database is seeded
+          const exercisesSnapshot = await getDocs(collection(db, COLLECTIONS.EXERCISES));
+          return exercisesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Exercise));
+      } catch (error) {
+          console.error('Error fetching exercises:', error);
+          return [];
+      }
+  },
+
+  addExercise: async (exercise: Omit<Exercise, 'id'>): Promise<Exercise> => {
+      try {
+          const docRef = await addDoc(collection(db, COLLECTIONS.EXERCISES), exercise);
+          const newExercise = { ...exercise, id: docRef.id };
+          console.log('Exercise added successfully:', newExercise.id);
+          return newExercise;
+      } catch (error) {
+          console.error('Error adding exercise:', error);
+          throw error;
+      }
+  },
+
+  deleteExercise: async (id: string): Promise<void> => {
+      try {
+          console.log('Deleting exercise:', id);
+          const exerciseRef = doc(db, COLLECTIONS.EXERCISES, id);
+          await deleteDoc(exerciseRef);
+          console.log('Exercise deleted successfully');
+      } catch (error) {
+          console.error('Error deleting exercise:', error);
           throw error;
       }
   },
