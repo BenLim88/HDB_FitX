@@ -46,7 +46,22 @@ export const MOCK_VENUES: Venue[] = [
     { id: 'v21', name: 'F45 Training - Global Functional HIIT Program', type: 'Commercial' },
     
     // Specialty Pods
-    { id: 'v22', name: 'The Gym Pod - 24/7 Pay-per-use Private Pods (HYROX setup available)', type: 'Commercial' }
+    { id: 'v22', name: 'The Gym Pod - 24/7 Pay-per-use Private Pods (HYROX setup available)', type: 'Commercial' },
+    
+    // Commercial Chain Gyms
+    { id: 'v23', name: 'Anytime Fitness - Largest 24/7 Chain (90+ Locations)', type: 'Commercial' },
+    { id: 'v24', name: 'Fitness First - Premium Commercial Chain & HYROX Club (15+ Locations)', type: 'Commercial' },
+    { id: 'v25', name: 'Virgin Active - Luxury/High-end with Pools & Rock Walls (6 Locations)', type: 'Commercial' },
+    { id: 'v26', name: 'PURE Fitness - Luxury/High-end & HYROX Affiliate (2 Locations)', type: 'Commercial' },
+    { id: 'v27', name: 'ActiveSG Gym - Government-run Affordable Community Gym (Many Locations)', type: 'Commercial' },
+    { id: 'v28', name: 'GYMMBOXX - Local Chain with Multiple Locations', type: 'Commercial' },
+    { id: 'v29', name: 'EnergyOne Gym - Located in SAFRA Clubs (Multiple Locations)', type: 'Commercial' },
+    { id: 'v30', name: '24/7 Fitness - Offers 24/7 Access (Multiple Locations)', type: 'Commercial' },
+    
+    // Boutique/Specialty Gyms
+    { id: 'v31', name: 'Dennis Gym - Bodybuilding & Serious Strength Fitness (6 Locations)', type: 'Commercial' },
+    { id: 'v32', name: 'The Strength Yard - Functional Barbell & Progressive Strength Training', type: 'Commercial' },
+    { id: 'v33', name: 'Amore Fitness & Define - Ladies-only Option (6 Locations)', type: 'Commercial' }
 ];
 
 // Extensive Exercise List - Organized by Category
@@ -141,26 +156,34 @@ export const MOCK_WORKOUTS: Workout[] = [
   {
     id: 'w_hyrox_pro',
     name: 'HYROX Simulation (RX)',
-    description: 'The ultimate fitness race simulation. 8km running + 8 workouts.',
+    description: 'The ultimate fitness race simulation. 8 x 1km runs alternating with 8 functional stations.',
     scheme: WorkoutScheme.FOR_TIME,
     time_cap_seconds: 5400, // 90 mins
     rest_type: 'manual',
     is_featured: true,
     components: [
-      { exercise_id: 'ski', target: '1000m Ski', order: 1 },
-      { exercise_id: 'sled_push', target: '50m Sled Push', weight: '152kg', order: 2 },
-      { exercise_id: 'sled_pull', target: '50m Sled Pull', weight: '103kg', order: 3 },
-      { exercise_id: 'burpee_broad', target: '80m Burpee Broad Jump', order: 4 },
-      { exercise_id: 'row', target: '1000m Row', order: 5 },
-      { exercise_id: 'farmers', target: '200m Farmers Carry', weight: '2x32kg', order: 6 },
-      { exercise_id: 'lunge', target: '100m Sandbag Lunges', weight: '30kg', order: 7 },
-      { exercise_id: 'wallball', target: '100 Wall Balls', weight: '9kg', order: 8 },
+      { exercise_id: 'run', target: '1km Run', order: 1 },
+      { exercise_id: 'ski', target: '1000m Ski Erg', order: 2 },
+      { exercise_id: 'run', target: '1km Run', order: 3 },
+      { exercise_id: 'sled_push', target: '50m Sled Push', weight: '152kg', order: 4 },
+      { exercise_id: 'run', target: '1km Run', order: 5 },
+      { exercise_id: 'sled_pull', target: '50m Sled Pull', weight: '103kg', order: 6 },
+      { exercise_id: 'run', target: '1km Run', order: 7 },
+      { exercise_id: 'burpee_broad', target: '80m Burpee Broad Jump', order: 8 },
+      { exercise_id: 'run', target: '1km Run', order: 9 },
+      { exercise_id: 'row', target: '1000m Row', order: 10 },
+      { exercise_id: 'run', target: '1km Run', order: 11 },
+      { exercise_id: 'farmers', target: '200m Farmers Carry', weight: '2x32kg', order: 12 },
+      { exercise_id: 'run', target: '1km Run', order: 13 },
+      { exercise_id: 'lunge', target: '100m Sandbag Lunges', weight: '30kg', order: 14 },
+      { exercise_id: 'run', target: '1km Run', order: 15 },
+      { exercise_id: 'wallball', target: '100 Wall Balls', weight: '9kg', order: 16 },
     ],
     scaling: {
-      [ScalingTier.RX]: 'Full Weights (Men 152/103kg)',
-      [ScalingTier.ADVANCED]: 'Open Weights (Men 102/78kg)',
-      [ScalingTier.INTERMEDIATE]: 'Doubles (Split Reps/Dist)',
-      [ScalingTier.BEGINNER]: 'Bodyweight movements / 50% dist',
+      [ScalingTier.RX]: 'Full Weights (Men 152/103kg, Women 102/78kg)',
+      [ScalingTier.ADVANCED]: 'Open Weights (Men 102/78kg, Women 70/52kg)',
+      [ScalingTier.INTERMEDIATE]: 'Doubles (Split Reps/Dist, Reduced Weights)',
+      [ScalingTier.BEGINNER]: 'Bodyweight movements / 50% distance',
     }
   },
   {
