@@ -13,11 +13,20 @@ interface WitnessInboxProps {
 const WitnessInbox: React.FC<WitnessInboxProps> = ({ notifications, currentUserId, refreshData, onNavigateToHome }) => {
 
   const handleAction = async (logId: string | undefined, action: 'verify' | 'reject') => {
-    if (!logId) return;
+    if (!logId) {
+      alert('Log ID is missing. Cannot verify/reject.');
+      return;
+    }
     
-    const status = action === 'verify' ? VerificationStatus.VERIFIED : VerificationStatus.UNVERIFIED;
-    await DataService.verifyLog(logId, currentUserId, status);
-    refreshData();
+    try {
+      const status = action === 'verify' ? VerificationStatus.VERIFIED : VerificationStatus.UNVERIFIED;
+      await DataService.verifyLog(logId, currentUserId, status);
+      console.log(`Log ${logId} ${action === 'verify' ? 'verified' : 'rejected'} successfully`);
+      refreshData();
+    } catch (error) {
+      console.error(`Error ${action === 'verify' ? 'verifying' : 'rejecting'} log:`, error);
+      alert(`Failed to ${action === 'verify' ? 'verify' : 'reject'} workout. Please try again.`);
+    }
   };
 
   const handleMarkAsRead = async (notifId: string) => {

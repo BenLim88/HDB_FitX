@@ -949,13 +949,18 @@ const App: React.FC = () => {
   };
 
   const handleUnpinWOD = async (wodId: string) => {
-      if (!currentUser || !currentUser.is_admin) return;
+      if (!currentUser || !currentUser.is_admin) {
+          alert('Only administrators can unpin workouts.');
+          return;
+      }
       try {
+          console.log('Unpinning WOD:', wodId);
           await DataService.deletePinnedWOD(wodId);
+          console.log('WOD unpinned successfully');
           refreshData();
       } catch (error) {
           console.error('Error unpinning WOD:', error);
-          alert('Failed to unpin workout. Please try again.');
+          alert(`Failed to unpin workout: ${error instanceof Error ? error.message : 'Unknown error'}. Check console for details.`);
       }
   };
 

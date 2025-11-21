@@ -359,8 +359,15 @@ export const DataService = {
   },
 
   deletePinnedWOD: async (id: string): Promise<void> => {
-      const wodRef = doc(db, COLLECTIONS.PINNED_WODS, id);
-      await deleteDoc(wodRef);
+      try {
+          console.log('Deleting pinned WOD:', id);
+          const wodRef = doc(db, COLLECTIONS.PINNED_WODS, id);
+          await deleteDoc(wodRef);
+          console.log('Pinned WOD deleted successfully');
+      } catch (error) {
+          console.error('Error deleting pinned WOD:', error);
+          throw error;
+      }
   },
 
   joinPinnedWOD: async (pinnedWodId: string, userId: string): Promise<PinnedWOD> => {
@@ -527,37 +534,47 @@ export const DataService = {
   },
 
   verifyLog: async (logId: string, verifierId: string, status: VerificationStatus): Promise<void> => {
-      const logRef = doc(db, COLLECTIONS.LOGS, logId);
-      const logSnap = await getDoc(logRef);
-      
-      if (!logSnap.exists()) {
-          throw new Error("Log not found");
+      try {
+          console.log(`Verifying log ${logId} with status ${status} by user ${verifierId}`);
+          const logRef = doc(db, COLLECTIONS.LOGS, logId);
+          const logSnap = await getDoc(logRef);
+          
+          if (!logSnap.exists()) {
+              throw new Error("Log not found");
+          }
+          
+          const updateData: any = {
+              verification_status: status
+          };
+          
+          if (status === VerificationStatus.VERIFIED) {
+              const verifierRef = doc(db, COLLECTIONS.USERS, verifierId);
+              const verifierSnap = await getDoc(verifierRef);
+              const verifier = verifierSnap.data() as User | undefined;
+              updateData.witness_name = verifier?.name;
+          }
+          
+          await updateDoc(logRef, updateData);
+          console.log('Log updated successfully');
+          
+          // Remove notification related to this log
+          const notificationsQuery = query(
+              collection(db, COLLECTIONS.NOTIFICATIONS),
+              where('payload.log_id', '==', logId)
+          );
+          const notificationsSnapshot = await getDocs(notificationsQuery);
+          if (notificationsSnapshot.docs.length > 0) {
+              const batch = writeBatch(db);
+              notificationsSnapshot.docs.forEach(doc => {
+                  batch.delete(doc.ref);
+              });
+              await batch.commit();
+              console.log(`Deleted ${notificationsSnapshot.docs.length} notification(s) for log ${logId}`);
+          }
+      } catch (error) {
+          console.error('Error verifying log:', error);
+          throw error;
       }
-      
-      const updateData: any = {
-          verification_status: status
-      };
-      
-      if (status === VerificationStatus.VERIFIED) {
-          const verifierRef = doc(db, COLLECTIONS.USERS, verifierId);
-          const verifierSnap = await getDoc(verifierRef);
-          const verifier = verifierSnap.data() as User | undefined;
-          updateData.witness_name = verifier?.name;
-      }
-      
-      await updateDoc(logRef, updateData);
-      
-      // Remove notification related to this log
-      const notificationsQuery = query(
-          collection(db, COLLECTIONS.NOTIFICATIONS),
-          where('payload.log_id', '==', logId)
-      );
-      const notificationsSnapshot = await getDocs(notificationsQuery);
-      const batch = writeBatch(db);
-      notificationsSnapshot.docs.forEach(doc => {
-          batch.delete(doc.ref);
-      });
-      await batch.commit();
   },
 
   addNotification: async (notification: Omit<Notification, 'id'>): Promise<Notification> => {
