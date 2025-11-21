@@ -216,14 +216,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       // Preserve is_featured if updating, else default to false
       const existing = workouts.find(w => w.id === editingWorkoutId);
       
-      const newWorkout: Workout = {
-          id: editingWorkoutId || `w_${Date.now()}`,
+      // Build workout object, filtering out undefined values for Firestore
+      const workoutData: any = {
           name: workoutName,
           description: workoutDesc,
           scheme: workoutScheme,
-          time_cap_seconds: workoutTimeCap ? parseInt(workoutTimeCap) * 60 : undefined,
           rest_type: restType,
-          rest_seconds: restType === 'fixed' ? parseInt(restSeconds) : undefined,
           rounds: workoutRounds ? parseInt(workoutRounds) : 1,
           components: workoutComponents,
           scaling: {
@@ -235,6 +233,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
           is_featured: existing?.is_featured || false,
           is_kids_friendly: isKidsFriendly,
           category: workoutCategory
+      };
+      
+      // Only add optional fields if they have values
+      if (workoutTimeCap && workoutTimeCap.trim() !== '') {
+          workoutData.time_cap_seconds = parseInt(workoutTimeCap) * 60;
+      }
+      if (restType === 'fixed' && restSeconds && restSeconds.trim() !== '') {
+          workoutData.rest_seconds = parseInt(restSeconds);
+      }
+      
+      const newWorkout: Workout = {
+          id: editingWorkoutId || `w_${Date.now()}`,
+          ...workoutData
       };
 
       try {
@@ -1165,12 +1176,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                                                 .map(e => <option key={e.id} value={e.id}>{e.name} ({e.category})</option>)}
                                         </select>
                                     </div>
-                                    <div className="flex-[1.8]">
+                                    <div className="flex-[1.3]">
                                         <label className="text-[10px] text-slate-500 font-bold mb-1 block">Amount</label>
                                         <div className="flex gap-1">
                                             <input 
                                                 type="number"
-                                                className="flex-[1.5] bg-slate-950 border border-slate-800 rounded p-2 text-white text-xs outline-none"
+                                                className="w-16 bg-slate-950 border border-slate-800 rounded p-2 text-white text-xs outline-none"
                                                 value={targetValue}
                                                 onChange={e => setTargetValue(e.target.value)}
                                                 placeholder="10"

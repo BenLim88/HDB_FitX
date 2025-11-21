@@ -422,7 +422,15 @@ export const DataService = {
 
   // --- WORKOUT MANAGEMENT (ADMIN) ---
   addWorkout: async (workout: Omit<Workout, 'id'>): Promise<Workout> => {
-      const docRef = await addDoc(collection(db, COLLECTIONS.WORKOUTS), workout);
+      // Filter out undefined values before saving to Firestore
+      const workoutData: any = {};
+      Object.keys(workout).forEach(key => {
+          const value = workout[key as keyof typeof workout];
+          if (value !== undefined) {
+              workoutData[key] = value;
+          }
+      });
+      const docRef = await addDoc(collection(db, COLLECTIONS.WORKOUTS), workoutData);
       const newWorkout = { ...workout, id: docRef.id };
       console.log('Workout added successfully:', newWorkout.id);
       return newWorkout;
@@ -434,7 +442,14 @@ export const DataService = {
       if (!workoutSnap.exists()) {
           throw new Error("Workout not found");
       }
-      await updateDoc(workoutRef, workout as any);
+      // Filter out undefined values before updating
+      const updateData: any = {};
+      Object.keys(workout).forEach(key => {
+          if (workout[key as keyof Workout] !== undefined) {
+              updateData[key] = workout[key as keyof Workout];
+          }
+      });
+      await updateDoc(workoutRef, updateData);
       return workout;
   },
 
