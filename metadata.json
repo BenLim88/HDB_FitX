@@ -1,0 +1,5 @@
+{
+  "name": "HDB FitX",
+  "description": "A high-performance community fitness app for HDB residents featuring workout tracking, witness verification, and leaderboards.",
+  "requestFramePermissions": []
+}
