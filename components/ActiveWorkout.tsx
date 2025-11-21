@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, Square, CheckCircle, SkipForward, Timer, Volume2, VolumeX, X as XIcon, Save, Info, List, ChevronRight, ChevronDown, ChevronUp, AlertTriangle, MapPin, Settings } from 'lucide-react';
+import { Play, Pause, Square, CheckCircle, SkipForward, Timer, Volume2, VolumeX, X as XIcon, Save, Info, List, ChevronRight, ChevronDown, ChevronUp, AlertTriangle, MapPin, Settings, Trash2 } from 'lucide-react';
 import { Workout, ScalingTier, Log, VerificationStatus, User, Venue } from '../types';
 import { DataService } from '../services/dataService';
 import { MOCK_EXERCISES } from '../constants';
@@ -43,10 +43,15 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
   const [selectedWitness, setSelectedWitness] = useState<string>('');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
   
   // Manual Log State (for logging without timer)
   const [manualTimeMinutes, setManualTimeMinutes] = useState('');
   const [manualTimeSeconds, setManualTimeSeconds] = useState('');
+  
+  // Street Lift (1RM) State
+  const [weightInput, setWeightInput] = useState('');
+  const [weightUnit, setWeightUnit] = useState('kg'); // kg or lbs
 
   // Refs
   const intervalRef = useRef<number | null>(null);
@@ -197,7 +202,7 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
     setTimeout(() => playBeep(783.99, 0.4), 300); // G5
   };
 
-  const handleSubmit = async (manualTime?: number) => {
+  const handleSubmit = async (manualTime?: number, manualWeight?: string) => {
     setIsSubmitting(true);
     
     // Determine Final Location String
@@ -213,8 +218,28 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
         }
     }
 
-    // Use manual time if provided, otherwise use elapsed time
-    const finalTimeSeconds = manualTime !== undefined ? manualTime : elapsedSeconds;
+    // Check if this is a Street Lift (1RM) workout
+    const isStreetLift = workout.category === 'Street Lift';
+    
+    let finalTimeSeconds: number;
+    let scoreDisplay: string;
+    
+    if (isStreetLift) {
+      // For Street Lift, use weight instead of time
+      const finalWeight = manualWeight || weightInput;
+      if (!finalWeight) {
+        alert("Please enter your 1RM weight.");
+        setIsSubmitting(false);
+        return;
+      }
+      // Use a placeholder time (0 or 1 second) since it's weight-based
+      finalTimeSeconds = 1;
+      scoreDisplay = `${finalWeight}${weightUnit}`;
+    } else {
+      // Use manual time if provided, otherwise use elapsed time
+      finalTimeSeconds = manualTime !== undefined ? manualTime : elapsedSeconds;
+      scoreDisplay = formatTime(finalTimeSeconds);
+    }
 
     try {
       await DataService.saveLog({
@@ -223,7 +248,7 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
         timestamp: Date.now(),
         location: locationString,
         total_time_seconds: finalTimeSeconds,
-        score_display: formatTime(finalTimeSeconds),
+        score_display: scoreDisplay,
         notes,
         difficulty_tier: selectedTier,
         verification_status: selectedWitness ? VerificationStatus.PENDING : VerificationStatus.UNVERIFIED,
@@ -236,6 +261,18 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
       setIsSubmitting(false);
     }
   };
+  
+  const handleDiscard = () => {
+    setShowDiscardConfirm(true);
+  };
+  
+  const confirmDiscard = () => {
+    onExit();
+  };
+  
+  const cancelDiscard = () => {
+    setShowDiscardConfirm(false);
+  };
 
   const handleLogWithoutTimer = () => {
     if (!selectedVenueId) {
@@ -246,17 +283,28 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
   };
 
   const handleSubmitManualLog = () => {
-    // Parse manual time input
-    const minutes = parseInt(manualTimeMinutes) || 0;
-    const seconds = parseInt(manualTimeSeconds) || 0;
-    const totalSeconds = (minutes * 60) + seconds;
+    const isStreetLift = workout.category === 'Street Lift';
+    
+    if (isStreetLift) {
+      // For Street Lift, use weight input
+      if (!weightInput) {
+        alert("Please enter your 1RM weight.");
+        return;
+      }
+      handleSubmit(undefined, weightInput);
+    } else {
+      // Parse manual time input
+      const minutes = parseInt(manualTimeMinutes) || 0;
+      const seconds = parseInt(manualTimeSeconds) || 0;
+      const totalSeconds = (minutes * 60) + seconds;
 
-    if (totalSeconds === 0) {
-      alert("Please enter a valid time.");
-      return;
+      if (totalSeconds === 0) {
+        alert("Please enter a valid time.");
+        return;
+      }
+
+      handleSubmit(totalSeconds);
     }
-
-    handleSubmit(totalSeconds);
   };
 
   const startMission = async () => {
@@ -297,6 +345,7 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
   if (showLogWithoutTimer && !isStarted && !showFinishScreen) {
     const selectedVenue = venues.find(v => v.id === selectedVenueId);
     const showCustomInput = selectedVenue && (selectedVenue.type === 'Commercial' || selectedVenue.type === 'Other' || selectedVenue.type === 'Home');
+    const isStreetLift = workout.category === 'Street Lift';
 
     return (
       <div className="h-full flex flex-col bg-slate-950 text-white p-5 relative pb-24">
@@ -305,49 +354,84 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
         </button>
         
         <h2 className="text-2xl font-black uppercase italic mb-6">Log Workout</h2>
-        <p className="text-slate-400 text-sm mb-6">Log your workout result without using the timer. Perfect for workouts completed on a separate device.</p>
+        <p className="text-slate-400 text-sm mb-6">
+          {isStreetLift 
+            ? 'Log your 1 Rep Max weight result. Perfect for workouts completed on a separate device.'
+            : 'Log your workout result without using the timer. Perfect for workouts completed on a separate device.'}
+        </p>
 
         <div className="space-y-4 flex-1 overflow-y-auto">
-          {/* Time Input */}
-          <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Completion Time</label>
-            <div className="flex gap-2 items-center">
-              <div className="flex-1">
+          {isStreetLift ? (
+            /* Weight Input for Street Lift */
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase mb-2">1 Rep Max Weight</label>
+              <div className="flex gap-2 items-center">
                 <input
                   type="number"
+                  step="0.5"
                   min="0"
-                  placeholder="Minutes"
-                  value={manualTimeMinutes}
-                  onChange={(e) => setManualTimeMinutes(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded p-3 text-white text-lg font-mono outline-none text-center"
+                  placeholder="0"
+                  value={weightInput}
+                  onChange={(e) => setWeightInput(e.target.value)}
+                  className="flex-1 bg-slate-950 border border-slate-800 rounded p-3 text-white text-2xl font-mono font-bold text-center outline-none"
                 />
-                <p className="text-[10px] text-slate-500 text-center mt-1">Minutes</p>
+                <select
+                  value={weightUnit}
+                  onChange={(e) => setWeightUnit(e.target.value)}
+                  className="bg-slate-950 border border-slate-800 rounded p-3 text-white text-lg font-bold outline-none"
+                >
+                  <option value="kg">kg</option>
+                  <option value="lbs">lbs</option>
+                </select>
               </div>
-              <span className="text-2xl font-bold text-slate-500">:</span>
-              <div className="flex-1">
-                <input
-                  type="number"
-                  min="0"
-                  max="59"
-                  placeholder="Seconds"
-                  value={manualTimeSeconds}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val === '' || (parseInt(val) >= 0 && parseInt(val) <= 59)) {
-                      setManualTimeSeconds(val);
-                    }
-                  }}
-                  className="w-full bg-slate-950 border border-slate-800 rounded p-3 text-white text-lg font-mono outline-none text-center"
-                />
-                <p className="text-[10px] text-slate-500 text-center mt-1">Seconds</p>
-              </div>
+              {weightInput && (
+                <p className="text-sm text-orange-500 font-bold mt-2 text-center">
+                  Recorded: {weightInput}{weightUnit}
+                </p>
+              )}
             </div>
-            {manualTimeMinutes || manualTimeSeconds ? (
-              <p className="text-sm text-orange-500 font-bold mt-2 text-center">
-                Total: {formatTime((parseInt(manualTimeMinutes) || 0) * 60 + (parseInt(manualTimeSeconds) || 0))}
-              </p>
-            ) : null}
-          </div>
+          ) : (
+            /* Time Input for Regular Workouts */
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Completion Time</label>
+              <div className="flex gap-2 items-center">
+                <div className="flex-1">
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="Minutes"
+                    value={manualTimeMinutes}
+                    onChange={(e) => setManualTimeMinutes(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded p-3 text-white text-lg font-mono outline-none text-center"
+                  />
+                  <p className="text-[10px] text-slate-500 text-center mt-1">Minutes</p>
+                </div>
+                <span className="text-2xl font-bold text-slate-500">:</span>
+                <div className="flex-1">
+                  <input
+                    type="number"
+                    min="0"
+                    max="59"
+                    placeholder="Seconds"
+                    value={manualTimeSeconds}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === '' || (parseInt(val) >= 0 && parseInt(val) <= 59)) {
+                        setManualTimeSeconds(val);
+                      }
+                    }}
+                    className="w-full bg-slate-950 border border-slate-800 rounded p-3 text-white text-lg font-mono outline-none text-center"
+                  />
+                  <p className="text-[10px] text-slate-500 text-center mt-1">Seconds</p>
+                </div>
+              </div>
+              {manualTimeMinutes || manualTimeSeconds ? (
+                <p className="text-sm text-orange-500 font-bold mt-2 text-center">
+                  Total: {formatTime((parseInt(manualTimeMinutes) || 0) * 60 + (parseInt(manualTimeSeconds) || 0))}
+                </p>
+              ) : null}
+            </div>
+          )}
 
           {/* Tier Display */}
           <div>
@@ -413,7 +497,7 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
 
         <button 
           onClick={handleSubmitManualLog}
-          disabled={isSubmitting || !selectedVenueId || (!manualTimeMinutes && !manualTimeSeconds)}
+          disabled={isSubmitting || !selectedVenueId || (isStreetLift ? !weightInput : (!manualTimeMinutes && !manualTimeSeconds))}
           className="mt-4 w-full py-4 bg-green-600 hover:bg-green-500 text-white font-black uppercase italic tracking-wider rounded-lg shadow-lg shadow-green-900/20 disabled:opacity-50 flex items-center justify-center gap-2"
         >
           <Save size={20} /> {isSubmitting ? 'Saving...' : 'Log Result'}
@@ -573,14 +657,65 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
 
   // --- SCREEN 2: MISSION DEBRIEF (FINISH) ---
   if (showFinishScreen) {
+    const isStreetLift = workout.category === 'Street Lift';
+    
     return (
-      <div className="h-full flex flex-col p-6 pb-24">
+      <div className="h-full flex flex-col p-6 pb-24 relative">
+         {/* Discard Confirmation Modal */}
+         {showDiscardConfirm && (
+           <div className="absolute inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-200">
+             <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 w-full max-w-sm shadow-2xl">
+               <div className="flex justify-center mb-4 text-red-500">
+                 <AlertTriangle size={48} strokeWidth={1.5} />
+               </div>
+               <h3 className="text-xl font-black text-white text-center uppercase italic">Discard Result?</h3>
+               <p className="text-slate-400 text-center text-sm mt-2 mb-6">This workout result will not be saved. Are you sure you want to discard?</p>
+               <div className="flex gap-3">
+                 <button onClick={cancelDiscard} className="flex-1 py-3 bg-slate-800 text-white font-bold rounded-lg uppercase text-xs hover:bg-slate-700">Cancel</button>
+                 <button onClick={confirmDiscard} className="flex-1 py-3 bg-red-600 text-white font-bold rounded-lg uppercase text-xs hover:bg-red-500">Discard</button>
+               </div>
+             </div>
+           </div>
+         )}
+         
          <h2 className="text-3xl font-black text-white italic uppercase mb-6 text-center">Mission Complete</h2>
          
-         <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 text-center mb-6">
-            <p className="text-slate-400 text-sm font-bold uppercase">Total Time</p>
-            <p className="text-4xl font-mono text-orange-500 font-bold mt-2">{formatTime(elapsedSeconds)}</p>
-         </div>
+         {isStreetLift ? (
+           // Street Lift (1RM) - Show Weight Input
+           <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 mb-6">
+             <label className="block text-slate-400 text-sm font-bold uppercase mb-3">1 Rep Max Weight</label>
+             <div className="flex gap-2 items-center">
+               <input
+                 type="number"
+                 step="0.5"
+                 min="0"
+                 placeholder="0"
+                 value={weightInput}
+                 onChange={(e) => setWeightInput(e.target.value)}
+                 className="flex-1 bg-slate-950 border border-slate-800 rounded p-4 text-white text-3xl font-mono font-bold text-center outline-none focus:border-orange-500"
+               />
+               <select
+                 value={weightUnit}
+                 onChange={(e) => setWeightUnit(e.target.value)}
+                 className="bg-slate-950 border border-slate-800 rounded p-4 text-white text-lg font-bold outline-none focus:border-orange-500"
+               >
+                 <option value="kg">kg</option>
+                 <option value="lbs">lbs</option>
+               </select>
+             </div>
+             {weightInput && (
+               <p className="text-sm text-orange-500 font-bold mt-3 text-center">
+                 Recorded: {weightInput}{weightUnit}
+               </p>
+             )}
+           </div>
+         ) : (
+           // Regular Workout - Show Time
+           <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 text-center mb-6">
+             <p className="text-slate-400 text-sm font-bold uppercase">Total Time</p>
+             <p className="text-4xl font-mono text-orange-500 font-bold mt-2">{formatTime(elapsedSeconds)}</p>
+           </div>
+         )}
 
          <div className="space-y-4 flex-1 overflow-y-auto">
             <div>
@@ -618,13 +753,21 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
             </div>
          </div>
 
-         <button 
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            className="mt-4 w-full py-4 bg-green-600 hover:bg-green-500 text-white font-black uppercase italic tracking-wider rounded-lg shadow-lg shadow-green-900/20 disabled:opacity-50 flex items-center justify-center gap-2"
-         >
-            <Save size={20} /> {isSubmitting ? 'Saving...' : 'Log Result'}
-         </button>
+         <div className="flex gap-3 mt-4">
+           <button 
+             onClick={handleDiscard}
+             className="flex-1 py-4 bg-slate-800 hover:bg-slate-700 text-white font-bold uppercase italic tracking-wider rounded-lg flex items-center justify-center gap-2"
+           >
+             <Trash2 size={20} /> Discard
+           </button>
+           <button 
+             onClick={() => handleSubmit(undefined, weightInput)}
+             disabled={isSubmitting || (isStreetLift && !weightInput)}
+             className="flex-1 py-4 bg-green-600 hover:bg-green-500 text-white font-black uppercase italic tracking-wider rounded-lg shadow-lg shadow-green-900/20 disabled:opacity-50 flex items-center justify-center gap-2"
+           >
+             <Save size={20} /> {isSubmitting ? 'Saving...' : 'Log Result'}
+           </button>
+         </div>
       </div>
     )
   }
