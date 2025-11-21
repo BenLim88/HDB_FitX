@@ -1,9 +1,9 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Exercise, Workout, User, GroupType, AthleteType, WorkoutComponent, ScalingTier, WorkoutScheme, Venue, UserCategory } from '../types';
 import { DataService } from '../services/dataService';
 import { MOCK_EXERCISES } from '../constants';
-import { Plus, Trash2, Dumbbell, LayoutList, Users, Edit, Shield, Save, X, Lock, ChevronRight, ArrowLeft, Timer, Settings, MapPin, Star, Calendar, Pin, Baby } from 'lucide-react';
+import { Plus, Trash2, Dumbbell, LayoutList, Users, Edit, Shield, Save, X, Lock, ChevronRight, ArrowLeft, Timer, Settings, MapPin, Star, Calendar, Pin, Baby, Filter } from 'lucide-react';
 
 interface AdminDashboardProps {
   initialWorkouts: Workout[];
@@ -67,6 +67,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
   const [targetUnit, setTargetUnit] = useState('Reps');
   const [weightInput, setWeightInput] = useState('');
   const [exerciseCategoryFilter, setExerciseCategoryFilter] = useState<string>('All');
+  
+  // Exercise List Filter & Sort State
+  const [exerciseListCategoryFilter, setExerciseListCategoryFilter] = useState<string>('All');
+  const [exerciseListTypeFilter, setExerciseListTypeFilter] = useState<string>('All');
+  const [exerciseSortBy, setExerciseSortBy] = useState<'name' | 'category' | 'type'>('name');
+  const [exerciseSortOrder, setExerciseSortOrder] = useState<'asc' | 'desc'>('asc');
 
   useEffect(() => {
       if (activeTab === 'users') {
@@ -519,28 +525,165 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                     </button>
                 </div>
 
-                {/* List */}
-                <div className="space-y-2">
-                    {exercises.map(ex => (
-                        <div key={ex.id} className="flex items-center justify-between bg-slate-900/50 border border-slate-800 p-3 rounded-lg">
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded bg-slate-800 flex items-center justify-center text-slate-500">
-                                    <Dumbbell size={14} />
-                                </div>
-                                <div>
-                                    <p className="text-white font-bold text-sm">{ex.name}</p>
-                                    <p className="text-xs text-slate-500 uppercase">{ex.category} • {ex.type}</p>
-                                </div>
-                            </div>
-                            <button 
-                                onClick={() => handleDeleteExercise(ex.id)}
-                                className="p-2 text-slate-600 hover:text-red-500 transition-colors"
+                {/* Filters and Sort */}
+                <div className="bg-slate-900/50 border border-slate-800 p-4 rounded-xl space-y-3">
+                    <h3 className="text-white font-bold text-sm flex items-center gap-2">
+                        <Filter size={16} className="text-orange-500" /> Filter & Sort
+                    </h3>
+                    <div className="grid grid-cols-2 gap-2">
+                        <div>
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Category</label>
+                            <select 
+                                className="w-full bg-slate-950 border border-slate-800 rounded px-2 py-2 text-white text-xs outline-none"
+                                value={exerciseListCategoryFilter}
+                                onChange={(e) => setExerciseListCategoryFilter(e.target.value)}
                             >
-                                <Trash2 size={16} />
-                            </button>
+                                <option value="All">All Categories</option>
+                                {Array.from(new Set(exercises.map(e => e.category))).sort().map(cat => (
+                                    <option key={cat} value={cat}>{cat}</option>
+                                ))}
+                            </select>
                         </div>
-                    ))}
+                        <div>
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Type</label>
+                            <select 
+                                className="w-full bg-slate-950 border border-slate-800 rounded px-2 py-2 text-white text-xs outline-none"
+                                value={exerciseListTypeFilter}
+                                onChange={(e) => setExerciseListTypeFilter(e.target.value)}
+                            >
+                                <option value="All">All Types</option>
+                                <option value="reps">Reps</option>
+                                <option value="time">Time</option>
+                                <option value="load">Load</option>
+                                <option value="distance">Distance</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                        <div>
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Sort By</label>
+                            <select 
+                                className="w-full bg-slate-950 border border-slate-800 rounded px-2 py-2 text-white text-xs outline-none"
+                                value={exerciseSortBy}
+                                onChange={(e) => setExerciseSortBy(e.target.value as 'name' | 'category' | 'type')}
+                            >
+                                <option value="name">Name</option>
+                                <option value="category">Category</option>
+                                <option value="type">Type</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Order</label>
+                            <select 
+                                className="w-full bg-slate-950 border border-slate-800 rounded px-2 py-2 text-white text-xs outline-none"
+                                value={exerciseSortOrder}
+                                onChange={(e) => setExerciseSortOrder(e.target.value as 'asc' | 'desc')}
+                            >
+                                <option value="asc">Ascending</option>
+                                <option value="desc">Descending</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
+
+                {/* Filtered and Sorted Exercise List */}
+                {(() => {
+                    const filteredAndSorted = useMemo(() => {
+                        let filtered = exercises.filter(ex => {
+                            const categoryMatch = exerciseListCategoryFilter === 'All' || ex.category === exerciseListCategoryFilter;
+                            const typeMatch = exerciseListTypeFilter === 'All' || ex.type === exerciseListTypeFilter;
+                            return categoryMatch && typeMatch;
+                        });
+
+                        // Sort exercises
+                        filtered.sort((a, b) => {
+                            let comparison = 0;
+                            if (exerciseSortBy === 'name') {
+                                comparison = a.name.localeCompare(b.name);
+                            } else if (exerciseSortBy === 'category') {
+                                comparison = a.category.localeCompare(b.category) || a.name.localeCompare(b.name);
+                            } else if (exerciseSortBy === 'type') {
+                                comparison = a.type.localeCompare(b.type) || a.name.localeCompare(b.name);
+                            }
+                            return exerciseSortOrder === 'asc' ? comparison : -comparison;
+                        });
+
+                        return filtered;
+                    }, [exercises, exerciseListCategoryFilter, exerciseListTypeFilter, exerciseSortBy, exerciseSortOrder]);
+
+                    // Group by category if sorting by category and showing all categories
+                    if (exerciseSortBy === 'category' && exerciseListCategoryFilter === 'All') {
+                        const grouped = new Map<string, Exercise[]>();
+                        filteredAndSorted.forEach(ex => {
+                            if (!grouped.has(ex.category)) {
+                                grouped.set(ex.category, []);
+                            }
+                            grouped.get(ex.category)!.push(ex);
+                        });
+
+                        return (
+                            <div className="space-y-4">
+                                {Array.from(grouped.entries()).map(([category, categoryExercises]) => (
+                                    <div key={category}>
+                                        <h4 className="text-slate-400 font-bold text-xs uppercase mb-2 px-2">{category} ({categoryExercises.length})</h4>
+                                        <div className="space-y-2">
+                                            {categoryExercises.map(ex => (
+                                                <div key={ex.id} className="flex items-center justify-between bg-slate-900/50 border border-slate-800 p-3 rounded-lg">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-8 h-8 rounded bg-slate-800 flex items-center justify-center text-slate-500">
+                                                            <Dumbbell size={14} />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-white font-bold text-sm">{ex.name}</p>
+                                                            <p className="text-xs text-slate-500 uppercase">{ex.category} • {ex.type}</p>
+                                                        </div>
+                                                    </div>
+                                                    <button 
+                                                        onClick={() => handleDeleteExercise(ex.id)}
+                                                        className="p-2 text-slate-600 hover:text-red-500 transition-colors"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        );
+                    }
+
+                    // Regular list view
+                    return (
+                        <div className="space-y-2">
+                            {filteredAndSorted.length > 0 ? (
+                                filteredAndSorted.map(ex => (
+                                    <div key={ex.id} className="flex items-center justify-between bg-slate-900/50 border border-slate-800 p-3 rounded-lg">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded bg-slate-800 flex items-center justify-center text-slate-500">
+                                                <Dumbbell size={14} />
+                                            </div>
+                                            <div>
+                                                <p className="text-white font-bold text-sm">{ex.name}</p>
+                                                <p className="text-xs text-slate-500 uppercase">{ex.category} • {ex.type}</p>
+                                            </div>
+                                        </div>
+                                        <button 
+                                            onClick={() => handleDeleteExercise(ex.id)}
+                                            className="p-2 text-slate-600 hover:text-red-500 transition-colors"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="text-center py-8 text-slate-500 text-sm">
+                                    No exercises found matching filters.
+                                </div>
+                            )}
+                        </div>
+                    );
+                })()}
             </div>
         )}
 
