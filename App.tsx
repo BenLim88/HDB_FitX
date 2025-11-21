@@ -10,7 +10,8 @@ import WitnessInbox from './components/WitnessInbox';
 import AdminDashboard from './components/AdminDashboard';
 import AuthScreen from './components/AuthScreen';
 import DIYWorkout from './components/DIYWorkout';
-import { Trophy, Flame, MapPin, ChevronRight, Bot, Loader2, ShieldAlert, Filter, Dumbbell, Settings, Edit2, Save, X, RefreshCcw, Search, Calendar, Wand2, Star, RotateCcw, Pin, Users } from 'lucide-react';
+import { Trophy, Flame, MapPin, ChevronRight, Bot, Loader2, ShieldAlert, Filter, Dumbbell, Settings, Edit2, Save, X, RefreshCcw, Search, Calendar, Wand2, Star, RotateCcw, Pin, Users, Baby } from 'lucide-react';
+import { MOCK_EXERCISES } from './constants';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth } from './firebaseConfig';
 
@@ -30,6 +31,7 @@ const HomeTab: React.FC<{
     const [aiTip, setAiTip] = useState<string>('');
     const [loadingTip, setLoadingTip] = useState(false);
     const [showParticipants, setShowParticipants] = useState<string | null>(null); // ID of WOD to show list for
+    const [workoutCategoryFilter, setWorkoutCategoryFilter] = useState<string>('All');
 
     const handleGetTip = async () => {
         setLoadingTip(true);
@@ -40,13 +42,43 @@ const HomeTab: React.FC<{
 
     const isKid = user.category === UserCategory.KID;
     
-    // Filter workouts based on user category
-    const filteredWorkouts = isKid 
+    // Helper function to categorize workouts
+    const getWorkoutCategory = (workout: Workout): string => {
+        if (workout.is_kids_friendly) return 'Kids Friendly';
+        const name = workout.name.toLowerCase();
+        if (name.includes('hyrox')) return 'Hyrox';
+        if (name.includes('murph') || name.includes('fran') || name.includes('grace') || name.includes('cindy')) return 'CrossFit';
+        if (workout.components.some(c => {
+            const ex = MOCK_EXERCISES.find(e => e.id === c.exercise_id);
+            return ex?.category === 'Bodyweight';
+        })) return 'Calisthenics';
+        return 'General';
+    };
+
+    // Filter workouts based on user category and selected filter
+    const baseFilteredWorkouts = isKid 
         ? workouts.filter(w => w.is_kids_friendly) 
         : workouts;
     
+    const filteredWorkouts = useMemo(() => {
+        if (workoutCategoryFilter === 'All') return baseFilteredWorkouts;
+        return baseFilteredWorkouts.filter(w => {
+            const category = getWorkoutCategory(w);
+            return category === workoutCategoryFilter;
+        });
+    }, [baseFilteredWorkouts, workoutCategoryFilter]);
+    
     const featuredWorkouts = filteredWorkouts.filter(w => w.is_featured);
     const otherWorkouts = filteredWorkouts.filter(w => !w.is_featured);
+
+    // Get available categories
+    const availableCategories = useMemo(() => {
+        const categories = new Set<string>();
+        baseFilteredWorkouts.forEach(w => {
+            categories.add(getWorkoutCategory(w));
+        });
+        return ['All', ...Array.from(categories).sort()];
+    }, [baseFilteredWorkouts]);
 
     return (
         <div className="p-5 space-y-6 pb-24">
@@ -209,13 +241,18 @@ const HomeTab: React.FC<{
                                 <div className="absolute top-0 right-0 w-20 h-20 bg-yellow-500/10 rounded-bl-full -mr-4 -mt-4"></div>
                                 <div className="relative z-10">
                                     <h3 className={`${isKid ? 'text-blue-900' : 'text-white'} font-black text-xl uppercase italic leading-tight group-hover:text-yellow-500 transition-colors`}>{w.name}</h3>
-                                    <div className="flex gap-2 mt-2 mb-3">
+                                    <div className="flex gap-2 mt-2 mb-3 flex-wrap">
                                          <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-500 border border-yellow-500/30">
                                             Featured
                                          </span>
                                          <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${isKid ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-slate-800 text-slate-400 border-slate-700'} border`}>
                                             {w.scheme}
                                          </span>
+                                         {w.is_kids_friendly && (
+                                             <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30 flex items-center gap-1">
+                                                 <Baby size={10} /> Kid Friendly
+                                             </span>
+                                         )}
                                     </div>
                                     <p className={`${isKid ? 'text-blue-700' : 'text-slate-400'} text-xs line-clamp-2 mb-2`}>{w.description}</p>
                                     <div className={`text-xs font-bold ${isKid ? 'text-blue-900' : 'text-white'} flex items-center gap-1`}>
@@ -250,32 +287,127 @@ const HomeTab: React.FC<{
             </button>
 
             <section>
-                <h2 className={`${isKid ? 'text-blue-900' : 'text-white'} font-bold text-lg mb-3 flex items-center gap-2`}>
-                    <Flame size={20} className={isKid ? 'text-blue-500' : 'text-orange-500'} />
-                    Standard Protocol
-                </h2>
-                <div className="grid gap-3">
-                    {otherWorkouts.map(w => (
-                        <button 
-                            key={w.id}
-                            onClick={() => onStartWorkout(w)}
-                            className={`${isKid ? 'bg-white hover:bg-blue-50 border-blue-200' : 'bg-slate-900 hover:bg-slate-800 border-slate-800'} border p-4 rounded-xl text-left transition-colors group`}
-                        >
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <h3 className={`${isKid ? 'text-blue-900 group-hover:text-blue-600' : 'text-white group-hover:text-orange-500'} font-bold text-lg transition-colors`}>{w.name}</h3>
-                                    <p className={`${isKid ? 'text-blue-700' : 'text-slate-400'} text-xs mt-1 line-clamp-2`}>{w.description}</p>
-                                </div>
-                                <ChevronRight className={isKid ? 'text-blue-400' : 'text-slate-600'} />
-                            </div>
-                            <div className="mt-3 flex gap-2">
-                                <span className={`text-[10px] ${isKid ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-slate-950 text-slate-400 border-slate-800'} px-2 py-1 rounded border`}>
-                                    {w.components.length} Exercises
-                                </span>
-                            </div>
-                        </button>
-                    ))}
+                <div className="flex items-center justify-between mb-3">
+                    <h2 className={`${isKid ? 'text-blue-900' : 'text-white'} font-bold text-lg flex items-center gap-2`}>
+                        <Flame size={20} className={isKid ? 'text-blue-500' : 'text-orange-500'} />
+                        Standard Protocol
+                    </h2>
                 </div>
+
+                {/* Category Filter */}
+                <div className="mb-4">
+                    <div className="flex gap-2 overflow-x-auto pb-2">
+                        {availableCategories.map(cat => (
+                            <button
+                                key={cat}
+                                onClick={() => setWorkoutCategoryFilter(cat)}
+                                className={`flex-shrink-0 px-4 py-2 rounded-lg text-xs font-bold transition-colors ${
+                                    workoutCategoryFilter === cat
+                                        ? (isKid ? 'bg-blue-500 text-white' : 'bg-orange-600 text-white')
+                                        : (isKid ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-slate-800 text-slate-400 border border-slate-700')
+                                }`}
+                            >
+                                {cat}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Group workouts by category */}
+                {workoutCategoryFilter === 'All' ? (
+                    // Show all workouts grouped by category
+                    (() => {
+                        const grouped = new Map<string, Workout[]>();
+                        otherWorkouts.forEach(w => {
+                            const category = getWorkoutCategory(w);
+                            if (!grouped.has(category)) {
+                                grouped.set(category, []);
+                            }
+                            grouped.get(category)!.push(w);
+                        });
+
+                        return Array.from(grouped.entries()).map(([category, categoryWorkouts]) => (
+                            <div key={category} className="mb-6">
+                                <h3 className={`${isKid ? 'text-blue-800' : 'text-slate-300'} font-bold text-sm uppercase mb-3 flex items-center gap-2`}>
+                                    {category === 'Kids Friendly' && <Baby size={14} className="text-blue-500" />}
+                                    {category}
+                                </h3>
+                                <div className="grid gap-3">
+                                    {categoryWorkouts.map(w => (
+                                        <button 
+                                            key={w.id}
+                                            onClick={() => onStartWorkout(w)}
+                                            className={`${isKid ? 'bg-white hover:bg-blue-50 border-blue-200' : 'bg-slate-900 hover:bg-slate-800 border-slate-800'} border p-4 rounded-xl text-left transition-colors group`}
+                                        >
+                                            <div className="flex justify-between items-start">
+                                                <div className="flex-1">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <h3 className={`${isKid ? 'text-blue-900 group-hover:text-blue-600' : 'text-white group-hover:text-orange-500'} font-bold text-lg transition-colors`}>{w.name}</h3>
+                                                        {w.is_kids_friendly && (
+                                                            <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30 flex items-center gap-1">
+                                                                <Baby size={10} /> Kid Friendly
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <p className={`${isKid ? 'text-blue-700' : 'text-slate-400'} text-xs mt-1 line-clamp-2`}>{w.description}</p>
+                                                </div>
+                                                <ChevronRight className={isKid ? 'text-blue-400' : 'text-slate-600'} />
+                                            </div>
+                                            <div className="mt-3 flex gap-2 flex-wrap">
+                                                <span className={`text-[10px] ${isKid ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-slate-950 text-slate-400 border-slate-800'} px-2 py-1 rounded border`}>
+                                                    {w.components.length} Exercises
+                                                </span>
+                                                <span className={`text-[10px] ${isKid ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-slate-950 text-slate-400 border-slate-800'} px-2 py-1 rounded border`}>
+                                                    {w.scheme}
+                                                </span>
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        ));
+                    })()
+                ) : (
+                    // Show filtered workouts
+                    <div className="grid gap-3">
+                        {otherWorkouts.length > 0 ? (
+                            otherWorkouts.map(w => (
+                                <button 
+                                    key={w.id}
+                                    onClick={() => onStartWorkout(w)}
+                                    className={`${isKid ? 'bg-white hover:bg-blue-50 border-blue-200' : 'bg-slate-900 hover:bg-slate-800 border-slate-800'} border p-4 rounded-xl text-left transition-colors group`}
+                                >
+                                    <div className="flex justify-between items-start">
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <h3 className={`${isKid ? 'text-blue-900 group-hover:text-blue-600' : 'text-white group-hover:text-orange-500'} font-bold text-lg transition-colors`}>{w.name}</h3>
+                                                {w.is_kids_friendly && (
+                                                    <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30 flex items-center gap-1">
+                                                        <Baby size={10} /> Kid Friendly
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <p className={`${isKid ? 'text-blue-700' : 'text-slate-400'} text-xs mt-1 line-clamp-2`}>{w.description}</p>
+                                        </div>
+                                        <ChevronRight className={isKid ? 'text-blue-400' : 'text-slate-600'} />
+                                    </div>
+                                    <div className="mt-3 flex gap-2 flex-wrap">
+                                        <span className={`text-[10px] ${isKid ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-slate-950 text-slate-400 border-slate-800'} px-2 py-1 rounded border`}>
+                                            {w.components.length} Exercises
+                                        </span>
+                                        <span className={`text-[10px] ${isKid ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-slate-950 text-slate-400 border-slate-800'} px-2 py-1 rounded border`}>
+                                            {w.scheme}
+                                        </span>
+                                    </div>
+                                </button>
+                            ))
+                        ) : (
+                            <div className={`text-center py-8 ${isKid ? 'text-blue-600' : 'text-slate-500'} text-sm`}>
+                                No workouts found in this category.
+                            </div>
+                        )}
+                    </div>
+                )}
             </section>
         </div>
     );
