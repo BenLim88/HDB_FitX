@@ -558,7 +558,7 @@ export const DataService = {
   getWorkouts: async (): Promise<Workout[]> => {
       await seedDatabase(); // Ensure database is seeded
       const workoutsSnapshot = await getDocs(collection(db, COLLECTIONS.WORKOUTS));
-      return workoutsSnapshot.docs.map(doc => doc.data() as Workout);
+      return workoutsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Workout));
   },
 
   getLogs: async (): Promise<Log[]> => {

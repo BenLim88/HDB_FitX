@@ -319,17 +319,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
           if (editingWorkoutId) {
               // Update existing workout in Firestore
               savedWorkout = await DataService.updateWorkout(newWorkout);
-              const updatedWorkouts = workouts.map(w => w.id === editingWorkoutId ? savedWorkout : w);
-              setWorkouts(updatedWorkouts);
-              onUpdateWorkouts(updatedWorkouts);
+              // Refresh workouts from Firestore to ensure we have the latest data
+              const refreshedWorkouts = await DataService.getWorkouts();
+              setWorkouts(refreshedWorkouts);
+              onUpdateWorkouts(refreshedWorkouts);
               alert('Workout updated successfully!');
           } else {
               // Create new workout in Firestore (remove id, let Firestore generate it)
               const { id, ...workoutWithoutId } = newWorkout;
               savedWorkout = await DataService.addWorkout(workoutWithoutId);
-              const updatedWorkouts = [...workouts, savedWorkout];
-              setWorkouts(updatedWorkouts);
-              onUpdateWorkouts(updatedWorkouts);
+              // Refresh workouts from Firestore to ensure we have the latest data
+              const refreshedWorkouts = await DataService.getWorkouts();
+              setWorkouts(refreshedWorkouts);
+              onUpdateWorkouts(refreshedWorkouts);
               alert('Workout created successfully!');
           }
           closeBuilder();
