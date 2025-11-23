@@ -341,7 +341,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       }
   };
 
-  const toggleFeaturedWorkout = (id: string) => {
+  const toggleFeaturedWorkout = async (id: string) => {
       const workout = workouts.find(w => w.id === id);
       if (!workout) return;
 
@@ -352,11 +352,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
           return;
       }
 
-      const updatedWorkouts = workouts.map(w => 
-          w.id === id ? { ...w, is_featured: !w.is_featured } : w
-      );
-      setWorkouts(updatedWorkouts);
-      onUpdateWorkouts(updatedWorkouts);
+      const updatedWorkout = { ...workout, is_featured: !workout.is_featured };
+
+      try {
+          await DataService.updateWorkout(updatedWorkout);
+          const updatedWorkouts = workouts.map(w => w.id === id ? updatedWorkout : w);
+          setWorkouts(updatedWorkouts);
+          onUpdateWorkouts(updatedWorkouts);
+          alert(`Workout "${updatedWorkout.name}" ${updatedWorkout.is_featured ? 'featured' : 'unfeatured'} successfully!`);
+      } catch (error) {
+          console.error('Error toggling featured status:', error);
+          alert(`Failed to toggle featured status: ${error instanceof Error ? error.message : 'Unknown error'}. Check console for details.`);
+      }
   };
 
   const closeBuilder = () => {
