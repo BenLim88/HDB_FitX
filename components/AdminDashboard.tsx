@@ -19,6 +19,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
   const [workouts, setWorkouts] = useState<Workout[]>(initialWorkouts);
   const [users, setUsers] = useState<User[]>([]);
   const [venues, setVenues] = useState<Venue[]>(initialVenues);
+  const [equipment, setEquipment] = useState<Equipment[]>([]);
 
   // UI States
   const [activeTab, setActiveTab] = useState<'exercises' | 'workouts' | 'users' | 'venues' | 'equipment'>('exercises');
