@@ -18,7 +18,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, notificationCo
 
   return (
     <nav className="fixed bottom-0 left-0 w-full bg-slate-950 border-t border-slate-800 pb-safe-area z-50">
-      <div className="flex justify-around items-center h-16 max-w-md mx-auto">
+      <div className="flex justify-around items-center h-16 w-full max-w-md lg:max-w-4xl xl:max-w-6xl mx-auto">
         {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
