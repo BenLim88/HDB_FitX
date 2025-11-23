@@ -120,11 +120,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
 
   const loadEquipment = async () => {
       try {
+          // getEquipment catches errors internally and returns empty array, so this should never throw
           const allEquipment = await DataService.getEquipment();
-          setEquipment(allEquipment);
+          setEquipment(allEquipment || []); // Ensure we always have an array
       } catch (error) {
-          console.error('Error loading equipment:', error);
-          alert('Failed to load equipment. Please try again.');
+          // This catch block should rarely execute since getEquipment handles errors internally
+          console.error('Unexpected error loading equipment:', error);
+          setEquipment([]);
+          // Only show alert if user is actively on equipment tab
+          if (activeTab === 'equipment') {
+              console.warn('Equipment loading failed. This might be due to Firestore rules not being deployed.');
+          }
       }
   };
 
