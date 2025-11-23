@@ -1071,10 +1071,15 @@ const App: React.FC = () => {
               }
           }
           // Priority 2: Generated avatar (only if user explicitly changed prompt/style)
-          // Only regenerate if avatarPrompt is set (not empty) OR if avatarStyle is set and current avatar is NOT a Firebase Storage/base64 URL
-          else if (avatarPrompt || (avatarStyle && avatarStyle !== '' && !currentUser.avatar_url?.startsWith('https://firebasestorage.googleapis.com') && !currentUser.avatar_url?.startsWith('data:image'))) {
-              const seed = avatarPrompt || (editProfileForm.name || currentUser.name);
+          // Regenerate if avatarPrompt is set (user entered a seed number) OR if avatarStyle changed
+          else if (avatarPrompt && avatarPrompt.trim() !== '') {
+              // User entered a seed number - generate avatar
+              const seed = avatarPrompt.trim();
               updatedUser.avatar_url = getAvatarUrl(avatarStyle || 'avataaars', seed);
+          } else if (avatarStyle && avatarStyle !== '' && !currentUser.avatar_url?.startsWith('https://firebasestorage.googleapis.com') && !currentUser.avatar_url?.startsWith('data:image')) {
+              // User changed avatar style but didn't enter a seed - use name as seed
+              const seed = editProfileForm.name || currentUser.name;
+              updatedUser.avatar_url = getAvatarUrl(avatarStyle, seed);
           }
           // Priority 3: Keep existing avatar_url if nothing changed
           // Preserve existing avatar_url (especially Firebase Storage URLs and base64 URLs)
@@ -1473,7 +1478,7 @@ const App: React.FC = () => {
                                         src={
                                             uploadedAvatarPreview 
                                                 ? uploadedAvatarPreview 
-                                                : (avatarPrompt ? getAvatarUrl(avatarStyle, avatarPrompt) : (editProfileForm.avatar_url || ''))
+                                                : (avatarPrompt ? getAvatarUrl(avatarStyle || 'avataaars', avatarPrompt) : (editProfileForm.avatar_url || ''))
                                         } 
                                         alt="avatar preview" 
                                         className="w-full h-full object-cover" 
