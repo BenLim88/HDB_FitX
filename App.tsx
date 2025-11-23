@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { MOCK_USERS, CURRENT_USER_ID } from './constants';
-import { User, Log, Notification, Workout, VerificationStatus, Gender, GroupType, AthleteType, ScalingTier, Venue, PinnedWOD, UserCategory, WorldRecord } from './types';
+import { User, Log, Notification, Workout, VerificationStatus, Gender, GroupType, AthleteType, ScalingTier, Venue, PinnedWOD, UserCategory, WorldRecord, Equipment } from './types';
 import { DataService } from './services/dataService';
 import { GeminiService } from './services/geminiService';
 import Navbar from './components/Navbar';
@@ -34,6 +34,8 @@ const HomeTab: React.FC<{
     const [loadingTip, setLoadingTip] = useState(false);
     const [showParticipants, setShowParticipants] = useState<string | null>(null); // ID of WOD to show list for
     const [workoutCategoryFilter, setWorkoutCategoryFilter] = useState<string>('All');
+    const [selectedWorkoutDetail, setSelectedWorkoutDetail] = useState<Workout | null>(null); // For workout detail popup
+    const [allEquipment, setAllEquipment] = useState<Equipment[]>([]); // For displaying equipment names
 
     const handleGetTip = async () => {
         setLoadingTip(true);
@@ -258,7 +260,7 @@ const HomeTab: React.FC<{
                         {featuredWorkouts.map(w => (
                             <button 
                                 key={w.id}
-                                onClick={() => onStartWorkout(w)}
+                                onClick={() => setSelectedWorkoutDetail(w)}
                                 className={`snap-center min-w-[85%] ${isKid ? 'bg-white border-2 border-yellow-400' : 'bg-slate-900 border-2 border-yellow-500/30'} p-5 rounded-2xl text-left transition-all active:scale-95 group relative overflow-hidden`}
                             >
                                 <div className="absolute top-0 right-0 w-20 h-20 bg-yellow-500/10 rounded-bl-full -mr-4 -mt-4"></div>
@@ -359,7 +361,7 @@ const HomeTab: React.FC<{
                                     {categoryWorkouts.map(w => (
                                         <button 
                                             key={w.id}
-                                            onClick={() => onStartWorkout(w)}
+                                            onClick={() => setSelectedWorkoutDetail(w)}
                                             className={`${isKid ? 'bg-white hover:bg-blue-50 border-blue-200' : 'bg-slate-900 hover:bg-slate-800 border-slate-800'} border p-4 rounded-xl text-left transition-colors group`}
                                         >
                                             <div className="flex justify-between items-start">

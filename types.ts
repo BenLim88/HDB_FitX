@@ -72,6 +72,12 @@ export interface Exercise {
   category: string;
 }
 
+export interface Equipment {
+  id: string;
+  name: string;
+  category: string; // e.g., "Strength Training", "Cardio", "CrossFit", etc.
+}
+
 export interface Venue {
   id: string;
   name: string;
@@ -102,6 +108,7 @@ export interface Workout {
   is_featured?: boolean;
   is_kids_friendly?: boolean;
   category?: string; // Workout category: General, CrossFit, Hyrox, Cardio, Hybrid, Strength, Calisthenics, Kids Friendly
+  equipment_ids?: string[]; // Array of equipment IDs required for this workout
 }
 
 export interface Log {

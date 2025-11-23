@@ -1,5 +1,5 @@
 
-import { AthleteType, GroupType, Log, ScalingTier, User, VerificationStatus, Workout, Exercise, WorkoutScheme, Gender, Venue, UserCategory, WorldRecord } from './types';
+import { AthleteType, GroupType, Log, ScalingTier, User, VerificationStatus, Workout, Exercise, WorkoutScheme, Gender, Venue, UserCategory, WorldRecord, Equipment } from './types';
 
 export const APP_NAME = "HDB FitX";
 
@@ -889,4 +889,170 @@ export const WORLD_RECORDS: WorldRecord[] = [
     division: "Women's Rx'd",
     category: 'Murph'
   }
+];
+
+// Mock Equipment - Comprehensive list from user requirements
+export const MOCK_EQUIPMENT: Equipment[] = [
+  // 1. Strength Training - Free Weights
+  { id: 'eq_dumbbells', name: 'Dumbbells', category: 'Strength Training' },
+  { id: 'eq_barbells', name: 'Barbells', category: 'Strength Training' },
+  { id: 'eq_olympic_bar', name: 'Olympic bar', category: 'Strength Training' },
+  { id: 'eq_training_bar', name: 'Training bar', category: 'Strength Training' },
+  { id: 'eq_technique_bar', name: 'Technique bar', category: 'Strength Training' },
+  { id: 'eq_hex_bar', name: 'Hex bar (trap bar)', category: 'Strength Training' },
+  { id: 'eq_kettlebells', name: 'Kettlebells', category: 'Strength Training' },
+  { id: 'eq_weight_plates', name: 'Weight plates', category: 'Strength Training' },
+  { id: 'eq_standard_plates', name: 'Standard plates', category: 'Strength Training' },
+  { id: 'eq_bumper_plates', name: 'Bumper plates', category: 'Strength Training' },
+  { id: 'eq_fractional_plates', name: 'Fractional plates', category: 'Strength Training' },
+  { id: 'eq_medicine_balls', name: 'Medicine balls', category: 'Strength Training' },
+  { id: 'eq_slam_balls', name: 'Slam balls', category: 'Strength Training' },
+  { id: 'eq_sandbags', name: 'Sandbags', category: 'Strength Training' },
+  { id: 'eq_bulgarian_bags', name: 'Bulgarian bags', category: 'Strength Training' },
+  { id: 'eq_clubs_maces', name: 'Clubs / Maces', category: 'Strength Training' },
+  
+  // 1.2 Benches & Racks
+  { id: 'eq_power_rack', name: 'Power rack', category: 'Strength Training' },
+  { id: 'eq_squat_rack', name: 'Squat rack', category: 'Strength Training' },
+  { id: 'eq_half_rack', name: 'Half rack', category: 'Strength Training' },
+  { id: 'eq_smith_machine', name: 'Smith machine', category: 'Strength Training' },
+  { id: 'eq_adjustable_bench', name: 'Adjustable bench', category: 'Strength Training' },
+  { id: 'eq_flat_bench', name: 'Flat bench', category: 'Strength Training' },
+  { id: 'eq_decline_bench', name: 'Decline bench', category: 'Strength Training' },
+  { id: 'eq_wall_squat_stand', name: 'Wall-mounted squat stand', category: 'Strength Training' },
+  
+  // 1.3 Cable & Selectorized Machines
+  { id: 'eq_cable_machine', name: 'Cable machine / functional trainer', category: 'Strength Training' },
+  { id: 'eq_lat_pulldown', name: 'Lat pulldown', category: 'Strength Training' },
+  { id: 'eq_seated_row', name: 'Seated row', category: 'Strength Training' },
+  { id: 'eq_chest_press', name: 'Chest press', category: 'Strength Training' },
+  { id: 'eq_pec_deck', name: 'Pec deck', category: 'Strength Training' },
+  { id: 'eq_leg_press', name: 'Leg press', category: 'Strength Training' },
+  { id: 'eq_hack_squat', name: 'Hack squat', category: 'Strength Training' },
+  { id: 'eq_leg_extension', name: 'Leg extension', category: 'Strength Training' },
+  { id: 'eq_hamstring_curl', name: 'Hamstring curl', category: 'Strength Training' },
+  { id: 'eq_hip_abductor', name: 'Hip abductor / adductor', category: 'Strength Training' },
+  { id: 'eq_cable_crossover', name: 'Cable crossover', category: 'Strength Training' },
+  { id: 'eq_glute_drive', name: 'Glute drive machine', category: 'Strength Training' },
+  
+  // 1.4 Specialty Strength Tools
+  { id: 'eq_strongman_log', name: 'Strongman log', category: 'Strength Training' },
+  { id: 'eq_yoke', name: 'Yoke', category: 'Strength Training' },
+  { id: 'eq_farmer_handles', name: 'Farmer carry handles', category: 'Strength Training' },
+  { id: 'eq_sled', name: 'Sled (push + pull)', category: 'Strength Training' },
+  { id: 'eq_weighted_vest', name: 'Weighted vest', category: 'Strength Training' },
+  { id: 'eq_chains_bands', name: 'Chains & bands', category: 'Strength Training' },
+  { id: 'eq_lifting_belts', name: 'Lifting belts', category: 'Strength Training' },
+  { id: 'eq_grip_trainers', name: 'Grip trainers', category: 'Strength Training' },
+  
+  // 2. Conditioning / Cardio - Machines
+  { id: 'eq_treadmill', name: 'Treadmill', category: 'Cardio' },
+  { id: 'eq_rower', name: 'Rower (Concept2, WaterRower)', category: 'Cardio' },
+  { id: 'eq_skierg', name: 'SkiErg', category: 'Cardio' },
+  { id: 'eq_assault_bike', name: 'Assault bike / air bike', category: 'Cardio' },
+  { id: 'eq_spin_bike', name: 'Spin bike', category: 'Cardio' },
+  { id: 'eq_elliptical', name: 'Elliptical', category: 'Cardio' },
+  { id: 'eq_stair_climber', name: 'Stair climber', category: 'Cardio' },
+  { id: 'eq_arc_trainer', name: 'Arc trainer', category: 'Cardio' },
+  
+  // 2.2 Manual Conditioning Tools
+  { id: 'eq_jump_rope', name: 'Jump rope', category: 'Cardio' },
+  { id: 'eq_battle_ropes', name: 'Battle ropes', category: 'Cardio' },
+  { id: 'eq_agility_ladder', name: 'Agility ladder', category: 'Cardio' },
+  { id: 'eq_cones', name: 'Cones', category: 'Cardio' },
+  { id: 'eq_plyometric_hurdles', name: 'Plyometric hurdles', category: 'Cardio' },
+  
+  // 3. CrossFit-Specific
+  { id: 'eq_pullup_rig', name: 'Pull-up rig', category: 'CrossFit' },
+  { id: 'eq_gymnastic_rings', name: 'Gymnastic rings', category: 'CrossFit' },
+  { id: 'eq_plyo_box', name: 'Plyo box', category: 'CrossFit' },
+  { id: 'eq_ghd', name: 'GHD (Glute Ham Developer)', category: 'CrossFit' },
+  { id: 'eq_climbing_rope', name: 'Climbing rope', category: 'CrossFit' },
+  { id: 'eq_peg_board', name: 'Peg board', category: 'CrossFit' },
+  { id: 'eq_wall_ball_targets', name: 'Wall ball targets', category: 'CrossFit' },
+  { id: 'eq_handstand_lanes', name: 'Handstand walk lanes', category: 'CrossFit' },
+  { id: 'eq_rope_climb_beams', name: 'Rope climb beams', category: 'CrossFit' },
+  { id: 'eq_worm', name: 'Worm (team implement)', category: 'CrossFit' },
+  
+  // 4. Hyrox-Specific
+  { id: 'eq_sled_push', name: 'Sled push', category: 'Hyrox' },
+  { id: 'eq_sled_pull', name: 'Sled pull', category: 'Hyrox' },
+  { id: 'eq_wall_ball_hyrox', name: 'Wall ball (6–9 kg)', category: 'Hyrox' },
+  { id: 'eq_tank_sled', name: 'Tank sled (magnetic resistance)', category: 'Hyrox' },
+  { id: 'eq_tempo_lunge_lines', name: 'Measure lines for tempo lunges', category: 'Hyrox' },
+  { id: 'eq_grip_chalk', name: 'Grip chalk station', category: 'Hyrox' },
+  { id: 'eq_performance_mats', name: 'Performance mats', category: 'Hyrox' },
+  { id: 'eq_timing_gates', name: 'Timing gates or trackers', category: 'Hyrox' },
+  
+  // 5. Calisthenics
+  { id: 'eq_pullup_bar', name: 'Pull-up bar', category: 'Calisthenics' },
+  { id: 'eq_parallel_bars', name: 'Parallel bars', category: 'Calisthenics' },
+  { id: 'eq_dip_bars', name: 'Dip bars', category: 'Calisthenics' },
+  { id: 'eq_parallettes', name: 'Parallettes', category: 'Calisthenics' },
+  { id: 'eq_stall_bars', name: 'Stall bars', category: 'Calisthenics' },
+  { id: 'eq_wall_bars', name: 'Wall bars', category: 'Calisthenics' },
+  { id: 'eq_calisthenics_rig', name: 'Calisthenics rig (modular outdoor rig)', category: 'Calisthenics' },
+  { id: 'eq_resistance_bands', name: 'Resistance bands', category: 'Calisthenics' },
+  { id: 'eq_ankle_weights', name: 'Ankle weights', category: 'Calisthenics' },
+  { id: 'eq_grip_blocks', name: 'Grip blocks', category: 'Calisthenics' },
+  { id: 'eq_handstand_canes', name: 'Handstand canes', category: 'Calisthenics' },
+  
+  // 6. Street Lift / Street Workout
+  { id: 'eq_dip_belt', name: 'Dip belt', category: 'Street Lift' },
+  { id: 'eq_high_pullup_bar', name: 'Pull-up bar (high)', category: 'Street Lift' },
+  { id: 'eq_low_bar', name: 'Low bar for muscle-ups', category: 'Street Lift' },
+  { id: 'eq_outdoor_fitness_park', name: 'Outdoor fitness park equipment', category: 'Street Lift' },
+  
+  // 7. Tactical Fitness
+  { id: 'eq_rucksacks', name: 'Rucksacks / weighted backpacks', category: 'Tactical Fitness' },
+  { id: 'eq_military_vest', name: 'Weighted vests (military grade)', category: 'Tactical Fitness' },
+  { id: 'eq_ammo_cans', name: 'Ammo cans (training replicas)', category: 'Tactical Fitness' },
+  { id: 'eq_sledgehammer', name: 'Sledgehammer', category: 'Tactical Fitness' },
+  { id: 'eq_wall_vaults', name: 'Wall vaults', category: 'Tactical Fitness' },
+  { id: 'eq_tire_flip', name: 'Tire flip tires', category: 'Tactical Fitness' },
+  { id: 'eq_tractor_tire', name: 'Tractor tire drag', category: 'Tactical Fitness' },
+  { id: 'eq_obstacle_drills', name: 'Obstacle drills', category: 'Tactical Fitness' },
+  { id: 'eq_combat_dummy', name: 'Combat dummy / grappling dummy', category: 'Tactical Fitness' },
+  
+  // 8. Obstacle Course Racing (OCR / Spartan)
+  { id: 'eq_bucket_carry', name: 'Bucket carry buckets', category: 'OCR' },
+  { id: 'eq_log_carry', name: 'Log carry', category: 'OCR' },
+  { id: 'eq_monkey_bars', name: 'Monkey bars', category: 'OCR' },
+  { id: 'eq_multi_rig', name: 'Multi-rig (rings, ropes, nunchucks)', category: 'OCR' },
+  { id: 'eq_hercules_hoist', name: 'Hercules hoist', category: 'OCR' },
+  { id: 'eq_tarzan_swing', name: 'Tarzan swing', category: 'OCR' },
+  { id: 'eq_4ft_wall', name: '4 ft wall', category: 'OCR' },
+  { id: 'eq_6ft_wall', name: '6 ft wall', category: 'OCR' },
+  { id: 'eq_8ft_wall', name: '8 ft wall', category: 'OCR' },
+  { id: 'eq_slip_wall', name: 'Slip wall', category: 'OCR' },
+  { id: 'eq_inverted_wall', name: 'Inverted wall', category: 'OCR' },
+  { id: 'eq_crawl_nets', name: 'Crawl nets / barbed-wire crawl', category: 'OCR' },
+  { id: 'eq_balance_beam', name: 'Balance beam', category: 'OCR' },
+  { id: 'eq_trenches', name: 'Trenches', category: 'OCR' },
+  
+  // 9. Kids-Friendly Fitness
+  { id: 'eq_light_medicine_balls', name: 'Light medicine balls', category: 'Kids Friendly' },
+  { id: 'eq_mini_dumbbells', name: 'Mini dumbbells (1–3 kg)', category: 'Kids Friendly' },
+  { id: 'eq_foam_plyo_boxes', name: 'Foam plyo boxes', category: 'Kids Friendly' },
+  { id: 'eq_soft_kettlebells', name: 'Soft kettlebells', category: 'Kids Friendly' },
+  { id: 'eq_low_pullup_bar', name: 'Low pull-up bar', category: 'Kids Friendly' },
+  { id: 'eq_monkey_bars_kids', name: 'Monkey bars', category: 'Kids Friendly' },
+  { id: 'eq_soft_hurdles', name: 'Soft hurdles', category: 'Kids Friendly' },
+  { id: 'eq_mini_obstacle', name: 'Mini obstacle course modules', category: 'Kids Friendly' },
+  { id: 'eq_small_jump_ropes', name: 'Small jump ropes', category: 'Kids Friendly' },
+  { id: 'eq_mini_stepper', name: 'Mini stepper', category: 'Kids Friendly' },
+  { id: 'eq_kids_treadmill', name: 'Kids treadmill (non-motorized)', category: 'Kids Friendly' },
+  
+  // 10. Accessories & Support Equipment
+  { id: 'eq_foam_rollers', name: 'Foam rollers', category: 'Accessories' },
+  { id: 'eq_lacrosse_balls', name: 'Lacrosse balls', category: 'Accessories' },
+  { id: 'eq_massage_guns', name: 'Massage guns', category: 'Accessories' },
+  { id: 'eq_lifting_straps', name: 'Lifting straps', category: 'Accessories' },
+  { id: 'eq_wrist_wraps', name: 'Wrist wraps', category: 'Accessories' },
+  { id: 'eq_knee_sleeves', name: 'Knee sleeves', category: 'Accessories' },
+  { id: 'eq_chalk', name: 'Chalk', category: 'Accessories' },
+  { id: 'eq_timer', name: 'Timer / wall clock', category: 'Accessories' },
+  { id: 'eq_heart_rate_monitor', name: 'Heart rate monitor', category: 'Accessories' },
+  { id: 'eq_mobility_sticks', name: 'Mobility sticks', category: 'Accessories' },
+  { id: 'eq_mats', name: 'Mats (yoga, HIIT, crash, lifting platforms)', category: 'Accessories' }
 ];

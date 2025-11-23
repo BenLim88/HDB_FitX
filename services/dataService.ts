@@ -1,6 +1,6 @@
 
-import { Log, Notification, User, VerificationStatus, Workout, GroupType, AthleteType, Gender, Venue, PinnedWOD, UserCategory, Exercise } from '../types';
-import { MOCK_LOGS, MOCK_USERS, MOCK_WORKOUTS, MOCK_VENUES, MOCK_EXERCISES } from '../constants';
+import { Log, Notification, User, VerificationStatus, Workout, GroupType, AthleteType, Gender, Venue, PinnedWOD, UserCategory, Exercise, Equipment } from '../types';
+import { MOCK_LOGS, MOCK_USERS, MOCK_WORKOUTS, MOCK_VENUES, MOCK_EXERCISES, MOCK_EQUIPMENT } from '../constants';
 import { auth, googleProvider, db } from '../firebaseConfig';
 import { signInWithPopup } from 'firebase/auth';
 import { 
@@ -27,7 +27,8 @@ const COLLECTIONS = {
   VENUES: 'venues',
   PINNED_WODS: 'pinnedWods',
   NOTIFICATIONS: 'notifications',
-  EXERCISES: 'exercises'
+  EXERCISES: 'exercises',
+  EQUIPMENT: 'equipment'
 };
 
 // Seed flag to prevent multiple seed operations
@@ -193,6 +194,33 @@ const seedDatabase = async (): Promise<void> => {
         }
       } catch (error) {
         console.error('Error seeding exercises:', error);
+      }
+      
+      // Always check and seed equipment independently
+      try {
+        const equipmentSnapshot = await getDocs(collection(db, COLLECTIONS.EQUIPMENT));
+        if (equipmentSnapshot.empty) {
+          console.log('Seeding equipment...');
+          const equipmentBatch = writeBatch(db);
+          let batchCount = 0;
+          for (const equipment of MOCK_EQUIPMENT) {
+            const equipmentRef = doc(db, COLLECTIONS.EQUIPMENT, equipment.id);
+            equipmentBatch.set(equipmentRef, equipment);
+            batchCount++;
+            if (batchCount >= 450) {
+              await equipmentBatch.commit();
+              batchCount = 0;
+            }
+          }
+          if (batchCount > 0) {
+            await equipmentBatch.commit();
+          }
+          console.log('Equipment seeded successfully');
+        } else {
+          console.log('Equipment already exists, skipping seed');
+        }
+      } catch (error) {
+        console.error('Error seeding equipment:', error);
       }
     } catch (error) {
       console.error('Error checking/seeding database:', error);
@@ -395,12 +423,43 @@ export const DataService = {
   // --- PINNED WOD MANAGEMENT ---
   getPinnedWODs: async (): Promise<PinnedWOD[]> => {
       const pinnedWodsSnapshot = await getDocs(
-          query(collection(db, COLLECTIONS.PINNED_WODS), orderBy('intended_date', 'desc'))
+          query(collection(db, COLLECTIONS.PINNED_WODS), orderBy('intended_date', 'asc')) // Sort earliest first
       );
-      return pinnedWodsSnapshot.docs.map(doc => ({
-          ...doc.data(),
-          id: doc.id
-      } as PinnedWOD));
+      const now = Date.now();
+      const wods = pinnedWodsSnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+              ...data,
+              id: doc.id,
+              intended_date: timestampToNumber(data.intended_date),
+              deadline: timestampToNumber(data.deadline)
+          } as PinnedWOD;
+      });
+      
+      // Filter out expired WODs and delete them
+      const activeWods: PinnedWOD[] = [];
+      const expiredIds: string[] = [];
+      
+      for (const wod of wods) {
+          if (wod.deadline < now) {
+              expiredIds.push(wod.id);
+          } else {
+              activeWods.push(wod);
+          }
+      }
+      
+      // Delete expired WODs
+      if (expiredIds.length > 0) {
+          const batch = writeBatch(db);
+          for (const id of expiredIds) {
+              const wodRef = doc(db, COLLECTIONS.PINNED_WODS, id);
+              batch.delete(wodRef);
+          }
+          await batch.commit();
+          console.log(`Auto-unpinned ${expiredIds.length} expired WOD(s)`);
+      }
+      
+      return activeWods;
   },
 
   addPinnedWOD: async (wod: Omit<PinnedWOD, 'id' | 'participants'>): Promise<PinnedWOD> => {
@@ -749,6 +808,53 @@ export const DataService = {
           console.log('Exercise deleted successfully');
       } catch (error) {
           console.error('Error deleting exercise:', error);
+          throw error;
+      }
+  },
+
+  // --- EQUIPMENT MANAGEMENT ---
+  getEquipment: async (): Promise<Equipment[]> => {
+      try {
+          const equipmentSnapshot = await getDocs(collection(db, COLLECTIONS.EQUIPMENT));
+          return equipmentSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Equipment));
+      } catch (error) {
+          console.error('Error fetching equipment:', error);
+          return [];
+      }
+  },
+
+  addEquipment: async (equipment: Omit<Equipment, 'id'>): Promise<Equipment> => {
+      try {
+          const docRef = await addDoc(collection(db, COLLECTIONS.EQUIPMENT), equipment);
+          const newEquipment = { ...equipment, id: docRef.id };
+          console.log('Equipment added successfully:', newEquipment.id);
+          return newEquipment;
+      } catch (error) {
+          console.error('Error adding equipment:', error);
+          throw error;
+      }
+  },
+
+  updateEquipment: async (equipment: Equipment): Promise<Equipment> => {
+      try {
+          const equipmentRef = doc(db, COLLECTIONS.EQUIPMENT, equipment.id);
+          await updateDoc(equipmentRef, equipment);
+          console.log('Equipment updated successfully:', equipment.id);
+          return equipment;
+      } catch (error) {
+          console.error('Error updating equipment:', error);
+          throw error;
+      }
+  },
+
+  deleteEquipment: async (id: string): Promise<void> => {
+      try {
+          console.log('Deleting equipment:', id);
+          const equipmentRef = doc(db, COLLECTIONS.EQUIPMENT, id);
+          await deleteDoc(equipmentRef);
+          console.log('Equipment deleted successfully');
+      } catch (error) {
+          console.error('Error deleting equipment:', error);
           throw error;
       }
   },
