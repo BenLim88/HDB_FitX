@@ -84,7 +84,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
           loadExercises();
       }
       if (activeTab === 'workouts') {
-          loadPinnedWODs();
+          loadPinnedWODs().catch(err => {
+              console.error('Error loading pinned WODs in useEffect:', err);
+          });
       }
   }, [activeTab]);
 
@@ -729,7 +731,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
 
                  {/* Venue List */}
                  <div className="space-y-3">
-                    {venues.length === 0 ? (
+                    {!venues || venues.length === 0 ? (
                         <div className="text-center py-8 text-slate-500 text-sm">
                             No venues registered yet. Add one above.
                         </div>
@@ -853,14 +855,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                         </button>
 
                         <div className="space-y-3">
-                            {workouts.length === 0 ? (
+                            {!workouts || workouts.length === 0 ? (
                                 <div className="text-center py-8 text-slate-500 text-sm">
                                     No workouts yet. Click "Build New Workout" to create one.
                                 </div>
                             ) : (
                             workouts.map(w => {
-                                const isPinned = pinnedWods.some(pw => pw.workout_id === w.id);
-                                const pinnedCount = pinnedWods.filter(pw => pw.workout_id === w.id).length;
+                                const isPinned = pinnedWods && pinnedWods.some(pw => pw.workout_id === w.id);
+                                const pinnedCount = pinnedWods ? pinnedWods.filter(pw => pw.workout_id === w.id).length : 0;
                                 
                                 return (
                                 <div key={w.id} className={`bg-slate-900 border p-4 rounded-xl relative transition-colors ${w.is_featured ? 'border-yellow-500/40 shadow-lg shadow-yellow-500/5' : 'border-slate-800'} ${isPinned ? 'border-blue-500/40 shadow-lg shadow-blue-500/5' : ''}`}>
