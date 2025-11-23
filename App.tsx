@@ -765,7 +765,16 @@ const LeaderboardTab: React.FC<{ logs: Log[], workouts: Workout[], allUsers: Use
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true); // Track auth loading state
-  const [activeTab, setActiveTab] = useState('home');
+  // Restore active tab from localStorage, default to 'home'
+  const [activeTab, setActiveTab] = useState(() => {
+    const savedTab = localStorage.getItem('hdb_fitx_activeTab');
+    // Validate that saved tab is a valid tab name
+    const validTabs = ['home', 'workout', 'leaderboard', 'profile', 'inbox', 'admin'];
+    if (savedTab && validTabs.includes(savedTab)) {
+      return savedTab;
+    }
+    return 'home';
+  });
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [logs, setLogs] = useState<Log[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -856,6 +865,13 @@ const App: React.FC = () => {
       localStorage.removeItem('hdb_fitx_user');
     }
   }, [currentUser]);
+
+  // Save active tab to localStorage whenever it changes
+  useEffect(() => {
+    if (activeTab) {
+      localStorage.setItem('hdb_fitx_activeTab', activeTab);
+    }
+  }, [activeTab]);
 
   // Initialize data when user logs in
   useEffect(() => {
