@@ -881,7 +881,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                             
                             return (
                                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                                    <div className="bg-slate-900 border border-slate-800 w-full max-w-md lg:max-w-2xl xl:max-w-4xl rounded-2xl p-6 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
+                                    <div className="bg-slate-900 border border-slate-800 w-full max-w-md lg:max-w-2xl xl:max-w-4xl 2xl:max-w-6xl rounded-2xl p-6 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
                                         <h3 className="text-white font-bold text-lg mb-4 flex items-center gap-2">
                                             <Pin className="text-blue-500" /> Pin Workout
                                         </h3>

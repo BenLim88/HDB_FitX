@@ -1151,8 +1151,8 @@ const App: React.FC = () => {
     ? 'min-h-screen bg-blue-50 font-sans pb-safe-area' 
     : 'min-h-screen bg-slate-950 font-sans pb-safe-area';
   const mainClasses = isKid
-    ? 'w-full max-w-md lg:max-w-4xl xl:max-w-6xl mx-auto min-h-screen bg-white shadow-2xl shadow-blue-200 relative'
-    : 'w-full max-w-md lg:max-w-4xl xl:max-w-6xl mx-auto min-h-screen bg-slate-950 shadow-2xl shadow-black relative';
+    ? 'w-full max-w-md lg:max-w-4xl xl:max-w-6xl 2xl:max-w-[2248px] mx-auto min-h-screen bg-white shadow-2xl shadow-blue-200 relative'
+    : 'w-full max-w-md lg:max-w-4xl xl:max-w-6xl 2xl:max-w-[2248px] mx-auto min-h-screen bg-slate-950 shadow-2xl shadow-black relative';
 
   return (
     <div className={themeClasses}>
