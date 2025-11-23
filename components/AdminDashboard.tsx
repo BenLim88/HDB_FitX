@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Exercise, Workout, User, GroupType, AthleteType, WorkoutComponent, ScalingTier, WorkoutScheme, Venue, UserCategory } from '../types';
+import { Exercise, Workout, User, GroupType, AthleteType, WorkoutComponent, ScalingTier, WorkoutScheme, Venue, UserCategory, PinnedWOD } from '../types';
 import { DataService } from '../services/dataService';
 import { MOCK_EXERCISES } from '../constants';
 import { Plus, Trash2, Dumbbell, LayoutList, Users, Edit, Shield, Save, X, Lock, ChevronRight, ArrowLeft, Timer, Settings, MapPin, Star, Calendar, Pin, Baby } from 'lucide-react';
@@ -19,6 +19,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
   const [workouts, setWorkouts] = useState<Workout[]>(initialWorkouts);
   const [users, setUsers] = useState<User[]>([]);
   const [venues, setVenues] = useState<Venue[]>(initialVenues);
+  const [pinnedWods, setPinnedWods] = useState<PinnedWOD[]>([]);
 
   // UI States
   const [activeTab, setActiveTab] = useState<'exercises' | 'workouts' | 'users' | 'venues'>('exercises');
@@ -81,6 +82,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       }
       if (activeTab === 'exercises') {
           loadExercises();
+      }
+      if (activeTab === 'workouts') {
+          loadPinnedWODs();
       }
   }, [activeTab]);
 
@@ -424,6 +428,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       if (users.length === 0) {
           await loadUsers();
       }
+      
+      // Load pinned WODs to check for overlaps
+      await loadPinnedWODs();
   };
 
   const handleConfirmPin = async () => {
@@ -448,6 +455,30 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       const start = new Date(`${intendedDate}T${intendedTime || '00:00'}`).getTime();
       const end = new Date(`${deadlineDate}T${deadlineTime || '23:59'}`).getTime();
 
+      // Check for overlapping pinned workouts with the same workout_id
+      const existingPinned = pinnedWods.filter(pw => pw.workout_id === workout.id);
+      const hasOverlap = existingPinned.some(pw => {
+          // Check if time ranges overlap
+          // Two ranges overlap if: start1 < end2 && start2 < end1
+          return (start < pw.deadline && pw.intended_date < end);
+      });
+
+      if (hasOverlap) {
+          const overlappingWods = existingPinned.filter(pw => 
+              (start < pw.deadline && pw.intended_date < end)
+          );
+          const overlapDetails = overlappingWods.map(pw => {
+              const pwStart = new Date(pw.intended_date).toLocaleString();
+              const pwEnd = new Date(pw.deadline).toLocaleString();
+              return `\n- ${pwStart} to ${pwEnd}`;
+          }).join('');
+          
+          const confirmMessage = `Warning: This workout is already pinned with overlapping time ranges:${overlapDetails}\n\nDo you want to pin it anyway?`;
+          if (!window.confirm(confirmMessage)) {
+              return; // User cancelled
+          }
+      }
+
       try {
           // Create pinned WOD
           const pinnedWod = await DataService.addPinnedWOD({
@@ -457,6 +488,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
               deadline: end,
               invited_user_ids: Array.from(selectedUserIds)
           });
+
+          // Refresh pinned WODs list
+          await loadPinnedWODs();
 
       // Determine which users to invite
       let usersToInvite: User[] = [];
@@ -815,11 +849,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                                     No workouts yet. Click "Build New Workout" to create one.
                                 </div>
                             ) : (
-                            workouts.map(w => (
-                                <div key={w.id} className={`bg-slate-900 border p-4 rounded-xl relative transition-colors ${w.is_featured ? 'border-yellow-500/40 shadow-lg shadow-yellow-500/5' : 'border-slate-800'}`}>
+                            workouts.map(w => {
+                                const isPinned = pinnedWods.some(pw => pw.workout_id === w.id);
+                                const pinnedCount = pinnedWods.filter(pw => pw.workout_id === w.id).length;
+                                
+                                return (
+                                <div key={w.id} className={`bg-slate-900 border p-4 rounded-xl relative transition-colors ${w.is_featured ? 'border-yellow-500/40 shadow-lg shadow-yellow-500/5' : 'border-slate-800'} ${isPinned ? 'border-blue-500/40 shadow-lg shadow-blue-500/5' : ''}`}>
                                     {w.is_featured && (
                                         <div className="absolute -top-2 -left-2 bg-yellow-500 text-black text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
                                             <Star size={10} fill="black" /> Featured
+                                        </div>
+                                    )}
+                                    {isPinned && (
+                                        <div className="absolute -top-2 -right-2 bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
+                                            <Pin size={10} fill="white" /> Pinned {pinnedCount > 1 ? `(${pinnedCount}x)` : ''}
                                         </div>
                                     )}
                                     <div className="flex justify-between items-start mt-1">
@@ -841,10 +884,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                                             </button>
                                             <button 
                                                 onClick={() => handleStartPinning(w.id)}
-                                                className="p-2 text-slate-600 hover:text-blue-400 hover:bg-slate-800 rounded transition-colors"
-                                                title="Pin WOD"
+                                                className={`p-2 hover:bg-slate-800 rounded transition-colors ${isPinned ? 'text-blue-400' : 'text-slate-600 hover:text-blue-400'}`}
+                                                title={isPinned ? `Pin WOD (Already pinned ${pinnedCount}x)` : 'Pin WOD'}
                                             >
-                                                <Pin size={18} />
+                                                <Pin size={18} fill={isPinned ? 'currentColor' : 'none'} />
                                             </button>
                                             <button 
                                                 onClick={() => startEditingWorkout(w)}
@@ -861,7 +904,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                                         </div>
                                     </div>
                                 </div>
-                            )))}
+                                );
+                            }))}
                         </div>
 
                         {/* PIN WOD MODAL */}
