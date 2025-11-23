@@ -155,26 +155,5 @@
         // This allows mock admin users (who don't use Firebase Auth) to delete exercises
         allow delete: if true;
         }
-        
-        // EQUIPMENT Collection (Public Read, Admin Write)
-        match /equipment/{equipmentId} {
-        // Anyone can read equipment
-        allow read: if true;
-        
-        // Allow creating equipment
-        // Note: App-level security ensures only admins can create equipment
-        // This allows mock admin users (who don't use Firebase Auth) to create equipment
-        allow create: if true;
-        
-        // Allow updating equipment
-        // Note: App-level security ensures only admins can update equipment
-        // This allows mock admin users (who don't use Firebase Auth) to update equipment
-        allow update: if true;
-        
-        // Allow deleting equipment
-        // Note: App-level security ensures only admins can delete equipment
-        // This allows mock admin users (who don't use Firebase Auth) to delete equipment
-        allow delete: if true;
-        }
     }
     }

@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { Exercise, Workout, User, GroupType, AthleteType, WorkoutComponent, ScalingTier, WorkoutScheme, Venue, UserCategory, Equipment } from '../types';
+import { Exercise, Workout, User, GroupType, AthleteType, WorkoutComponent, ScalingTier, WorkoutScheme, Venue, UserCategory } from '../types';
 import { DataService } from '../services/dataService';
 import { MOCK_EXERCISES } from '../constants';
-import { Plus, Trash2, Dumbbell, LayoutList, Users, Edit, Shield, Save, X, Lock, ChevronRight, ArrowLeft, Timer, Settings, MapPin, Star, Calendar, Pin, Baby, Wrench } from 'lucide-react';
+import { Plus, Trash2, Dumbbell, LayoutList, Users, Edit, Shield, Save, X, Lock, ChevronRight, ArrowLeft, Timer, Settings, MapPin, Star, Calendar, Pin, Baby } from 'lucide-react';
 
 interface AdminDashboardProps {
   initialWorkouts: Workout[];
@@ -19,10 +19,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
   const [workouts, setWorkouts] = useState<Workout[]>(initialWorkouts);
   const [users, setUsers] = useState<User[]>([]);
   const [venues, setVenues] = useState<Venue[]>(initialVenues);
-  const [equipment, setEquipment] = useState<Equipment[]>([]);
 
   // UI States
-  const [activeTab, setActiveTab] = useState<'exercises' | 'workouts' | 'users' | 'venues' | 'equipment'>('exercises');
+  const [activeTab, setActiveTab] = useState<'exercises' | 'workouts' | 'users' | 'venues'>('exercises');
   const [isCreatingWorkout, setIsCreatingWorkout] = useState(false);
   const [editingWorkoutId, setEditingWorkoutId] = useState<string | null>(null);
 
@@ -39,11 +38,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
   const [newExerciseName, setNewExerciseName] = useState('');
   const [newExerciseType, setNewExerciseType] = useState<'reps' | 'time' | 'load' | 'distance'>('reps');
   const [newExerciseCategory, setNewExerciseCategory] = useState('General');
-
-  // Equipment Form State
-  const [newEquipmentName, setNewEquipmentName] = useState('');
-  const [newEquipmentCategory, setNewEquipmentCategory] = useState('Strength Training');
-  const [editingEquipmentId, setEditingEquipmentId] = useState<string | null>(null);
 
   // Venue Form State
   const [editingVenueId, setEditingVenueId] = useState<string | null>(null);
@@ -66,7 +60,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
   const [workoutCategory, setWorkoutCategory] = useState<string>('General');
   const [workoutRounds, setWorkoutRounds] = useState<string>('1');
   const [componentRound, setComponentRound] = useState<string>('1');
-  const [selectedEquipmentIds, setSelectedEquipmentIds] = useState<Set<string>>(new Set());
   
   // Scaling Builder State
   const [scalingRx, setScalingRx] = useState('');
@@ -89,15 +82,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       if (activeTab === 'exercises') {
           loadExercises();
       }
-      if (activeTab === 'equipment') {
-          loadEquipment();
-      }
   }, [activeTab]);
 
-  // Load exercises and equipment on component mount
+  // Load exercises on component mount
   useEffect(() => {
       loadExercises();
-      loadEquipment(); // Load equipment on mount so it's available for workout builder
   }, []);
 
   const loadUsers = async () => {
@@ -116,22 +105,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       } catch (error) {
           console.error('Error loading exercises:', error);
           alert('Failed to load exercises. Please try again.');
-      }
-  };
-
-  const loadEquipment = async () => {
-      try {
-          // getEquipment catches errors internally and returns empty array, so this should never throw
-          const allEquipment = await DataService.getEquipment();
-          setEquipment(allEquipment || []); // Ensure we always have an array
-      } catch (error) {
-          // This catch block should rarely execute since getEquipment handles errors internally
-          console.error('Unexpected error loading equipment:', error);
-          setEquipment([]);
-          // Only show alert if user is actively on equipment tab
-          if (activeTab === 'equipment') {
-              console.warn('Equipment loading failed. This might be due to Firestore rules not being deployed.');
-          }
       }
   };
 
@@ -220,68 +193,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       }
   };
 
-  // --- EQUIPMENT HANDLERS ---
-  const handleAddEquipment = async () => {
-      if (!newEquipmentName || !newEquipmentCategory) {
-          alert('Please fill in all equipment fields.');
-          return;
-      }
-      try {
-          const newEq = await DataService.addEquipment({
-              name: newEquipmentName,
-              category: newEquipmentCategory
-          });
-          setEquipment([...equipment, newEq]);
-          setNewEquipmentName('');
-          setNewEquipmentCategory('Strength Training');
-          alert('Equipment added successfully!');
-      } catch (error) {
-          console.error('Error adding equipment:', error);
-          alert(`Failed to add equipment: ${error instanceof Error ? error.message : 'Unknown error'}. Check console for details.`);
-      }
-  };
-
-  const handleEditEquipment = (eq: Equipment) => {
-      setEditingEquipmentId(eq.id);
-      setNewEquipmentName(eq.name);
-      setNewEquipmentCategory(eq.category);
-  };
-
-  const handleSaveEquipment = async () => {
-      if (!editingEquipmentId || !newEquipmentName || !newEquipmentCategory) {
-          alert('Please fill in all equipment fields.');
-          return;
-      }
-      try {
-          const updated = await DataService.updateEquipment({
-              id: editingEquipmentId,
-              name: newEquipmentName,
-              category: newEquipmentCategory
-          });
-          setEquipment(equipment.map(e => e.id === updated.id ? updated : e));
-          setEditingEquipmentId(null);
-          setNewEquipmentName('');
-          setNewEquipmentCategory('Strength Training');
-          alert('Equipment updated successfully!');
-      } catch (error) {
-          console.error('Error updating equipment:', error);
-          alert(`Failed to update equipment: ${error instanceof Error ? error.message : 'Unknown error'}. Check console for details.`);
-      }
-  };
-
-  const handleDeleteEquipment = async (id: string) => {
-      if (window.confirm("Are you sure you want to delete this equipment? This cannot be undone.")) {
-          try {
-              await DataService.deleteEquipment(id);
-              setEquipment(equipment.filter(e => e.id !== id));
-              alert('Equipment deleted successfully!');
-          } catch (error) {
-              console.error('Error deleting equipment:', error);
-              alert(`Failed to delete equipment: ${error instanceof Error ? error.message : 'Unknown error'}. Check console for details.`);
-          }
-      }
-  };
-
   // --- WORKOUT BUILDER HANDLERS ---
   const handleAddComponent = () => {
       if (!selectedExId || !targetValue) return;
@@ -347,12 +258,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       setScalingInt(workout.scaling[ScalingTier.INTERMEDIATE] || '');
       setScalingBeg(workout.scaling[ScalingTier.BEGINNER] || '');
       
-      // Load equipment selection
-      setSelectedEquipmentIds(new Set(workout.equipment_ids || []));
-      
-      // Ensure equipment is loaded (async, but UI will update when it loads)
-      loadEquipment();
-      
       setIsCreatingWorkout(true);
   };
 
@@ -393,8 +298,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
           },
           is_featured: existing?.is_featured || false,
           is_kids_friendly: isKidsFriendly,
-          category: workoutCategory,
-          equipment_ids: selectedEquipmentIds.size > 0 ? Array.from(selectedEquipmentIds) : undefined
+          category: workoutCategory
       };
       
       // Only add optional fields if they have values
@@ -474,7 +378,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       setWorkoutCategory('General');
       setWorkoutRounds('1');
       setComponentRound('1');
-      setSelectedEquipmentIds(new Set());
   };
 
   const handleDeleteWorkout = async (id: string) => {
@@ -900,12 +803,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                 {!isCreatingWorkout ? (
                     <div className="space-y-4">
                         <button 
-                            onClick={() => {
-                                setIsCreatingWorkout(true);
-                                setEditingWorkoutId(null);
-                                // Ensure equipment is loaded for the builder
-                                loadEquipment();
-                            }}
+                            onClick={() => { setIsCreatingWorkout(true); setEditingWorkoutId(null); }}
                             className="w-full py-3 bg-orange-600 hover:bg-orange-500 text-white font-black uppercase italic tracking-wider rounded-lg shadow-lg shadow-orange-900/20 flex items-center justify-center gap-2"
                         >
                             <Plus size={20} /> Build New Workout
@@ -1197,41 +1095,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                                 <label htmlFor="kidsFriendly" className="text-xs font-bold text-slate-500 uppercase cursor-pointer">
                                     Kids Friendly Workout
                                 </label>
-                            </div>
-
-                            {/* Equipment Selection */}
-                            <div className="pt-2 border-t border-slate-800">
-                                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Required Equipment</label>
-                                <div className="max-h-48 overflow-y-auto space-y-2 bg-slate-950 border border-slate-800 rounded p-3">
-                                    {equipment.length === 0 ? (
-                                        <p className="text-xs text-slate-500 text-center py-2">Loading equipment...</p>
-                                    ) : (
-                                        Array.from(new Set(equipment.map(e => e.category))).map(category => (
-                                            <div key={category} className="space-y-1">
-                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{category}</p>
-                                                {equipment.filter(e => e.category === category).map(eq => (
-                                                    <label key={eq.id} className="flex items-center gap-2 cursor-pointer hover:bg-slate-900 p-1 rounded">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={selectedEquipmentIds.has(eq.id)}
-                                                            onChange={(e) => {
-                                                                const newSet = new Set(selectedEquipmentIds);
-                                                                if (e.target.checked) {
-                                                                    newSet.add(eq.id);
-                                                                } else {
-                                                                    newSet.delete(eq.id);
-                                                                }
-                                                                setSelectedEquipmentIds(newSet);
-                                                            }}
-                                                            className="w-3 h-3 rounded border-slate-700 bg-slate-800 text-orange-500 focus:ring-orange-500"
-                                                        />
-                                                        <span className="text-xs text-slate-300">{eq.name}</span>
-                                                    </label>
-                                                ))}
-                                            </div>
-                                        ))
-                                    )}
-                                </div>
                             </div>
 
                             {/* Rest Configuration */}
@@ -1603,102 +1466,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                     </div>
                 )))}
              </div>
-        )}
-
-        {activeTab === 'equipment' && (
-            <div className="p-4 space-y-6">
-                {/* Add/Edit Equipment Form */}
-                <div className={`bg-slate-900 border ${editingEquipmentId ? 'border-orange-500' : 'border-slate-800'} p-4 rounded-xl transition-colors`}>
-                    <h3 className="text-white font-bold text-sm mb-3 flex items-center gap-2">
-                        {editingEquipmentId ? <Edit size={16} className="text-orange-500" /> : <Plus size={16} className="text-orange-500" />}
-                        {editingEquipmentId ? 'Update Equipment' : 'Add New Equipment'}
-                    </h3>
-                    <div className="space-y-3">
-                        <input 
-                            className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-white text-sm focus:border-orange-500 outline-none"
-                            placeholder="Equipment Name (e.g. Dumbbells)"
-                            value={newEquipmentName}
-                            onChange={(e) => setNewEquipmentName(e.target.value)}
-                        />
-                        <select 
-                            className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-white text-sm outline-none"
-                            value={newEquipmentCategory}
-                            onChange={(e) => setNewEquipmentCategory(e.target.value)}
-                        >
-                            <option value="Strength Training">Strength Training</option>
-                            <option value="Cardio">Cardio</option>
-                            <option value="CrossFit">CrossFit</option>
-                            <option value="Hyrox">Hyrox</option>
-                            <option value="Calisthenics">Calisthenics</option>
-                            <option value="Street Lift">Street Lift</option>
-                            <option value="Tactical Fitness">Tactical Fitness</option>
-                            <option value="OCR">OCR</option>
-                            <option value="Kids Friendly">Kids Friendly</option>
-                            <option value="Accessories">Accessories</option>
-                        </select>
-                        <div className="flex gap-2">
-                            <button 
-                                onClick={editingEquipmentId ? handleSaveEquipment : handleAddEquipment}
-                                className={`flex-1 ${editingEquipmentId ? 'bg-orange-600 hover:bg-orange-500' : 'bg-slate-800 hover:bg-slate-700'} text-slate-200 font-bold py-2 rounded text-sm transition-colors`}
-                            >
-                                {editingEquipmentId ? 'Update Equipment' : 'Add Equipment'}
-                            </button>
-                            {editingEquipmentId && (
-                                <button 
-                                    onClick={() => {
-                                        setEditingEquipmentId(null);
-                                        setNewEquipmentName('');
-                                        setNewEquipmentCategory('Strength Training');
-                                    }}
-                                    className="px-4 bg-slate-800 hover:bg-slate-700 text-white font-bold py-2 rounded text-sm"
-                                >
-                                    Cancel
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Equipment List */}
-                <div className="space-y-2">
-                    <h3 className="text-white font-bold text-sm mb-3">Equipment Database</h3>
-                    {equipment.length === 0 ? (
-                        <div className="text-center py-8 text-slate-500 text-sm">
-                            No equipment found. Add equipment above.
-                        </div>
-                    ) : (
-                        <div className="space-y-2">
-                            {Array.from(new Set(equipment.map(e => e.category))).map(category => (
-                                <div key={category} className="space-y-2">
-                                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-4 mb-2">{category}</h4>
-                                    {equipment.filter(e => e.category === category).map(eq => (
-                                        <div key={eq.id} className="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-between">
-                                            <div>
-                                                <h4 className="text-white font-bold text-sm">{eq.name}</h4>
-                                                <p className="text-xs text-slate-500">{eq.category}</p>
-                                            </div>
-                                            <div className="flex gap-2">
-                                                <button 
-                                                    onClick={() => handleEditEquipment(eq)}
-                                                    className="p-2 text-slate-600 hover:text-orange-500 transition-colors"
-                                                >
-                                                    <Edit size={16} />
-                                                </button>
-                                                <button 
-                                                    onClick={() => handleDeleteEquipment(eq.id)}
-                                                    className="p-2 text-slate-600 hover:text-red-500 transition-colors"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </div>
         )}
     </div>
   );
