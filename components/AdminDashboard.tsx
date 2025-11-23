@@ -112,6 +112,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       }
   };
 
+  const loadPinnedWODs = async () => {
+      try {
+          const pinned = await DataService.getPinnedWODs();
+          setPinnedWods(pinned);
+      } catch (error) {
+          console.error('Error loading pinned WODs:', error);
+      }
+  };
+
   // --- VENUE HANDLERS ---
   const handleSaveVenue = async () => {
       if (!newVenueName) return;
