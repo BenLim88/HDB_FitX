@@ -197,30 +197,38 @@ const seedDatabase = async (): Promise<void> => {
       }
       
       // Always check and seed equipment independently
+      // Note: Seeding may fail if Firestore rules don't allow writes, but that's OK
+      // Equipment can be added manually through the Admin Dashboard
       try {
         const equipmentSnapshot = await getDocs(collection(db, COLLECTIONS.EQUIPMENT));
         if (equipmentSnapshot.empty) {
           console.log('Seeding equipment...');
-          const equipmentBatch = writeBatch(db);
-          let batchCount = 0;
-          for (const equipment of MOCK_EQUIPMENT) {
-            const equipmentRef = doc(db, COLLECTIONS.EQUIPMENT, equipment.id);
-            equipmentBatch.set(equipmentRef, equipment);
-            batchCount++;
-            if (batchCount >= 450) {
-              await equipmentBatch.commit();
-              batchCount = 0;
+          try {
+            const equipmentBatch = writeBatch(db);
+            let batchCount = 0;
+            for (const equipment of MOCK_EQUIPMENT) {
+              const equipmentRef = doc(db, COLLECTIONS.EQUIPMENT, equipment.id);
+              equipmentBatch.set(equipmentRef, equipment);
+              batchCount++;
+              if (batchCount >= 450) {
+                await equipmentBatch.commit();
+                batchCount = 0;
+              }
             }
+            if (batchCount > 0) {
+              await equipmentBatch.commit();
+            }
+            console.log('Equipment seeded successfully');
+          } catch (seedError) {
+            console.warn('Equipment seeding failed (this is OK if rules restrict writes). Equipment can be added manually:', seedError);
+            // Don't throw - allow app to continue
           }
-          if (batchCount > 0) {
-            await equipmentBatch.commit();
-          }
-          console.log('Equipment seeded successfully');
         } else {
           console.log('Equipment already exists, skipping seed');
         }
       } catch (error) {
-        console.error('Error seeding equipment:', error);
+        console.warn('Error checking equipment collection (this is OK):', error);
+        // Don't throw - allow app to continue even if we can't check/seed equipment
       }
     } catch (error) {
       console.error('Error checking/seeding database:', error);

@@ -88,11 +88,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       if (activeTab === 'exercises') {
           loadExercises();
       }
+      if (activeTab === 'equipment') {
+          loadEquipment();
+      }
   }, [activeTab]);
 
-  // Load exercises on component mount
+  // Load exercises and equipment on component mount
   useEffect(() => {
       loadExercises();
+      loadEquipment(); // Load equipment on mount so it's available for workout builder
   }, []);
 
   const loadUsers = async () => {
@@ -339,10 +343,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       // Load equipment selection
       setSelectedEquipmentIds(new Set(workout.equipment_ids || []));
       
-      // Load equipment if not already loaded
-      if (equipment.length === 0) {
-          loadEquipment();
-      }
+      // Ensure equipment is loaded (async, but UI will update when it loads)
+      loadEquipment();
       
       setIsCreatingWorkout(true);
   };
@@ -891,7 +893,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                 {!isCreatingWorkout ? (
                     <div className="space-y-4">
                         <button 
-                            onClick={() => { setIsCreatingWorkout(true); setEditingWorkoutId(null); }}
+                            onClick={() => {
+                                setIsCreatingWorkout(true);
+                                setEditingWorkoutId(null);
+                                // Ensure equipment is loaded for the builder
+                                loadEquipment();
+                            }}
                             className="w-full py-3 bg-orange-600 hover:bg-orange-500 text-white font-black uppercase italic tracking-wider rounded-lg shadow-lg shadow-orange-900/20 flex items-center justify-center gap-2"
                         >
                             <Plus size={20} /> Build New Workout
