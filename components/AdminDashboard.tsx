@@ -77,12 +77,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
 
   useEffect(() => {
       if (activeTab === 'users') {
+          // Only allow Master Admin (ID = 'Admin' or 'master_admin') to view users
+          if (currentUser.id !== 'Admin' && currentUser.id !== 'master_admin') {
+              setActiveTab('exercises');
+              return;
+          }
           loadUsers();
       }
       if (activeTab === 'exercises') {
           loadExercises();
       }
-  }, [activeTab]);
+  }, [activeTab, currentUser.id]);
 
   // Load exercises on component mount
   useEffect(() => {
@@ -635,12 +640,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                 >
                     Venues
                 </button>
+                {(currentUser.id === 'Admin' || currentUser.id === 'master_admin') && (
                 <button 
                     onClick={() => { setActiveTab('users'); closeBuilder(); }}
                     className={`flex-shrink-0 py-2 px-4 rounded-lg font-bold text-sm transition-colors ${activeTab === 'users' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-400'}`}
                 >
                     Users
                 </button>
+                )}
             </div>
         </div>
 
@@ -1342,7 +1349,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
             </div>
         )}
 
-        {activeTab === 'users' && (
+        {activeTab === 'users' && (currentUser.id === 'Admin' || currentUser.id === 'master_admin') && (
              <div className="p-4 space-y-4">
                 {users.length === 0 ? (
                     <div className="text-center py-8 text-slate-500 text-sm">
