@@ -151,4 +151,5 @@ export interface PinnedWOD {
   intended_date: number; // Timestamp
   deadline: number; // Timestamp
   participants: string[]; // Array of User IDs
+  invited_user_ids?: string[]; // Array of invited User IDs
 }
