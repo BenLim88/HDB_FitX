@@ -76,6 +76,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
   const [exerciseCategoryFilter, setExerciseCategoryFilter] = useState<string>('All');
 
   useEffect(() => {
+      setWorkouts(initialWorkouts);
+  }, [initialWorkouts]);
+
+  useEffect(() => {
+      setVenues(initialVenues);
+  }, [initialVenues]);
+
+  useEffect(() => {
       // Redirect non-master admins away from users tab
       if (activeTab === 'users' && currentUser?.id !== 'master_admin') {
           setActiveTab('exercises');
@@ -87,6 +95,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       }
       if (activeTab === 'exercises') {
           loadExercises();
+      }
+      if (activeTab === 'workouts') {
+          loadWorkouts();
+      }
+      if (activeTab === 'venues') {
+          loadVenues();
       }
   }, [activeTab, currentUser]);
 
@@ -111,6 +125,24 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       } catch (error) {
           console.error('Error loading exercises:', error);
           alert('Failed to load exercises. Please try again.');
+      }
+  };
+
+  const loadWorkouts = async () => {
+      try {
+          const allWorkouts = await DataService.getWorkouts();
+          setWorkouts(allWorkouts);
+      } catch (error) {
+          console.error('Error loading workouts:', error);
+      }
+  };
+
+  const loadVenues = async () => {
+      try {
+          const allVenues = await DataService.getVenues();
+          setVenues(allVenues);
+      } catch (error) {
+          console.error('Error loading venues:', error);
       }
   };
 
