@@ -40,10 +40,31 @@ const HomeTab: React.FC<{
     const [assigningWorkoutId, setAssigningWorkoutId] = useState<string | null>(null);
     const [assignSearchTerm, setAssignSearchTerm] = useState('');
     const [isAssigning, setIsAssigning] = useState(false);
+    const handleGetTip = async () => {
         setLoadingTip(true);
         const tip = await GeminiService.generateAdvice(`Give me a short, aggressive motivation tip for a ${user.athlete_type} athlete.`);
         setAiTip(tip);
         setLoadingTip(false);
+    };
+
+    const handleConfirmAssign = async (targetUser: User) => {
+        const workout = workouts.find(w => w.id === assigningWorkoutId);
+        if (!workout) return;
+        
+        if (confirm(`Assign "${workout.name}" to ${targetUser.name}?`)) {
+            setIsAssigning(true);
+            try {
+                await onAssignWorkout(targetUser.id, workout.id, workout.name);
+                alert(`Workout assigned to ${targetUser.name}`);
+                setAssigningWorkoutId(null);
+                setAssignSearchTerm('');
+            } catch (error) {
+                console.error("Error assigning workout", error);
+                alert("Failed to assign workout");
+            } finally {
+                setIsAssigning(false);
+            }
+        }
     };
 
     const isKid = user.category === UserCategory.KID;
