@@ -1823,7 +1823,7 @@ const App: React.FC = () => {
           <Navbar 
             activeTab={activeTab === 'admin' ? 'profile' : activeTab} 
             setActiveTab={setActiveTab} 
-            notificationCount={notifications.length} 
+            notificationCount={notifications.filter(n => !n.read).length} 
           />
       )}
     </div>
