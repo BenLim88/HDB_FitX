@@ -28,14 +28,18 @@ const HomeTab: React.FC<{
   onJoinPinned: (id: string) => void,
   onUnjoinPinned: (id: string) => void,
   onUnpinWOD?: (id: string) => void, // Add unpin handler
+  onAssignWorkout: (targetUserId: string, workoutId: string, workoutName: string) => Promise<void>,
   allUsers: User[]
-}> = ({ user, workouts, pinnedWods, onStartWorkout, onStartDIY, onJoinPinned, onUnjoinPinned, onUnpinWOD, allUsers }) => {
+}> = ({ user, workouts, pinnedWods, onStartWorkout, onStartDIY, onJoinPinned, onUnjoinPinned, onUnpinWOD, onAssignWorkout, allUsers }) => {
     const [aiTip, setAiTip] = useState<string>('');
     const [loadingTip, setLoadingTip] = useState(false);
     const [showParticipants, setShowParticipants] = useState<string | null>(null); // ID of WOD to show list for
     const [workoutCategoryFilter, setWorkoutCategoryFilter] = useState<string>('All');
-
-    const handleGetTip = async () => {
+    
+    // Assign Modal State
+    const [assigningWorkoutId, setAssigningWorkoutId] = useState<string | null>(null);
+    const [assignSearchTerm, setAssignSearchTerm] = useState('');
+    const [isAssigning, setIsAssigning] = useState(false);
         setLoadingTip(true);
         const tip = await GeminiService.generateAdvice(`Give me a short, aggressive motivation tip for a ${user.athlete_type} athlete.`);
         setAiTip(tip);
@@ -90,6 +94,64 @@ const HomeTab: React.FC<{
 
     return (
         <div className="p-5 space-y-6 pb-24">
+            {/* ASSIGN WORKOUT MODAL */}
+            {assigningWorkoutId && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in">
+                    <div className={`${isKid ? 'bg-white' : 'bg-slate-900'} border ${isKid ? 'border-blue-200' : 'border-slate-800'} w-full max-w-md rounded-2xl p-6 shadow-2xl flex flex-col max-h-[80vh]`}>
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className={`${isKid ? 'text-blue-900' : 'text-white'} font-bold text-lg flex items-center gap-2`}>
+                                <Users size={20} className={isKid ? 'text-blue-500' : 'text-orange-500'} /> Assign to Athlete
+                            </h3>
+                            <button onClick={() => setAssigningWorkoutId(null)} className="p-2 text-slate-500 hover:text-red-500">
+                                <X size={20} />
+                            </button>
+                        </div>
+                        
+                        <div className="mb-4 relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+                            <input 
+                                className={`w-full ${isKid ? 'bg-blue-50 border-blue-200 text-blue-900' : 'bg-slate-950 border-slate-800 text-white'} border rounded-lg py-3 pl-10 pr-4 outline-none focus:border-blue-500`}
+                                placeholder="Search athlete..."
+                                value={assignSearchTerm}
+                                onChange={e => setAssignSearchTerm(e.target.value)}
+                                autoFocus
+                            />
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto space-y-2 pr-2">
+                            {allUsers
+                                .filter(u => u.id !== user.id && u.name.toLowerCase().includes(assignSearchTerm.toLowerCase()))
+                                .map(u => (
+                                <button
+                                    key={u.id}
+                                    onClick={() => handleConfirmAssign(u)}
+                                    disabled={isAssigning}
+                                    className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all ${
+                                        isKid 
+                                            ? 'bg-white border-blue-100 hover:border-blue-400 hover:bg-blue-50' 
+                                            : 'bg-slate-950 border-slate-800 hover:border-orange-500 hover:bg-slate-900'
+                                    }`}
+                                >
+                                    <div className="w-10 h-10 rounded-full bg-slate-800 overflow-hidden border border-slate-700">
+                                        <img src={u.avatar_url} className="w-full h-full object-cover" />
+                                    </div>
+                                    <div className="text-left">
+                                        <p className={`${isKid ? 'text-blue-900' : 'text-white'} font-bold text-sm`}>{u.name}</p>
+                                        <p className="text-xs text-slate-500">{u.athlete_type}</p>
+                                    </div>
+                                    <ChevronRight className="ml-auto text-slate-500" size={16} />
+                                </button>
+                            ))}
+                            {allUsers.filter(u => u.id !== user.id && u.name.toLowerCase().includes(assignSearchTerm.toLowerCase())).length === 0 && (
+                                <div className="text-center py-8 text-slate-500 italic text-sm">
+                                    No athletes found.
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <header className="flex justify-between items-end">
                 <div>
                     <p className={`${isKid ? 'text-blue-600' : 'text-slate-400'} text-sm font-medium uppercase tracking-wider`}>Welcome Back</p>
@@ -278,9 +340,19 @@ const HomeTab: React.FC<{
                                          )}
                                     </div>
                                     <p className={`${isKid ? 'text-blue-700' : 'text-slate-400'} text-xs line-clamp-2 mb-2`}>{w.description}</p>
-                                    <div className={`text-xs font-bold ${isKid ? 'text-blue-900' : 'text-white'} flex items-center gap-1`}>
+                                    <div className={`text-xs font-bold ${isKid ? 'text-blue-900' : 'text-white'} flex items-center gap-1 mt-auto`}>
                                         Start Mission <ChevronRight size={14} className="text-yellow-500" />
                                     </div>
+                                    <button 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setAssigningWorkoutId(w.id);
+                                        }}
+                                        className="absolute bottom-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white backdrop-blur-sm transition-colors z-20"
+                                        title="Assign to Athlete"
+                                    >
+                                        <Users size={16} />
+                                    </button>
                                 </div>
                             </button>
                         ))}
@@ -373,16 +445,28 @@ const HomeTab: React.FC<{
                                                         )}
                                 </div>
                                                     <p className={`${isKid ? 'text-blue-700' : 'text-slate-400'} text-xs mt-1 line-clamp-2`}>{w.description}</p>
+                                </div>
+                                <ChevronRight className={isKid ? 'text-blue-400' : 'text-slate-600'} />
                             </div>
-                                                <ChevronRight className={isKid ? 'text-blue-400' : 'text-slate-600'} />
-                                            </div>
-                                            <div className="mt-3 flex gap-2 flex-wrap">
-                                                <span className={`text-[10px] ${isKid ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-slate-950 text-slate-400 border-slate-800'} px-2 py-1 rounded border`}>
-                                    {w.components.length} Exercises
-                                </span>
-                                                <span className={`text-[10px] ${isKid ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-slate-950 text-slate-400 border-slate-800'} px-2 py-1 rounded border`}>
-                                                    {w.scheme}
-                                                </span>
+                            <div className="flex justify-between items-end mt-3">
+                                <div className="flex gap-2 flex-wrap">
+                                    <span className={`text-[10px] ${isKid ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-slate-950 text-slate-400 border-slate-800'} px-2 py-1 rounded border`}>
+                                        {w.components.length} Exercises
+                                    </span>
+                                    <span className={`text-[10px] ${isKid ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-slate-950 text-slate-400 border-slate-800'} px-2 py-1 rounded border`}>
+                                        {w.scheme}
+                                    </span>
+                                </div>
+                                <button 
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setAssigningWorkoutId(w.id);
+                                    }}
+                                    className={`p-2 rounded-full ${isKid ? 'bg-blue-100 text-blue-600 hover:bg-blue-200' : 'bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700'} transition-colors`}
+                                    title="Assign to Athlete"
+                                >
+                                    <Users size={14} />
+                                </button>
                             </div>
                         </button>
                     ))}
@@ -414,13 +498,25 @@ const HomeTab: React.FC<{
                                         </div>
                                         <ChevronRight className={isKid ? 'text-blue-400' : 'text-slate-600'} />
                                     </div>
-                                    <div className="mt-3 flex gap-2 flex-wrap">
-                                        <span className={`text-[10px] ${isKid ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-slate-950 text-slate-400 border-slate-800'} px-2 py-1 rounded border`}>
-                                            {w.components.length} Exercises
-                                        </span>
-                                        <span className={`text-[10px] ${isKid ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-slate-950 text-slate-400 border-slate-800'} px-2 py-1 rounded border`}>
-                                            {w.scheme}
-                                        </span>
+                                    <div className="flex justify-between items-end mt-3">
+                                        <div className="flex gap-2 flex-wrap">
+                                            <span className={`text-[10px] ${isKid ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-slate-950 text-slate-400 border-slate-800'} px-2 py-1 rounded border`}>
+                                                {w.components.length} Exercises
+                                            </span>
+                                            <span className={`text-[10px] ${isKid ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-slate-950 text-slate-400 border-slate-800'} px-2 py-1 rounded border`}>
+                                                {w.scheme}
+                                            </span>
+                                        </div>
+                                        <button 
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setAssigningWorkoutId(w.id);
+                                            }}
+                                            className={`p-2 rounded-full ${isKid ? 'bg-blue-100 text-blue-600 hover:bg-blue-200' : 'bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700'} transition-colors`}
+                                            title="Assign to Athlete"
+                                        >
+                                            <Users size={14} />
+                                        </button>
                                     </div>
                                 </button>
                             ))
@@ -1150,6 +1246,20 @@ const App: React.FC = () => {
       }
   };
 
+  const handleAssignWorkout = async (targetUserId: string, workoutId: string, workoutName: string) => {
+      if (!currentUser) return;
+      await DataService.assignWorkout(targetUserId, workoutId, workoutName, currentUser.name);
+  };
+
+  const handleStartAssignedWorkout = (workoutId: string) => {
+      const workout = workouts.find(w => w.id === workoutId);
+      if (workout) {
+          handleStartWorkout(workout);
+      } else {
+          alert('Assigned workout not found. It might have been deleted.');
+      }
+  };
+
   // Show loading state while checking auth
   if (isLoadingAuth) {
       return (
@@ -1231,6 +1341,7 @@ const App: React.FC = () => {
                     onJoinPinned={handleJoinPinned}
                     onUnjoinPinned={handleUnjoinPinned}
                     onUnpinWOD={currentUser.is_admin ? handleUnpinWOD : undefined}
+                    onAssignWorkout={handleAssignWorkout}
                     allUsers={allUsers}
                 />
             )}
@@ -1245,6 +1356,7 @@ const App: React.FC = () => {
                   currentUserId={currentUser.id} 
                   refreshData={refreshData}
                   onNavigateToHome={() => setActiveTab('home')}
+                  onStartAssignedWorkout={handleStartAssignedWorkout}
                 />
             )}
 

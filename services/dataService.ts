@@ -416,6 +416,18 @@ export const DataService = {
       };
   },
 
+  assignWorkout: async (targetUserId: string, workoutId: string, workoutName: string, assignerName: string): Promise<void> => {
+      await DataService.addNotification({
+          target_user_id: targetUserId,
+          type: 'workout_assignment',
+          message: `${assignerName} assigned you a workout: ${workoutName}`,
+          payload: {
+              workout_id: workoutId
+          },
+          read: false
+      });
+  },
+
   deletePinnedWOD: async (id: string): Promise<void> => {
       try {
           console.log('Deleting pinned WOD:', id);
