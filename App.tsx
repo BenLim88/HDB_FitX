@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { MOCK_USERS, CURRENT_USER_ID } from './constants';
 import { User, Log, Notification, Workout, VerificationStatus, Gender, GroupType, AthleteType, ScalingTier, Venue, PinnedWOD, UserCategory, WorldRecord } from './types';
 import { DataService } from './services/dataService';
@@ -765,7 +765,8 @@ const LeaderboardTab: React.FC<{ logs: Log[], workouts: Workout[], allUsers: Use
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true); // Track auth loading state
-  const [isLoggingOut, setIsLoggingOut] = useState(false); // Flag to prevent auto-restoration during logout
+  const isLoggingOutRef = useRef(false); // Use ref so callbacks always see latest value
+  const authUnsubscribeRef = useRef<(() => void) | null>(null); // Store unsubscribe function
   // Restore active tab from localStorage, default to 'home'
   const [activeTab, setActiveTab] = useState(() => {
     const savedTab = localStorage.getItem('hdb_fitx_activeTab');
@@ -799,35 +800,35 @@ const App: React.FC = () => {
   // Restore user session on mount
   useEffect(() => {
     // Don't restore session if we're in the middle of logging out
-    if (isLoggingOut) {
+    if (isLoggingOutRef.current) {
       setIsLoadingAuth(false);
       return;
     }
-
-    let unsubscribe: (() => void) | null = null;
 
     const restoreSession = async () => {
       try {
         // Check localStorage for saved user first
         const savedUser = localStorage.getItem('hdb_fitx_user');
-        if (savedUser) {
+        if (savedUser && !isLoggingOutRef.current) {
           const user = JSON.parse(savedUser) as User;
           // Ensure user exists in the users array for updates to work
           await DataService.updateUser(user); // This will add user if not exists
-          setCurrentUser(user);
+          if (!isLoggingOutRef.current) {
+            setCurrentUser(user);
+          }
           setIsLoadingAuth(false);
           return;
         }
 
         // Check Firebase auth state (for Google sign-in users)
-        unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+        authUnsubscribeRef.current = onAuthStateChanged(auth, async (firebaseUser) => {
           // Don't restore if we're logging out
-          if (isLoggingOut) {
+          if (isLoggingOutRef.current) {
             setIsLoadingAuth(false);
             return;
           }
 
-          if (firebaseUser) {
+          if (firebaseUser && !isLoggingOutRef.current) {
             // User is signed in with Google, restore their session
             const allUsers = await DataService.getAllUsers();
             let user = allUsers.find(u => u.id === firebaseUser.uid);
@@ -849,8 +850,16 @@ const App: React.FC = () => {
               await DataService.updateUser(user);
             }
             
-            setCurrentUser(user);
-            localStorage.setItem('hdb_fitx_user', JSON.stringify(user));
+            if (!isLoggingOutRef.current) {
+              setCurrentUser(user);
+              localStorage.setItem('hdb_fitx_user', JSON.stringify(user));
+            }
+          } else if (!firebaseUser) {
+            // Firebase user signed out, make sure we're logged out too
+            if (isLoggingOutRef.current) {
+              setCurrentUser(null);
+              localStorage.removeItem('hdb_fitx_user');
+            }
           }
           setIsLoadingAuth(false);
         });
@@ -864,22 +873,23 @@ const App: React.FC = () => {
 
     // Cleanup subscription on unmount
     return () => {
-      if (unsubscribe) {
-        unsubscribe();
+      if (authUnsubscribeRef.current) {
+        authUnsubscribeRef.current();
+        authUnsubscribeRef.current = null;
       }
     };
-  }, [isLoggingOut]);
+  }, []); // Only run once on mount
 
   // Save user to localStorage whenever it changes (but not during logout)
   useEffect(() => {
-    if (isLoggingOut) return; // Don't save during logout
+    if (isLoggingOutRef.current) return; // Don't save during logout
     
     if (currentUser) {
       localStorage.setItem('hdb_fitx_user', JSON.stringify(currentUser));
     } else {
       localStorage.removeItem('hdb_fitx_user');
     }
-  }, [currentUser, isLoggingOut]);
+  }, [currentUser]);
 
   // Save active tab to localStorage whenever it changes
   useEffect(() => {
@@ -1166,17 +1176,16 @@ const App: React.FC = () => {
   };
 
   const handleLogout = async () => {
-      // Set logout flag to prevent auto-restoration
-      setIsLoggingOut(true);
+      // Set logout flag to prevent auto-restoration (use ref so callbacks see it immediately)
+      isLoggingOutRef.current = true;
       
-      try {
-          // Sign out from Firebase first
-          await signOut(auth);
-      } catch (error) {
-          console.error('Firebase sign out error:', error);
+      // Unsubscribe from auth listener first to prevent it from firing
+      if (authUnsubscribeRef.current) {
+        authUnsubscribeRef.current();
+        authUnsubscribeRef.current = null;
       }
       
-      // Clear local storage immediately
+      // Clear local storage FIRST before any state changes
       localStorage.removeItem('hdb_fitx_user');
       localStorage.removeItem('hdb_fitx_activeTab');
       
@@ -1186,6 +1195,13 @@ const App: React.FC = () => {
       setActiveWorkout(null);
       setActiveDIY(false);
       setIsEditingProfile(false);
+      
+      try {
+          // Sign out from Firebase (this might trigger auth state change, but we've unsubscribed)
+          await signOut(auth);
+      } catch (error) {
+          console.error('Firebase sign out error:', error);
+      }
       
       // Reset loading state to show auth screen
       setIsLoadingAuth(false);
@@ -1209,7 +1225,7 @@ const App: React.FC = () => {
   // If no user, show Auth Screen
   if (!currentUser) {
       return <AuthScreen onAuthSuccess={(user) => {
-          setIsLoggingOut(false); // Reset logout flag on successful login
+          isLoggingOutRef.current = false; // Reset logout flag on successful login
           setCurrentUser(user);
       }} />;
   }
