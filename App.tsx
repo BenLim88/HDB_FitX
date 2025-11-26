@@ -1150,6 +1150,24 @@ const App: React.FC = () => {
       }
   };
 
+  const handleLogout = async () => {
+      try {
+          await signOut(auth);
+      } catch (error) {
+          console.error('Logout error:', error);
+      }
+      // Clear local storage
+      localStorage.removeItem('hdb_fitx_user');
+      localStorage.removeItem('hdb_fitx_activeTab');
+      
+      // Reset all app states
+      setCurrentUser(null);
+      setActiveTab('home');
+      setActiveWorkout(null);
+      setActiveDIY(false);
+      setIsEditingProfile(false);
+  };
+
   // Show loading state while checking auth
   if (isLoadingAuth) {
       return (
@@ -1450,17 +1468,7 @@ const App: React.FC = () => {
                             </div>
                             
                             <button 
-                                onClick={async () => {
-                                    // Sign out from Firebase if signed in
-                                    try {
-                                        await signOut(auth);
-                                    } catch (error) {
-                                        console.error('Firebase sign out error:', error);
-                                    }
-                                    // Clear local state
-                                    setCurrentUser(null);
-                                    localStorage.removeItem('hdb_fitx_user');
-                                }}
+                                onClick={handleLogout}
                                 className={`mt-12 ${isKid ? 'text-blue-500' : 'text-slate-600'} text-sm font-bold hover:${isKid ? 'text-blue-700' : 'text-white'} flex items-center justify-center gap-2 w-full`}
                             >
                                 Log Out
