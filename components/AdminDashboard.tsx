@@ -77,17 +77,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
 
   useEffect(() => {
       if (activeTab === 'users') {
-          // Only allow Master Admin (ID = 'Admin' or 'master_admin') to view users
-          if (currentUser.id !== 'Admin' && currentUser.id !== 'master_admin') {
-              setActiveTab('exercises');
-              return;
-          }
           loadUsers();
       }
       if (activeTab === 'exercises') {
           loadExercises();
       }
-  }, [activeTab, currentUser.id]);
+  }, [activeTab]);
 
   // Load exercises on component mount
   useEffect(() => {
@@ -170,12 +165,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       }
       try {
           const newEx = await DataService.addExercise({
-              name: newExerciseName,
-              type: newExerciseType,
-              category: newExerciseCategory
+        name: newExerciseName,
+        type: newExerciseType,
+        category: newExerciseCategory
           });
-          setExercises([...exercises, newEx]);
-          setNewExerciseName('');
+    setExercises([...exercises, newEx]);
+    setNewExerciseName('');
           setNewExerciseType('reps');
           setNewExerciseCategory('General');
           alert('Exercise added successfully!');
@@ -189,7 +184,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       if (window.confirm("Are you sure you want to delete this exercise? This cannot be undone.")) {
           try {
               await DataService.deleteExercise(id);
-              setExercises(exercises.filter(e => e.id !== id));
+    setExercises(exercises.filter(e => e.id !== id));
               alert('Exercise deleted successfully!');
           } catch (error) {
               console.error('Error deleting exercise:', error);
@@ -262,7 +257,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       setScalingAdv(workout.scaling[ScalingTier.ADVANCED] || '');
       setScalingInt(workout.scaling[ScalingTier.INTERMEDIATE] || '');
       setScalingBeg(workout.scaling[ScalingTier.BEGINNER] || '');
-      
+
       setIsCreatingWorkout(true);
   };
 
@@ -321,7 +316,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
 
       try {
           let savedWorkout: Workout;
-          if (editingWorkoutId) {
+      if (editingWorkoutId) {
               // Update existing workout in Firestore
               savedWorkout = await DataService.updateWorkout(newWorkout);
               // Refresh workouts from Firestore to ensure we have the latest data
@@ -329,7 +324,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
               setWorkouts(refreshedWorkouts);
               onUpdateWorkouts(refreshedWorkouts);
               alert('Workout updated successfully!');
-          } else {
+      } else {
               // Create new workout in Firestore (remove id, let Firestore generate it)
               const { id, ...workoutWithoutId } = newWorkout;
               savedWorkout = await DataService.addWorkout(workoutWithoutId);
@@ -339,7 +334,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
               onUpdateWorkouts(refreshedWorkouts);
               alert('Workout created successfully!');
           }
-          closeBuilder();
+      closeBuilder();
       } catch (error) {
           console.error('Error saving workout:', error);
           alert(`Failed to save workout: ${error instanceof Error ? error.message : 'Unknown error'}. Check console for details.`);
@@ -362,8 +357,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       try {
           await DataService.updateWorkout(updatedWorkout);
           const updatedWorkouts = workouts.map(w => w.id === id ? updatedWorkout : w);
-          setWorkouts(updatedWorkouts);
-          onUpdateWorkouts(updatedWorkouts);
+      setWorkouts(updatedWorkouts);
+      onUpdateWorkouts(updatedWorkouts);
           alert(`Workout "${updatedWorkout.name}" ${updatedWorkout.is_featured ? 'featured' : 'unfeatured'} successfully!`);
       } catch (error) {
           console.error('Error toggling featured status:', error);
@@ -403,8 +398,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
           try {
               console.log('Attempting to delete workout with ID:', id, 'Type:', typeof id);
               await DataService.deleteWorkout(id);
-              const updatedWorkouts = workouts.filter(w => w.id !== id);
-              setWorkouts(updatedWorkouts);
+          const updatedWorkouts = workouts.filter(w => w.id !== id);
+          setWorkouts(updatedWorkouts);
               onUpdateWorkouts(updatedWorkouts);
               alert('Workout deleted successfully!');
           } catch (error) {
@@ -566,12 +561,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
           console.log('Saving user:', editingUserId, updatedUser);
           const updated = await DataService.updateUser(updatedUser);
           console.log('User updated successfully:', updated);
-          setUsers(users.map(u => u.id === updated.id ? updated : u));
-          setEditingUserId(null);
-          setEditForm({});
+              setUsers(users.map(u => u.id === updated.id ? updated : u));
+              setEditingUserId(null);
+              setEditForm({});
           alert('User updated successfully!');
-      } catch (e) {
-          console.error("Failed to update user", e);
+          } catch (e) {
+              console.error("Failed to update user", e);
           alert(`Failed to update user: ${e instanceof Error ? e.message : 'Unknown error'}. Check console for details.`);
       }
   };
@@ -640,14 +635,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                 >
                     Venues
                 </button>
-                {(currentUser.id === 'Admin' || currentUser.id === 'master_admin') && (
                 <button 
                     onClick={() => { setActiveTab('users'); closeBuilder(); }}
                     className={`flex-shrink-0 py-2 px-4 rounded-lg font-bold text-sm transition-colors ${activeTab === 'users' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-400'}`}
                 >
                     Users
                 </button>
-                )}
             </div>
         </div>
 
@@ -957,7 +950,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                                                         >
                                                             {allFilteredSelected ? 'Deselect All' : 'Select All'} ({filteredUsers.length})
                                                         </button>
-                                                    </div>
+                        </div>
                                                 )}
 
                                                 {/* User List */}
@@ -1209,28 +1202,28 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                                                         )}
                                                         {roundComponents.map((comp, compIdx) => {
                                                             const globalIdx = workoutComponents.findIndex(c => c === comp);
-                                                            const ex = exercises.find(e => e.id === comp.exercise_id);
-                                                            return (
+                                            const ex = exercises.find(e => e.id === comp.exercise_id);
+                                            return (
                                                                 <div key={globalIdx} className="flex items-center justify-between bg-slate-950 p-2 rounded border border-slate-800">
-                                                                    <div className="flex items-center gap-3">
+                                                    <div className="flex items-center gap-3">
                                                                         <span className="text-slate-600 font-mono font-bold text-xs">#{globalIdx + 1}</span>
-                                                                        <div>
-                                                                            <p className="text-white text-xs font-bold">{ex?.name || 'Unknown'}</p>
+                                                        <div>
+                                                            <p className="text-white text-xs font-bold">{ex?.name || 'Unknown'}</p>
                                                                             <div className="flex gap-2 items-center flex-wrap">
                                                                                 {(comp.sets && comp.sets > 1) && (
                                                                                     <span className="text-[10px] text-blue-400 font-bold">{comp.sets}x</span>
                                                                                 )}
-                                                                                <span className="text-[10px] text-orange-500">{comp.target}</span>
-                                                                                {comp.weight && <span className="text-[10px] text-slate-400">@ {comp.weight}</span>}
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
+                                                                <span className="text-[10px] text-orange-500">{comp.target}</span>
+                                                                {comp.weight && <span className="text-[10px] text-slate-400">@ {comp.weight}</span>}
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                                     <button onClick={() => removeComponent(globalIdx)} className="text-slate-600 hover:text-red-500">
-                                                                        <X size={14} />
-                                                                    </button>
-                                                                </div>
+                                                        <X size={14} />
+                                                    </button>
+                                                </div>
                                                             );
-                                                        })}
+                                        })}
                                                     </div>
                                                 ));
                                         })()}
@@ -1349,7 +1342,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
             </div>
         )}
 
-        {activeTab === 'users' && (currentUser.id === 'Admin' || currentUser.id === 'master_admin') && (
+        {activeTab === 'users' && (
              <div className="p-4 space-y-4">
                 {users.length === 0 ? (
                     <div className="text-center py-8 text-slate-500 text-sm">

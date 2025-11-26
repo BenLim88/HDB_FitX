@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { MOCK_USERS, CURRENT_USER_ID } from './constants';
 import { User, Log, Notification, Workout, VerificationStatus, Gender, GroupType, AthleteType, ScalingTier, Venue, PinnedWOD, UserCategory, WorldRecord } from './types';
 import { DataService } from './services/dataService';
@@ -313,8 +313,8 @@ const HomeTab: React.FC<{
                 <div className="flex items-center justify-between mb-3">
                     <h2 className={`${isKid ? 'text-blue-900' : 'text-white'} font-bold text-lg flex items-center gap-2`}>
                         <Flame size={20} className={isKid ? 'text-blue-500' : 'text-orange-500'} />
-                        Standard Protocol
-                    </h2>
+                    Standard Protocol
+                </h2>
                 </div>
 
                 {/* Category Filter */}
@@ -355,14 +355,14 @@ const HomeTab: React.FC<{
                                     {category === 'Kids Friendly' && <Baby size={14} className="text-blue-500" />}
                                     {category}
                                 </h3>
-                                <div className="grid gap-3">
+                <div className="grid gap-3">
                                     {categoryWorkouts.map(w => (
-                                        <button 
-                                            key={w.id}
-                                            onClick={() => onStartWorkout(w)}
+                        <button 
+                            key={w.id}
+                            onClick={() => onStartWorkout(w)}
                                             className={`${isKid ? 'bg-white hover:bg-blue-50 border-blue-200' : 'bg-slate-900 hover:bg-slate-800 border-slate-800'} border p-4 rounded-xl text-left transition-colors group`}
-                                        >
-                                            <div className="flex justify-between items-start">
+                        >
+                            <div className="flex justify-between items-start">
                                                 <div className="flex-1">
                                                     <div className="flex items-center gap-2 mb-1">
                                                         <h3 className={`${isKid ? 'text-blue-900 group-hover:text-blue-600' : 'text-white group-hover:text-orange-500'} font-bold text-lg transition-colors`}>{w.name}</h3>
@@ -371,22 +371,22 @@ const HomeTab: React.FC<{
                                                                 <Baby size={10} /> Kid Friendly
                                                             </span>
                                                         )}
-                                                    </div>
+                                </div>
                                                     <p className={`${isKid ? 'text-blue-700' : 'text-slate-400'} text-xs mt-1 line-clamp-2`}>{w.description}</p>
-                                                </div>
+                            </div>
                                                 <ChevronRight className={isKid ? 'text-blue-400' : 'text-slate-600'} />
                                             </div>
                                             <div className="mt-3 flex gap-2 flex-wrap">
                                                 <span className={`text-[10px] ${isKid ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-slate-950 text-slate-400 border-slate-800'} px-2 py-1 rounded border`}>
-                                                    {w.components.length} Exercises
-                                                </span>
+                                    {w.components.length} Exercises
+                                </span>
                                                 <span className={`text-[10px] ${isKid ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-slate-950 text-slate-400 border-slate-800'} px-2 py-1 rounded border`}>
                                                     {w.scheme}
                                                 </span>
-                                            </div>
-                                        </button>
-                                    ))}
-                                </div>
+                            </div>
+                        </button>
+                    ))}
+                </div>
                             </div>
                         ));
                     })()
@@ -600,15 +600,15 @@ const LeaderboardTab: React.FC<{ logs: Log[], workouts: Workout[], allUsers: Use
                 {/* Row 4: Status & Category */}
                 <div className="flex gap-2">
                     <div className="relative flex-1">
-                        <select 
-                            className="w-full bg-slate-900 border border-slate-800 rounded-lg py-3 px-3 text-white text-sm appearance-none outline-none focus:border-orange-500"
-                            value={selectedVerification}
-                            onChange={(e) => setSelectedVerification(e.target.value)}
-                        >
-                            <option value="all">Any Status</option>
-                            <option value={VerificationStatus.VERIFIED}>Verified Only</option>
-                            <option value={VerificationStatus.UNVERIFIED}>Unverified</option>
-                        </select>
+                    <select 
+                        className="w-full bg-slate-900 border border-slate-800 rounded-lg py-3 px-3 text-white text-sm appearance-none outline-none focus:border-orange-500"
+                        value={selectedVerification}
+                        onChange={(e) => setSelectedVerification(e.target.value)}
+                    >
+                        <option value="all">Any Status</option>
+                        <option value={VerificationStatus.VERIFIED}>Verified Only</option>
+                        <option value={VerificationStatus.UNVERIFIED}>Unverified</option>
+                    </select>
                     </div>
                     <div className="relative flex-1">
                         <select 
@@ -765,8 +765,6 @@ const LeaderboardTab: React.FC<{ logs: Log[], workouts: Workout[], allUsers: Use
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true); // Track auth loading state
-  const isLoggingOutRef = useRef(false); // Use ref so callbacks always see latest value
-  const authUnsubscribeRef = useRef<(() => void) | null>(null); // Store unsubscribe function
   // Restore active tab from localStorage, default to 'home'
   const [activeTab, setActiveTab] = useState(() => {
     const savedTab = localStorage.getItem('hdb_fitx_activeTab');
@@ -799,36 +797,24 @@ const App: React.FC = () => {
 
   // Restore user session on mount
   useEffect(() => {
-    // Don't restore session if we're in the middle of logging out
-    if (isLoggingOutRef.current) {
-      setIsLoadingAuth(false);
-      return;
-    }
+    let unsubscribe: (() => void) | null = null;
 
     const restoreSession = async () => {
       try {
         // Check localStorage for saved user first
         const savedUser = localStorage.getItem('hdb_fitx_user');
-        if (savedUser && !isLoggingOutRef.current) {
+        if (savedUser) {
           const user = JSON.parse(savedUser) as User;
           // Ensure user exists in the users array for updates to work
           await DataService.updateUser(user); // This will add user if not exists
-          if (!isLoggingOutRef.current) {
-            setCurrentUser(user);
-          }
+          setCurrentUser(user);
           setIsLoadingAuth(false);
           return;
         }
 
         // Check Firebase auth state (for Google sign-in users)
-        authUnsubscribeRef.current = onAuthStateChanged(auth, async (firebaseUser) => {
-          // Don't restore if we're logging out
-          if (isLoggingOutRef.current) {
-            setIsLoadingAuth(false);
-            return;
-          }
-
-          if (firebaseUser && !isLoggingOutRef.current) {
+        unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+          if (firebaseUser) {
             // User is signed in with Google, restore their session
             const allUsers = await DataService.getAllUsers();
             let user = allUsers.find(u => u.id === firebaseUser.uid);
@@ -850,16 +836,8 @@ const App: React.FC = () => {
               await DataService.updateUser(user);
             }
             
-            if (!isLoggingOutRef.current) {
-              setCurrentUser(user);
-              localStorage.setItem('hdb_fitx_user', JSON.stringify(user));
-            }
-          } else if (!firebaseUser) {
-            // Firebase user signed out, make sure we're logged out too
-            if (isLoggingOutRef.current) {
-              setCurrentUser(null);
-              localStorage.removeItem('hdb_fitx_user');
-            }
+            setCurrentUser(user);
+            localStorage.setItem('hdb_fitx_user', JSON.stringify(user));
           }
           setIsLoadingAuth(false);
         });
@@ -873,17 +851,14 @@ const App: React.FC = () => {
 
     // Cleanup subscription on unmount
     return () => {
-      if (authUnsubscribeRef.current) {
-        authUnsubscribeRef.current();
-        authUnsubscribeRef.current = null;
+      if (unsubscribe) {
+        unsubscribe();
       }
     };
-  }, []); // Only run once on mount
+  }, []);
 
-  // Save user to localStorage whenever it changes (but not during logout)
+  // Save user to localStorage whenever it changes
   useEffect(() => {
-    if (isLoggingOutRef.current) return; // Don't save during logout
-    
     if (currentUser) {
       localStorage.setItem('hdb_fitx_user', JSON.stringify(currentUser));
     } else {
@@ -1104,8 +1079,8 @@ const App: React.FC = () => {
           } else if (avatarStyle && avatarStyle !== '' && !currentUser.avatar_url?.startsWith('https://firebasestorage.googleapis.com') && !currentUser.avatar_url?.startsWith('data:image')) {
               // User changed avatar style but didn't enter a seed - use name as seed
               const seed = editProfileForm.name || currentUser.name;
-              updatedUser.avatar_url = getAvatarUrl(avatarStyle, seed);
-          }
+          updatedUser.avatar_url = getAvatarUrl(avatarStyle, seed);
+      }
           // Priority 3: Keep existing avatar_url if nothing changed
           // Preserve existing avatar_url (especially Firebase Storage URLs and base64 URLs)
           else {
@@ -1175,41 +1150,6 @@ const App: React.FC = () => {
       }
   };
 
-  const handleLogout = async () => {
-      // Set logout flag to prevent auto-restoration (use ref so callbacks see it immediately)
-      isLoggingOutRef.current = true;
-      
-      // Unsubscribe from auth listener first to prevent it from firing
-      if (authUnsubscribeRef.current) {
-        authUnsubscribeRef.current();
-        authUnsubscribeRef.current = null;
-      }
-      
-      // Clear local storage FIRST before any state changes
-      localStorage.removeItem('hdb_fitx_user');
-      localStorage.removeItem('hdb_fitx_activeTab');
-      
-      // Reset all app states
-      setCurrentUser(null);
-      setActiveTab('home');
-      setActiveWorkout(null);
-      setActiveDIY(false);
-      setIsEditingProfile(false);
-      
-      try {
-          // Sign out from Firebase (this might trigger auth state change, but we've unsubscribed)
-          await signOut(auth);
-      } catch (error) {
-          console.error('Firebase sign out error:', error);
-      }
-      
-      // Reset loading state to show auth screen
-      setIsLoadingAuth(false);
-      
-      // Keep logout flag set to prevent any restoration attempts
-      // It will be reset when user successfully logs in again
-  };
-
   // Show loading state while checking auth
   if (isLoadingAuth) {
       return (
@@ -1224,10 +1164,7 @@ const App: React.FC = () => {
 
   // If no user, show Auth Screen
   if (!currentUser) {
-      return <AuthScreen onAuthSuccess={(user) => {
-          isLoggingOutRef.current = false; // Reset logout flag on successful login
-          setCurrentUser(user);
-      }} />;
+      return <AuthScreen onAuthSuccess={(user) => setCurrentUser(user)} />;
   }
 
   const isKid = currentUser.category === UserCategory.KID;
@@ -1379,7 +1316,7 @@ const App: React.FC = () => {
                                     )}
                                 </div>
                             </div>
-
+                            
                             {/* Workout History Section */}
                             <div className={`mt-6 p-4 ${isKid ? 'bg-blue-50 border-blue-200' : 'bg-slate-900 border-slate-800'} rounded-lg border`}>
                                 <div className="flex justify-between items-center mb-4">
@@ -1487,7 +1424,7 @@ const App: React.FC = () => {
                                                         </div>
                                                     </div>
                                                     <div className="flex flex-col gap-2 shrink-0">
-                                                        <button
+                            <button 
                                                             onClick={async () => {
                                                                 if (confirm(`Delete this workout log? This will remove it from the leaderboard.`)) {
                                                                     try {
@@ -1513,7 +1450,17 @@ const App: React.FC = () => {
                             </div>
                             
                             <button 
-                                onClick={handleLogout}
+                                onClick={async () => {
+                                    // Sign out from Firebase if signed in
+                                    try {
+                                        await signOut(auth);
+                                    } catch (error) {
+                                        console.error('Firebase sign out error:', error);
+                                    }
+                                    // Clear local state
+                                    setCurrentUser(null);
+                                    localStorage.removeItem('hdb_fitx_user');
+                                }}
                                 className={`mt-12 ${isKid ? 'text-blue-500' : 'text-slate-600'} text-sm font-bold hover:${isKid ? 'text-blue-700' : 'text-white'} flex items-center justify-center gap-2 w-full`}
                             >
                                 Log Out
@@ -1573,42 +1520,42 @@ const App: React.FC = () => {
                                     {/* Generated Avatar Options */}
                                     <div>
                                         <label className={`text-[10px] font-bold ${isKid ? 'text-blue-600' : 'text-slate-500'} block mb-1 text-left`}>Generate Avatar</label>
-                                        <div className="flex gap-2">
-                                            <input 
-                                                type="text"
-                                                inputMode="numeric"
-                                                pattern="[0-9]*"
-                                                value={avatarPrompt}
-                                                onChange={(e) => {
-                                                    const val = e.target.value;
-                                                    if (/^\d*$/.test(val)) setAvatarPrompt(val);
-                                                }}
+                                     <div className="flex gap-2">
+                                        <input 
+                                            type="text"
+                                            inputMode="numeric"
+                                            pattern="[0-9]*"
+                                            value={avatarPrompt}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                if (/^\d*$/.test(val)) setAvatarPrompt(val);
+                                            }}
                                                 placeholder="Seed number"
                                                 className={`flex-1 ${isKid ? 'bg-white border-blue-200 text-blue-900' : 'bg-slate-950 border-slate-800 text-white'} border rounded px-3 py-2 text-xs outline-none font-mono`}
-                                            />
-                                            <button 
-                                                onClick={() => setAvatarPrompt(Math.floor(Math.random() * 1000000).toString())} 
+                                        />
+                                        <button 
+                                            onClick={() => setAvatarPrompt(Math.floor(Math.random() * 1000000).toString())} 
                                                 className={`p-2 ${isKid ? 'bg-blue-100 text-blue-600 hover:bg-blue-200' : 'bg-slate-800 text-orange-500 hover:bg-slate-700'} rounded`}
-                                            >
-                                                <RefreshCcw size={14} />
-                                            </button>
-                                        </div>
-                                        <div className="mt-2">
-                                            <select
-                                                value={avatarStyle}
-                                                onChange={(e) => setAvatarStyle(e.target.value)}
+                                        >
+                                            <RefreshCcw size={14} />
+                                        </button>
+                                     </div>
+                                     <div className="mt-2">
+                                        <select
+                                            value={avatarStyle}
+                                            onChange={(e) => setAvatarStyle(e.target.value)}
                                                 className={`w-full ${isKid ? 'bg-white border-blue-200 text-blue-900' : 'bg-slate-950 border-slate-800 text-slate-300'} border rounded px-2 py-1.5 text-[10px] outline-none`}
-                                            >
-                                                <option value="avataaars">Human (Standard)</option>
-                                                <option value="adventurer">Human (RPG)</option>
-                                                <option value="fun-emoji">Emoji (Expressive)</option>
-                                                <option value="bottts">Mecha (Robots)</option>
-                                                <option value="pixel-art">Retro (Pixel)</option>
-                                                <option value="cats">Animal (Cats)</option>
-                                                <option value="monsters">Creature (Monsters)</option>
-                                            </select>
+                                        >
+                                            <option value="avataaars">Human (Standard)</option>
+                                            <option value="adventurer">Human (RPG)</option>
+                                            <option value="fun-emoji">Emoji (Expressive)</option>
+                                            <option value="bottts">Mecha (Robots)</option>
+                                            <option value="pixel-art">Retro (Pixel)</option>
+                                            <option value="cats">Animal (Cats)</option>
+                                            <option value="monsters">Creature (Monsters)</option>
+                                        </select>
                                         </div>
-                                    </div>
+                                     </div>
                                 </div>
                             </div>
 
@@ -1711,7 +1658,7 @@ const App: React.FC = () => {
                                         </>
                                     ) : (
                                         <>
-                                            <Save size={16} /> Save
+                                    <Save size={16} /> Save
                                         </>
                                     )}
                                 </button>
