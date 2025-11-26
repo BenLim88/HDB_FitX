@@ -124,7 +124,7 @@ const WitnessInbox: React.FC<WitnessInboxProps> = ({ notifications, currentUserI
                   </div>
                   <div className="flex-1">
                     <p className="text-sm text-white font-medium">{notif.message}</p>
-                    <p className="text-xs text-slate-400 mt-1">Your trainer has assigned you a mission.</p>
+                    <p className="text-xs text-slate-400 mt-1">You have been assigned a mission.</p>
                   </div>
                 </div>
                 
