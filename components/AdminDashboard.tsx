@@ -76,19 +76,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
   const [exerciseCategoryFilter, setExerciseCategoryFilter] = useState<string>('All');
 
   useEffect(() => {
-      // Redirect non-master admins away from users tab
-      if (activeTab === 'users' && currentUser?.id !== 'master_admin') {
-          setActiveTab('exercises');
-          return;
-      }
-      
       if (activeTab === 'users') {
           loadUsers();
       }
       if (activeTab === 'exercises') {
           loadExercises();
       }
-  }, [activeTab, currentUser]);
+  }, [activeTab]);
 
   // Load exercises on component mount
   useEffect(() => {
@@ -641,14 +635,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                 >
                     Venues
                 </button>
-                {currentUser?.id === 'master_admin' && (
-                    <button 
-                        onClick={() => { setActiveTab('users'); closeBuilder(); }}
-                        className={`flex-shrink-0 py-2 px-4 rounded-lg font-bold text-sm transition-colors ${activeTab === 'users' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-400'}`}
-                    >
-                        Users
-                    </button>
-                )}
+                <button 
+                    onClick={() => { setActiveTab('users'); closeBuilder(); }}
+                    className={`flex-shrink-0 py-2 px-4 rounded-lg font-bold text-sm transition-colors ${activeTab === 'users' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-400'}`}
+                >
+                    Users
+                </button>
             </div>
         </div>
 
@@ -1350,7 +1342,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
             </div>
         )}
 
-        {activeTab === 'users' && currentUser?.id === 'master_admin' && (
+        {activeTab === 'users' && (
              <div className="p-4 space-y-4">
                 {users.length === 0 ? (
                     <div className="text-center py-8 text-slate-500 text-sm">
