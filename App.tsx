@@ -46,7 +46,7 @@ const HomeTab: React.FC<{
     const [isAssigning, setIsAssigning] = useState(false);
     const [selectedAthleteIds, setSelectedAthleteIds] = useState<Set<string>>(new Set());
     
-    // Get personalized AI assessment based on archetype, workout history, and leaderboard
+    // Get personalized AI assessment based on archetype, workout history, and category-specific leaderboard
     const handleGetTip = async () => {
         setLoadingTip(true);
         
@@ -65,51 +65,144 @@ const HomeTab: React.FC<{
         
         // Days since last workout
         const daysSinceLastWorkout = allUserLogs.length > 0
-            ? Math.floor((Date.now() - Math.max(...allUserLogs.map(l => l.timestamp))) / (1000 * 60 * 60 * 24))
+            ? Math.floor((Date.now() - Math.max(...allUserLogs.map(l => l.timestamp))) / (1000 * 60 * 60 * 1000 * 24))
             : null;
-        
-        // Calculate leaderboard position
-        const userWorkoutCounts = new Map<string, number>();
-        logs.forEach(l => {
-            userWorkoutCounts.set(l.user_id, (userWorkoutCounts.get(l.user_id) || 0) + 1);
-        });
-        const sortedUsers = Array.from(userWorkoutCounts.entries()).sort((a, b) => b[1] - a[1]);
-        const userRank = sortedUsers.findIndex(([id]) => id === user.id) + 1;
-        const totalUsers = sortedUsers.length;
-        const topPercentile = totalUsers > 0 ? Math.round((userRank / totalUsers) * 100) : 100;
         
         // Workout frequency analysis
         const avgWorkoutsPerWeek = monthlyWorkouts > 0 ? (monthlyWorkouts / 4).toFixed(1) : '0';
         
+        // ===== CATEGORY-SPECIFIC LEADERBOARD ANALYSIS =====
+        // Group all logs by workout category
+        const workoutCategoryMap = new Map<string, string>(); // workout_id -> category
+        workouts.forEach(w => {
+            workoutCategoryMap.set(w.id, w.category || 'General');
+        });
+        
+        // Count workouts per user per category
+        const categoryUserCounts = new Map<string, Map<string, number>>(); // category -> (user_id -> count)
+        logs.forEach(l => {
+            const category = workoutCategoryMap.get(l.workout_id) || 'General';
+            if (!categoryUserCounts.has(category)) {
+                categoryUserCounts.set(category, new Map());
+            }
+            const userCounts = categoryUserCounts.get(category)!;
+            userCounts.set(l.user_id, (userCounts.get(l.user_id) || 0) + 1);
+        });
+        
+        // Calculate user's rank in each category they've participated in
+        const userCategoryRankings: { category: string; rank: number; total: number; count: number }[] = [];
+        const userCategoryParticipation: { category: string; count: number }[] = [];
+        
+        categoryUserCounts.forEach((userCounts, category) => {
+            const userCount = userCounts.get(user.id) || 0;
+            if (userCount > 0) {
+                const sortedByCount = Array.from(userCounts.entries()).sort((a, b) => b[1] - a[1]);
+                const rank = sortedByCount.findIndex(([id]) => id === user.id) + 1;
+                userCategoryRankings.push({
+                    category,
+                    rank,
+                    total: sortedByCount.length,
+                    count: userCount
+                });
+                userCategoryParticipation.push({ category, count: userCount });
+            }
+        });
+        
+        // Sort by rank (best first) for strengths, and by count (lowest first) for weaknesses
+        const strengthCategories = [...userCategoryRankings]
+            .filter(r => r.rank <= 3 && r.total >= 2) // Top 3 with at least 2 participants
+            .sort((a, b) => a.rank - b.rank)
+            .slice(0, 3);
+        
+        const improvementCategories = [...userCategoryRankings]
+            .filter(r => r.rank > Math.ceil(r.total / 2)) // Bottom half
+            .sort((a, b) => b.rank - a.rank)
+            .slice(0, 2);
+        
+        // Categories user hasn't tried
+        const allCategories = new Set<string>(workouts.map(w => w.category || 'General'));
+        const userCategories = new Set<string>(userCategoryParticipation.map(p => p.category));
+        const unexploredCategories = Array.from(allCategories).filter(c => !userCategories.has(c));
+        
+        // Build category-specific leaderboard context
+        let categoryLeaderboardContext = '';
+        
+        if (strengthCategories.length > 0) {
+            const strengthsText = strengthCategories
+                .map(r => `${r.category} (#${r.rank} of ${r.total}, ${r.count} workouts)`)
+                .join(', ');
+            categoryLeaderboardContext += `Strong categories: ${strengthsText}. `;
+        }
+        
+        if (improvementCategories.length > 0) {
+            const improvementText = improvementCategories
+                .map(r => `${r.category} (#${r.rank} of ${r.total})`)
+                .join(', ');
+            categoryLeaderboardContext += `Areas for improvement: ${improvementText}. `;
+        }
+        
+        if (unexploredCategories.length > 0 && unexploredCategories.length <= 4) {
+            categoryLeaderboardContext += `Unexplored categories: ${unexploredCategories.join(', ')}. `;
+        }
+        
+        // Most active category
+        const mostActiveCategory = userCategoryParticipation.length > 0
+            ? userCategoryParticipation.sort((a, b) => b.count - a.count)[0]
+            : null;
+        
+        if (mostActiveCategory) {
+            categoryLeaderboardContext += `Most trained category: ${mostActiveCategory.category} (${mostActiveCategory.count} sessions). `;
+        }
+        
+        // Overall activity summary
+        const overallSummary = `Total workouts logged: ${totalWorkouts}. Monthly average: ${avgWorkoutsPerWeek} sessions/week.`;
+        
         // Build professional assessment context
         let performanceAssessment = '';
         if (weeklyWorkouts === 0 && daysSinceLastWorkout !== null && daysSinceLastWorkout > 7) {
-            performanceAssessment = `Assessment: ${daysSinceLastWorkout} days since last recorded workout. Training consistency has declined significantly. Recommend immediate resumption of training protocol.`;
+            performanceAssessment = `Training Status: ${daysSinceLastWorkout} days since last recorded workout. Training consistency has declined significantly. Recommend immediate resumption of training protocol.`;
         } else if (weeklyWorkouts === 0) {
-            performanceAssessment = `Assessment: No workouts logged this week. Current training frequency is below optimal levels for maintaining fitness gains.`;
+            performanceAssessment = `Training Status: No workouts logged this week. Current training frequency is below optimal levels for maintaining fitness gains.`;
         } else if (weeklyWorkouts >= 5) {
-            performanceAssessment = `Assessment: Excellent training volume with ${weeklyWorkouts} sessions this week. Current output demonstrates strong commitment. Recent activities: ${recentWorkoutNames.join(', ')}.`;
+            performanceAssessment = `Training Status: Excellent training volume with ${weeklyWorkouts} sessions this week. Current output demonstrates strong commitment. Recent activities: ${recentWorkoutNames.join(', ')}.`;
         } else if (weeklyWorkouts >= 3) {
-            performanceAssessment = `Assessment: Solid training consistency with ${weeklyWorkouts} sessions this week. On track for maintenance goals. Recent activities: ${recentWorkoutNames.join(', ')}.`;
+            performanceAssessment = `Training Status: Solid training consistency with ${weeklyWorkouts} sessions this week. On track for maintenance goals. Recent activities: ${recentWorkoutNames.join(', ')}.`;
         } else {
-            performanceAssessment = `Assessment: ${weeklyWorkouts} session(s) logged this week. Consider increasing frequency to 3-4 sessions for optimal progress. Recent: ${recentWorkoutNames.join(', ')}.`;
+            performanceAssessment = `Training Status: ${weeklyWorkouts} session(s) logged this week. Consider increasing frequency to 3-4 sessions for optimal progress. Recent: ${recentWorkoutNames.join(', ')}.`;
         }
         
-        // Leaderboard context
-        const leaderboardContext = userRank > 0 
-            ? `Leaderboard standing: Rank #${userRank} of ${totalUsers} athletes (top ${topPercentile}%). Total logged workouts: ${totalWorkouts}. Monthly average: ${avgWorkoutsPerWeek} sessions/week.`
-            : `No leaderboard data available yet. Begin logging workouts to establish ranking.`;
+        // Archetype alignment check
+        const archetypeCategory = user.athlete_type === 'Hyrox' ? 'Hyrox' 
+            : user.athlete_type === 'CrossFit' ? 'CrossFit'
+            : user.athlete_type === 'Calisthenics' ? 'Calisthenics'
+            : user.athlete_type === 'Runner' ? 'Cardio'
+            : user.athlete_type === 'Strength' || user.athlete_type === 'Bodybuilder' ? 'Street Lift'
+            : null;
+        
+        let archetypeAlignmentNote = '';
+        if (archetypeCategory && mostActiveCategory) {
+            if (mostActiveCategory.category === archetypeCategory) {
+                archetypeAlignmentNote = `Training alignment: Good - most active category (${mostActiveCategory.category}) matches athlete archetype (${user.athlete_type}).`;
+            } else {
+                const archetypeWorkouts = userCategoryParticipation.find(p => p.category === archetypeCategory);
+                if (archetypeWorkouts) {
+                    archetypeAlignmentNote = `Training alignment: Note - athlete archetype is ${user.athlete_type}, but most training is in ${mostActiveCategory.category}. Consider increasing ${archetypeCategory} workouts.`;
+                } else {
+                    archetypeAlignmentNote = `Training alignment: Gap identified - athlete archetype is ${user.athlete_type}, but no ${archetypeCategory} workouts logged. Recommend exploring this category.`;
+                }
+            }
+        }
         
         // Archetype-specific recommendations
         const archetypeRecommendations: Record<string, string> = {
-            'Hyrox': 'Recommended focus: Running endurance, sled work, rowing, and functional fitness stations. Prioritize race-simulation training.',
-            'CrossFit': 'Recommended focus: Varied functional movements, Olympic lifting technique, and high-intensity metabolic conditioning.',
-            'Calisthenics': 'Recommended focus: Bodyweight skill progressions, movement control, and strength-to-weight ratio optimization.',
-            'Hybrid': 'Recommended focus: Balanced programming combining strength, conditioning, and functional fitness elements.',
-            'Runner': 'Recommended focus: Running volume progression, tempo work, interval training, and lower body strength.',
-            'Strength': 'Recommended focus: Compound lifts, progressive overload protocols, and adequate recovery periods.',
-            'Bodybuilder': 'Recommended focus: Muscle isolation, hypertrophy protocols, and mind-muscle connection.',
-            'Generic': 'Recommended focus: Balanced training across strength, conditioning, and mobility domains.'
+            'Hyrox': 'Archetype focus: Running endurance, sled work, rowing, and functional fitness stations. Prioritize race-simulation training.',
+            'CrossFit': 'Archetype focus: Varied functional movements, Olympic lifting technique, and high-intensity metabolic conditioning.',
+            'Calisthenics': 'Archetype focus: Bodyweight skill progressions, movement control, and strength-to-weight ratio optimization.',
+            'Hybrid': 'Archetype focus: Balanced programming combining strength, conditioning, and functional fitness elements.',
+            'Runner': 'Archetype focus: Running volume progression, tempo work, interval training, and lower body strength.',
+            'Strength': 'Archetype focus: Compound lifts, progressive overload protocols, and adequate recovery periods.',
+            'Bodybuilder': 'Archetype focus: Muscle isolation, hypertrophy protocols, and mind-muscle connection.',
+            'Generic': 'Archetype focus: Balanced training across strength, conditioning, and mobility domains.'
         };
         
         const recommendation = archetypeRecommendations[user.athlete_type] || archetypeRecommendations['Generic'];
@@ -121,17 +214,22 @@ Training archetype: ${user.athlete_type}
 
 ${performanceAssessment}
 
-${leaderboardContext}
+Category Performance Analysis:
+${categoryLeaderboardContext || 'No category-specific data available yet.'}
+
+${archetypeAlignmentNote}
+
+${overallSummary}
 
 ${recommendation}
 
 Provide a CONCISE professional assessment (3-4 sentences) that includes:
-1. A brief evaluation of their current training status and consistency
-2. Their competitive standing relative to other athletes
-3. One specific, actionable recommendation for improvement based on their archetype
-4. A professional but encouraging closing statement
+1. A brief evaluation of their training consistency and volume
+2. Their competitive standing in specific workout categories (mention actual rankings like "#2 in Hyrox" if applicable)
+3. Whether their training aligns with their archetype, and specific category recommendations
+4. One actionable next step
 
-Maintain a professional tone throughout. Avoid slang, colloquialisms, or overly casual language. Be direct, analytical, and constructive.
+Maintain a professional tone throughout. Avoid slang or casual language. Be analytical, specific, and constructive.
         `.trim();
         
         const tip = await GeminiService.generateAdvice(prompt);
