@@ -1380,6 +1380,10 @@ const App: React.FC = () => {
                   refreshData={refreshData}
                   onNavigateToHome={() => setActiveTab('home')}
                   onStartAssignedWorkout={handleStartAssignedWorkout}
+                  onNavigateToCollab={(collabId) => {
+                    // Navigate to admin tab where collaborations are managed
+                    setActiveTab('admin');
+                  }}
                 />
             )}
 

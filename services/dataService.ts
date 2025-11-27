@@ -1,5 +1,5 @@
 
-import { Log, Notification, User, VerificationStatus, Workout, GroupType, AthleteType, Gender, Venue, PinnedWOD, UserCategory, Exercise } from '../types';
+import { Log, Notification, User, VerificationStatus, Workout, GroupType, AthleteType, Gender, Venue, PinnedWOD, UserCategory, Exercise, CollaborativeWorkout, WorkoutSuggestion, CollaborationMessage, CollaborationStatus, SuggestionStatus, SuggestionType, WorkoutScheme, ScalingTier } from '../types';
 import { MOCK_LOGS, MOCK_USERS, MOCK_WORKOUTS, MOCK_VENUES, MOCK_EXERCISES } from '../constants';
 import { auth, googleProvider, db } from '../firebaseConfig';
 import { signInWithPopup } from 'firebase/auth';
@@ -27,7 +27,10 @@ const COLLECTIONS = {
   VENUES: 'venues',
   PINNED_WODS: 'pinnedWods',
   NOTIFICATIONS: 'notifications',
-  EXERCISES: 'exercises'
+  EXERCISES: 'exercises',
+  COLLAB_WORKOUTS: 'collaborativeWorkouts',
+  COLLAB_SUGGESTIONS: 'collabSuggestions',
+  COLLAB_MESSAGES: 'collabMessages'
 };
 
 // Seed flag to prevent multiple seed operations
@@ -807,5 +810,385 @@ export const DataService = {
           console.error('Error updating log witness:', error);
           throw error;
       }
+  },
+
+  // ============ COLLABORATIVE WORKOUT METHODS ============
+
+  // Create a new collaborative workout session
+  createCollaborativeWorkout: async (
+    initiator: User,
+    workoutData: Partial<CollaborativeWorkout>,
+    invitedUserIds: string[]
+  ): Promise<CollaborativeWorkout> => {
+    try {
+      const now = Date.now();
+      const collabData: Omit<CollaborativeWorkout, 'id'> = {
+        name: workoutData.name || 'Untitled Collaboration',
+        description: workoutData.description || '',
+        scheme: workoutData.scheme || WorkoutScheme.FOR_TIME,
+        rest_type: workoutData.rest_type || 'none',
+        rounds: workoutData.rounds || 1,
+        category: workoutData.category || 'General',
+        is_kids_friendly: workoutData.is_kids_friendly || false,
+        components: workoutData.components || [],
+        scaling: workoutData.scaling || {
+          [ScalingTier.RX]: 'RX',
+          [ScalingTier.ADVANCED]: 'Scaled',
+          [ScalingTier.INTERMEDIATE]: 'Scaled',
+          [ScalingTier.BEGINNER]: 'Foundation'
+        },
+        initiator_id: initiator.id,
+        initiator_name: initiator.name,
+        collaborator_ids: invitedUserIds,
+        status: CollaborationStatus.ACTIVE,
+        created_at: now,
+        updated_at: now
+      };
+
+      const docRef = await addDoc(collection(db, COLLECTIONS.COLLAB_WORKOUTS), removeUndefined(collabData));
+      
+      // Send notifications to invited collaborators
+      for (const userId of invitedUserIds) {
+        await DataService.addNotification({
+          target_user_id: userId,
+          type: 'collab_invite',
+          message: `${initiator.name} invited you to collaborate on "${collabData.name}"`,
+          payload: { collab_workout_id: docRef.id },
+          read: false
+        });
+      }
+
+      return { ...collabData, id: docRef.id };
+    } catch (error) {
+      console.error('Error creating collaborative workout:', error);
+      throw error;
+    }
+  },
+
+  // Get all collaborative workouts for a user (as initiator or collaborator)
+  getCollaborativeWorkouts: async (userId: string): Promise<CollaborativeWorkout[]> => {
+    try {
+      const allCollabs: CollaborativeWorkout[] = [];
+      
+      // Get where user is initiator
+      const initiatorQuery = query(
+        collection(db, COLLECTIONS.COLLAB_WORKOUTS),
+        where('initiator_id', '==', userId)
+      );
+      const initiatorSnap = await getDocs(initiatorQuery);
+      initiatorSnap.docs.forEach(d => {
+        allCollabs.push({ ...d.data(), id: d.id } as CollaborativeWorkout);
+      });
+
+      // Get where user is collaborator
+      const collabQuery = query(
+        collection(db, COLLECTIONS.COLLAB_WORKOUTS),
+        where('collaborator_ids', 'array-contains', userId)
+      );
+      const collabSnap = await getDocs(collabQuery);
+      collabSnap.docs.forEach(d => {
+        // Avoid duplicates
+        if (!allCollabs.find(c => c.id === d.id)) {
+          allCollabs.push({ ...d.data(), id: d.id } as CollaborativeWorkout);
+        }
+      });
+
+      return allCollabs.sort((a, b) => b.updated_at - a.updated_at);
+    } catch (error) {
+      console.error('Error fetching collaborative workouts:', error);
+      return [];
+    }
+  },
+
+  // Get a single collaborative workout by ID
+  getCollaborativeWorkout: async (id: string): Promise<CollaborativeWorkout | null> => {
+    try {
+      const docSnap = await getDoc(doc(db, COLLECTIONS.COLLAB_WORKOUTS, id));
+      if (!docSnap.exists()) return null;
+      return { ...docSnap.data(), id: docSnap.id } as CollaborativeWorkout;
+    } catch (error) {
+      console.error('Error fetching collaborative workout:', error);
+      return null;
+    }
+  },
+
+  // Update collaborative workout
+  updateCollaborativeWorkout: async (id: string, updates: Partial<CollaborativeWorkout>): Promise<void> => {
+    try {
+      const docRef = doc(db, COLLECTIONS.COLLAB_WORKOUTS, id);
+      await updateDoc(docRef, removeUndefined({ ...updates, updated_at: Date.now() }));
+    } catch (error) {
+      console.error('Error updating collaborative workout:', error);
+      throw error;
+    }
+  },
+
+  // Add a collaborator to the workout
+  addCollaborator: async (collabId: string, userId: string, inviterName: string): Promise<void> => {
+    try {
+      const collab = await DataService.getCollaborativeWorkout(collabId);
+      if (!collab) throw new Error('Collaboration not found');
+      
+      if (!collab.collaborator_ids.includes(userId)) {
+        await updateDoc(doc(db, COLLECTIONS.COLLAB_WORKOUTS, collabId), {
+          collaborator_ids: [...collab.collaborator_ids, userId],
+          updated_at: Date.now()
+        });
+
+        // Send notification
+        await DataService.addNotification({
+          target_user_id: userId,
+          type: 'collab_invite',
+          message: `${inviterName} invited you to collaborate on "${collab.name}"`,
+          payload: { collab_workout_id: collabId },
+          read: false
+        });
+      }
+    } catch (error) {
+      console.error('Error adding collaborator:', error);
+      throw error;
+    }
+  },
+
+  // Submit a suggestion for a collaborative workout
+  submitSuggestion: async (suggestion: Omit<WorkoutSuggestion, 'id'>): Promise<WorkoutSuggestion> => {
+    try {
+      const docRef = await addDoc(collection(db, COLLECTIONS.COLLAB_SUGGESTIONS), removeUndefined(suggestion));
+      
+      // Notify the initiator
+      const collab = await DataService.getCollaborativeWorkout(suggestion.collab_workout_id);
+      if (collab && collab.initiator_id !== suggestion.suggester_id) {
+        await DataService.addNotification({
+          target_user_id: collab.initiator_id,
+          type: 'collab_suggestion',
+          message: `${suggestion.suggester_name} made a suggestion for "${collab.name}"`,
+          payload: { collab_workout_id: suggestion.collab_workout_id, suggestion_id: docRef.id },
+          read: false
+        });
+      }
+
+      return { ...suggestion, id: docRef.id };
+    } catch (error) {
+      console.error('Error submitting suggestion:', error);
+      throw error;
+    }
+  },
+
+  // Get all suggestions for a collaborative workout
+  getSuggestions: async (collabWorkoutId: string): Promise<WorkoutSuggestion[]> => {
+    try {
+      const q = query(
+        collection(db, COLLECTIONS.COLLAB_SUGGESTIONS),
+        where('collab_workout_id', '==', collabWorkoutId)
+      );
+      const snap = await getDocs(q);
+      return snap.docs
+        .map(d => ({ ...d.data(), id: d.id } as WorkoutSuggestion))
+        .sort((a, b) => b.created_at - a.created_at);
+    } catch (error) {
+      console.error('Error fetching suggestions:', error);
+      return [];
+    }
+  },
+
+  // Resolve a suggestion (accept or reject)
+  resolveSuggestion: async (
+    suggestionId: string,
+    status: SuggestionStatus,
+    resolverId: string,
+    collabWorkoutId: string
+  ): Promise<void> => {
+    try {
+      const suggestionRef = doc(db, COLLECTIONS.COLLAB_SUGGESTIONS, suggestionId);
+      const suggestionSnap = await getDoc(suggestionRef);
+      
+      if (!suggestionSnap.exists()) throw new Error('Suggestion not found');
+      
+      const suggestion = suggestionSnap.data() as WorkoutSuggestion;
+      
+      await updateDoc(suggestionRef, {
+        status,
+        resolved_at: Date.now(),
+        resolved_by: resolverId
+      });
+
+      // If accepted, apply the change to the collaborative workout
+      if (status === SuggestionStatus.ACCEPTED) {
+        const collab = await DataService.getCollaborativeWorkout(collabWorkoutId);
+        if (!collab) return;
+
+        let updatedComponents = [...collab.components];
+
+        if (suggestion.type === SuggestionType.ADD_EXERCISE || suggestion.type === SuggestionType.ADD_NEW_EXERCISE) {
+          if (suggestion.proposed_component) {
+            const newComponent = {
+              exercise_id: suggestion.proposed_component.exercise_id || `custom_${Date.now()}`,
+              target: suggestion.proposed_component.target,
+              weight: suggestion.proposed_component.weight,
+              sets: suggestion.proposed_component.sets,
+              order: updatedComponents.length + 1
+            };
+            updatedComponents.push(newComponent);
+
+            // If it's a new exercise, add it to the exercises collection
+            if (suggestion.type === SuggestionType.ADD_NEW_EXERCISE && suggestion.proposed_exercise) {
+              const exerciseId = `custom_${Date.now()}`;
+              await setDoc(doc(db, COLLECTIONS.EXERCISES, exerciseId), {
+                id: exerciseId,
+                name: suggestion.proposed_exercise.name,
+                type: suggestion.proposed_exercise.type,
+                category: suggestion.proposed_exercise.category
+              });
+              // Update the component with the new exercise ID
+              updatedComponents[updatedComponents.length - 1].exercise_id = exerciseId;
+            }
+          }
+        } else if (suggestion.type === SuggestionType.REMOVE_EXERCISE) {
+          if (suggestion.target_component_order !== undefined) {
+            updatedComponents = updatedComponents.filter(c => c.order !== suggestion.target_component_order);
+            // Reorder remaining components
+            updatedComponents = updatedComponents.map((c, i) => ({ ...c, order: i + 1 }));
+          }
+        } else if (suggestion.type === SuggestionType.MODIFY_EXERCISE) {
+          if (suggestion.proposed_component && suggestion.target_component_order !== undefined) {
+            const idx = updatedComponents.findIndex(c => c.order === suggestion.target_component_order);
+            if (idx >= 0) {
+              updatedComponents[idx] = {
+                ...updatedComponents[idx],
+                exercise_id: suggestion.proposed_component.exercise_id || updatedComponents[idx].exercise_id,
+                target: suggestion.proposed_component.target,
+                weight: suggestion.proposed_component.weight,
+                sets: suggestion.proposed_component.sets
+              };
+            }
+          }
+        }
+
+        await DataService.updateCollaborativeWorkout(collabWorkoutId, {
+          components: updatedComponents
+        });
+      }
+
+      // Notify the suggester of the resolution
+      if (suggestion.suggester_id !== resolverId) {
+        const users = await DataService.getAllUsers();
+        const resolver = users.find(u => u.id === resolverId);
+        await DataService.addNotification({
+          target_user_id: suggestion.suggester_id,
+          type: 'collab_update',
+          message: `${resolver?.name || 'Admin'} ${status === SuggestionStatus.ACCEPTED ? 'accepted' : 'rejected'} your suggestion`,
+          payload: { collab_workout_id: collabWorkoutId, suggestion_id: suggestionId },
+          read: false
+        });
+      }
+    } catch (error) {
+      console.error('Error resolving suggestion:', error);
+      throw error;
+    }
+  },
+
+  // Send a chat message
+  sendCollabMessage: async (message: Omit<CollaborationMessage, 'id'>): Promise<CollaborationMessage> => {
+    try {
+      const docRef = await addDoc(collection(db, COLLECTIONS.COLLAB_MESSAGES), removeUndefined(message));
+      return { ...message, id: docRef.id };
+    } catch (error) {
+      console.error('Error sending message:', error);
+      throw error;
+    }
+  },
+
+  // Get chat messages for a collaborative workout
+  getCollabMessages: async (collabWorkoutId: string): Promise<CollaborationMessage[]> => {
+    try {
+      const q = query(
+        collection(db, COLLECTIONS.COLLAB_MESSAGES),
+        where('collab_workout_id', '==', collabWorkoutId)
+      );
+      const snap = await getDocs(q);
+      return snap.docs
+        .map(d => ({ ...d.data(), id: d.id } as CollaborationMessage))
+        .sort((a, b) => a.timestamp - b.timestamp);
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      return [];
+    }
+  },
+
+  // Finalize collaborative workout and convert to regular workout
+  finalizeCollaborativeWorkout: async (collabId: string, initiatorId: string): Promise<Workout> => {
+    try {
+      const collab = await DataService.getCollaborativeWorkout(collabId);
+      if (!collab) throw new Error('Collaboration not found');
+      if (collab.initiator_id !== initiatorId) throw new Error('Only initiator can finalize');
+
+      // Create the regular workout
+      const workoutData: Omit<Workout, 'id'> = {
+        name: collab.name,
+        description: collab.description,
+        scheme: collab.scheme,
+        time_cap_seconds: collab.time_cap_seconds,
+        rest_type: collab.rest_type,
+        rest_seconds: collab.rest_seconds,
+        rounds: collab.rounds,
+        components: collab.components,
+        scaling: collab.scaling,
+        is_featured: false,
+        is_kids_friendly: collab.is_kids_friendly,
+        category: collab.category
+      };
+
+      const newWorkout = await DataService.addWorkout(workoutData);
+
+      // Mark collaboration as finalized
+      await updateDoc(doc(db, COLLECTIONS.COLLAB_WORKOUTS, collabId), {
+        status: CollaborationStatus.FINALIZED,
+        updated_at: Date.now()
+      });
+
+      // Notify all collaborators
+      for (const userId of collab.collaborator_ids) {
+        await DataService.addNotification({
+          target_user_id: userId,
+          type: 'collab_update',
+          message: `"${collab.name}" has been finalized and is now available!`,
+          payload: { collab_workout_id: collabId, workout_id: newWorkout.id },
+          read: false
+        });
+      }
+
+      return newWorkout;
+    } catch (error) {
+      console.error('Error finalizing collaborative workout:', error);
+      throw error;
+    }
+  },
+
+  // Cancel a collaborative workout
+  cancelCollaborativeWorkout: async (collabId: string, initiatorId: string): Promise<void> => {
+    try {
+      const collab = await DataService.getCollaborativeWorkout(collabId);
+      if (!collab) throw new Error('Collaboration not found');
+      if (collab.initiator_id !== initiatorId) throw new Error('Only initiator can cancel');
+
+      await updateDoc(doc(db, COLLECTIONS.COLLAB_WORKOUTS, collabId), {
+        status: CollaborationStatus.CANCELLED,
+        updated_at: Date.now()
+      });
+
+      // Notify all collaborators
+      for (const userId of collab.collaborator_ids) {
+        await DataService.addNotification({
+          target_user_id: userId,
+          type: 'collab_update',
+          message: `"${collab.name}" collaboration has been cancelled`,
+          payload: { collab_workout_id: collabId },
+          read: false
+        });
+      }
+    } catch (error) {
+      console.error('Error cancelling collaborative workout:', error);
+      throw error;
+    }
   }
 };

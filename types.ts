@@ -124,12 +124,14 @@ export interface Log {
 export interface Notification {
   id: string;
   target_user_id: string;
-  type: 'witness_request' | 'system' | 'pinned_wod_invitation' | 'workout_assignment';
+  type: 'witness_request' | 'system' | 'pinned_wod_invitation' | 'workout_assignment' | 'collab_invite' | 'collab_suggestion' | 'collab_update';
   message: string;
   payload: {
     log_id?: string;
     pinned_wod_id?: string;
     workout_id?: string;
+    collab_workout_id?: string;
+    suggestion_id?: string;
   };
   read: boolean;
 }
@@ -153,4 +155,91 @@ export interface PinnedWOD {
   deadline: number; // Timestamp
   participants: string[]; // Array of User IDs
   invited_user_ids?: string[]; // Array of invited User IDs
+}
+
+// ============ COLLABORATIVE WORKOUT TYPES ============
+
+export enum CollaborationStatus {
+  ACTIVE = 'active',
+  FINALIZED = 'finalized',
+  CANCELLED = 'cancelled'
+}
+
+export enum SuggestionType {
+  ADD_EXERCISE = 'add_exercise',
+  REMOVE_EXERCISE = 'remove_exercise',
+  MODIFY_EXERCISE = 'modify_exercise',
+  ADD_NEW_EXERCISE = 'add_new_exercise' // For exercises not in the database
+}
+
+export enum SuggestionStatus {
+  PENDING = 'pending',
+  ACCEPTED = 'accepted',
+  REJECTED = 'rejected'
+}
+
+export interface CollaborativeWorkout {
+  id: string;
+  name: string;
+  description: string;
+  scheme: WorkoutScheme;
+  time_cap_seconds?: number;
+  rest_type: 'fixed' | 'manual' | 'none';
+  rest_seconds?: number;
+  rounds?: number;
+  category?: string;
+  is_kids_friendly?: boolean;
+  components: WorkoutComponent[]; // Current accepted components
+  scaling: Record<ScalingTier, string>;
+  // Collaboration metadata
+  initiator_id: string; // Admin who started the collaboration
+  initiator_name: string;
+  collaborator_ids: string[]; // Users invited to collaborate
+  status: CollaborationStatus;
+  created_at: number;
+  updated_at: number;
+}
+
+export interface WorkoutSuggestion {
+  id: string;
+  collab_workout_id: string;
+  suggester_id: string;
+  suggester_name: string;
+  suggester_avatar?: string;
+  type: SuggestionType;
+  status: SuggestionStatus;
+  // For ADD/MODIFY
+  proposed_component?: {
+    exercise_id?: string; // Empty if new exercise
+    exercise_name: string; // Name (for display or new exercise)
+    target: string;
+    weight?: string;
+    sets?: number;
+    order?: number;
+  };
+  // For new exercise proposals
+  proposed_exercise?: {
+    name: string;
+    type: 'time' | 'reps' | 'load' | 'distance';
+    category: string;
+  };
+  // For REMOVE
+  target_component_order?: number; // Which component to remove
+  // Metadata
+  reason?: string; // Why this suggestion
+  created_at: number;
+  resolved_at?: number;
+  resolved_by?: string;
+}
+
+export interface CollaborationMessage {
+  id: string;
+  collab_workout_id: string;
+  sender_id: string;
+  sender_name: string;
+  sender_avatar?: string;
+  message: string;
+  timestamp: number;
+  // Optional: reference to a suggestion
+  suggestion_ref?: string;
 }

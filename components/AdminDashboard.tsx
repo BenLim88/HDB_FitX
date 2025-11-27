@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
-import { Exercise, Workout, User, GroupType, AthleteType, WorkoutComponent, ScalingTier, WorkoutScheme, Venue, UserCategory } from '../types';
+import { Exercise, Workout, User, GroupType, AthleteType, WorkoutComponent, ScalingTier, WorkoutScheme, Venue, UserCategory, CollaborativeWorkout, CollaborationStatus } from '../types';
 import { DataService } from '../services/dataService';
 import { MOCK_EXERCISES } from '../constants';
-import { Plus, Trash2, Dumbbell, LayoutList, Users, Edit, Shield, Save, X, Lock, ChevronRight, ArrowLeft, Timer, Settings, MapPin, Star, Calendar, Pin, Baby } from 'lucide-react';
+import { Plus, Trash2, Dumbbell, LayoutList, Users, Edit, Shield, Save, X, Lock, ChevronRight, ArrowLeft, Timer, Settings, MapPin, Star, Calendar, Pin, Baby, UsersRound, Loader2, Search, MessageSquare } from 'lucide-react';
+import CollaborativeWorkoutBuilder from './CollaborativeWorkoutBuilder';
 
 interface AdminDashboardProps {
   initialWorkouts: Workout[];
@@ -21,9 +22,21 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
   const [venues, setVenues] = useState<Venue[]>(initialVenues);
 
   // UI States
-  const [activeTab, setActiveTab] = useState<'exercises' | 'workouts' | 'users' | 'venues'>('exercises');
+  const [activeTab, setActiveTab] = useState<'exercises' | 'workouts' | 'users' | 'venues' | 'collab'>('exercises');
   const [isCreatingWorkout, setIsCreatingWorkout] = useState(false);
   const [editingWorkoutId, setEditingWorkoutId] = useState<string | null>(null);
+  
+  // Collaboration States
+  const [collabWorkouts, setCollabWorkouts] = useState<CollaborativeWorkout[]>([]);
+  const [selectedCollab, setSelectedCollab] = useState<CollaborativeWorkout | null>(null);
+  const [isCreatingCollab, setIsCreatingCollab] = useState(false);
+  const [collabName, setCollabName] = useState('');
+  const [collabDesc, setCollabDesc] = useState('');
+  const [collabScheme, setCollabScheme] = useState<WorkoutScheme>(WorkoutScheme.FOR_TIME);
+  const [collabCategory, setCollabCategory] = useState('General');
+  const [collabInviteSearch, setCollabInviteSearch] = useState('');
+  const [collabSelectedUsers, setCollabSelectedUsers] = useState<Set<string>>(new Set());
+  const [isLoadingCollabs, setIsLoadingCollabs] = useState(false);
 
   // Pin WOD State
   const [pinningWorkoutId, setPinningWorkoutId] = useState<string | null>(null);
@@ -102,6 +115,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       if (activeTab === 'venues') {
           loadVenues();
       }
+      if (activeTab === 'collab') {
+          loadCollabs();
+          loadUsers(); // Also load users for invite list
+      }
   }, [activeTab, currentUser]);
 
   // Load exercises on component mount
@@ -112,6 +129,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
   const loadUsers = async () => {
       const allUsers = await DataService.getAllUsers();
       setUsers(allUsers);
+  };
+
+  const loadCollabs = async () => {
+      setIsLoadingCollabs(true);
+      try {
+          const collabs = await DataService.getCollaborativeWorkouts(currentUser.id);
+          setCollabWorkouts(collabs);
+      } catch (error) {
+          console.error('Error loading collaborations:', error);
+      } finally {
+          setIsLoadingCollabs(false);
+      }
   };
 
   const loadExercises = async () => {
@@ -672,6 +701,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                     className={`flex-shrink-0 py-2 px-4 rounded-lg font-bold text-sm transition-colors ${activeTab === 'venues' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-400'}`}
                 >
                     Venues
+                </button>
+                <button 
+                    onClick={() => { setActiveTab('collab'); closeBuilder(); setSelectedCollab(null); }}
+                    className={`flex-shrink-0 py-2 px-4 rounded-lg font-bold text-sm transition-colors flex items-center gap-1.5 ${activeTab === 'collab' ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400'}`}
+                >
+                    <UsersRound size={14} /> Collabs
                 </button>
                 {currentUser?.id === 'master_admin' && (
                     <button 
@@ -1524,6 +1559,243 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                     </div>
                 )))}
              </div>
+        )}
+
+        {/* COLLABORATION TAB */}
+        {activeTab === 'collab' && (
+            selectedCollab ? (
+                <CollaborativeWorkoutBuilder
+                    collabWorkout={selectedCollab}
+                    currentUser={currentUser}
+                    allUsers={users}
+                    exercises={exercises}
+                    onBack={() => { setSelectedCollab(null); loadCollabs(); }}
+                    onRefresh={async () => {
+                        const updated = await DataService.getCollaborativeWorkout(selectedCollab.id);
+                        if (updated) setSelectedCollab(updated);
+                    }}
+                />
+            ) : (
+                <div className="p-4 space-y-6">
+                    {/* Create New Collaboration Button */}
+                    {!isCreatingCollab && (
+                        <button
+                            onClick={() => { setIsCreatingCollab(true); loadUsers(); }}
+                            className="w-full py-4 bg-purple-600 hover:bg-purple-500 text-white font-bold uppercase rounded-xl flex items-center justify-center gap-2"
+                        >
+                            <Plus size={20} /> Start New Collaboration
+                        </button>
+                    )}
+
+                    {/* Create Collaboration Form */}
+                    {isCreatingCollab && (
+                        <div className="bg-slate-900 border border-purple-500/50 p-4 rounded-xl">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-white font-bold text-lg flex items-center gap-2">
+                                    <UsersRound size={20} className="text-purple-500" /> New Collaboration
+                                </h3>
+                                <button onClick={() => { setIsCreatingCollab(false); setCollabSelectedUsers(new Set()); }} className="text-slate-500 hover:text-white">
+                                    <X size={20} />
+                                </button>
+                            </div>
+                            
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Workout Name</label>
+                                    <input
+                                        type="text"
+                                        value={collabName}
+                                        onChange={(e) => setCollabName(e.target.value)}
+                                        placeholder="e.g., Community Hero WOD"
+                                        className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-3 text-white outline-none focus:border-purple-500"
+                                    />
+                                </div>
+                                
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Description</label>
+                                    <textarea
+                                        value={collabDesc}
+                                        onChange={(e) => setCollabDesc(e.target.value)}
+                                        placeholder="What's this workout about?"
+                                        rows={2}
+                                        className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-3 text-white outline-none focus:border-purple-500 resize-none"
+                                    />
+                                </div>
+                                
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Scheme</label>
+                                        <select
+                                            value={collabScheme}
+                                            onChange={(e) => setCollabScheme(e.target.value as WorkoutScheme)}
+                                            className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-3 text-white outline-none"
+                                        >
+                                            {Object.values(WorkoutScheme).map(s => (
+                                                <option key={s} value={s}>{s}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Category</label>
+                                        <select
+                                            value={collabCategory}
+                                            onChange={(e) => setCollabCategory(e.target.value)}
+                                            className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-3 text-white outline-none"
+                                        >
+                                            {['General', 'CrossFit', 'Hyrox', 'Cardio', 'Hybrid', 'Strength', 'Calisthenics'].map(c => (
+                                                <option key={c} value={c}>{c}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                {/* Invite Collaborators */}
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Invite Collaborators</label>
+                                    <div className="relative mb-2">
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+                                        <input
+                                            type="text"
+                                            value={collabInviteSearch}
+                                            onChange={(e) => setCollabInviteSearch(e.target.value)}
+                                            placeholder="Search users..."
+                                            className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-10 pr-4 py-2 text-white text-sm outline-none"
+                                        />
+                                    </div>
+                                    <div className="max-h-40 overflow-y-auto space-y-1 bg-slate-950 border border-slate-800 rounded-lg p-2">
+                                        {users
+                                            .filter(u => u.id !== currentUser.id && u.name.toLowerCase().includes(collabInviteSearch.toLowerCase()))
+                                            .map(user => (
+                                            <button
+                                                key={user.id}
+                                                onClick={() => {
+                                                    const newSet = new Set(collabSelectedUsers);
+                                                    if (newSet.has(user.id)) {
+                                                        newSet.delete(user.id);
+                                                    } else {
+                                                        newSet.add(user.id);
+                                                    }
+                                                    setCollabSelectedUsers(newSet);
+                                                }}
+                                                className={`w-full flex items-center gap-2 p-2 rounded-lg transition-colors ${
+                                                    collabSelectedUsers.has(user.id) 
+                                                        ? 'bg-purple-600/20 border border-purple-500' 
+                                                        : 'hover:bg-slate-800 border border-transparent'
+                                                }`}
+                                            >
+                                                <div className="w-6 h-6 rounded-full overflow-hidden">
+                                                    <img src={user.avatar_url} className="w-full h-full object-cover" />
+                                                </div>
+                                                <span className="text-sm text-white">{user.name}</span>
+                                                {collabSelectedUsers.has(user.id) && (
+                                                    <span className="ml-auto text-purple-500 text-xs font-bold">✓</span>
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    {collabSelectedUsers.size > 0 && (
+                                        <p className="text-xs text-purple-400 mt-1">{collabSelectedUsers.size} collaborator(s) selected</p>
+                                    )}
+                                </div>
+
+                                <button
+                                    onClick={async () => {
+                                        if (!collabName.trim()) {
+                                            alert('Please enter a workout name');
+                                            return;
+                                        }
+                                        try {
+                                            const newCollab = await DataService.createCollaborativeWorkout(
+                                                currentUser,
+                                                {
+                                                    name: collabName,
+                                                    description: collabDesc,
+                                                    scheme: collabScheme,
+                                                    category: collabCategory
+                                                },
+                                                Array.from(collabSelectedUsers)
+                                            );
+                                            setIsCreatingCollab(false);
+                                            setCollabName('');
+                                            setCollabDesc('');
+                                            setCollabSelectedUsers(new Set());
+                                            setSelectedCollab(newCollab);
+                                        } catch (error) {
+                                            console.error('Error creating collaboration:', error);
+                                            alert('Failed to create collaboration');
+                                        }
+                                    }}
+                                    className="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold uppercase rounded-xl"
+                                >
+                                    Create & Start Building
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Existing Collaborations */}
+                    <div>
+                        <h3 className="text-sm font-bold text-slate-500 uppercase mb-3 flex items-center gap-2">
+                            <MessageSquare size={14} /> Your Collaborations ({collabWorkouts.length})
+                        </h3>
+                        
+                        {isLoadingCollabs ? (
+                            <div className="flex items-center justify-center py-12">
+                                <Loader2 className="animate-spin text-purple-500" size={32} />
+                            </div>
+                        ) : collabWorkouts.length === 0 ? (
+                            <div className="text-center py-12 text-slate-500">
+                                <UsersRound size={48} className="mx-auto mb-4 opacity-30" />
+                                <p className="text-sm">No collaborations yet</p>
+                                <p className="text-xs">Start one to build workouts with your community!</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {collabWorkouts.map(collab => (
+                                    <button
+                                        key={collab.id}
+                                        onClick={() => setSelectedCollab(collab)}
+                                        className="w-full bg-slate-900 border border-slate-800 hover:border-purple-500/50 p-4 rounded-xl text-left transition-colors"
+                                    >
+                                        <div className="flex items-start justify-between mb-2">
+                                            <div>
+                                                <h4 className="font-bold text-white">{collab.name}</h4>
+                                                <p className="text-xs text-slate-500">
+                                                    {collab.initiator_id === currentUser.id ? 'You started this' : `By ${collab.initiator_name}`}
+                                                </p>
+                                            </div>
+                                            <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
+                                                collab.status === CollaborationStatus.ACTIVE 
+                                                    ? 'bg-green-500/20 text-green-400'
+                                                    : collab.status === CollaborationStatus.FINALIZED
+                                                    ? 'bg-blue-500/20 text-blue-400'
+                                                    : 'bg-red-500/20 text-red-400'
+                                            }`}>
+                                                {collab.status}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-4 text-xs text-slate-400">
+                                            <span className="flex items-center gap-1">
+                                                <Dumbbell size={12} /> {collab.components.length} exercises
+                                            </span>
+                                            <span className="flex items-center gap-1">
+                                                <Users size={12} /> {collab.collaborator_ids.length + 1} people
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-1 mt-2">
+                                            {users.filter(u => collab.collaborator_ids.includes(u.id) || u.id === collab.initiator_id).slice(0, 5).map(u => (
+                                                <div key={u.id} className="w-6 h-6 rounded-full overflow-hidden border border-slate-700">
+                                                    <img src={u.avatar_url} className="w-full h-full object-cover" />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )
         )}
     </div>
   );
