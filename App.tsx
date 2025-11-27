@@ -1,16 +1,17 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { MOCK_USERS, CURRENT_USER_ID } from './constants';
-import { User, Log, Notification, Workout, VerificationStatus, Gender, GroupType, AthleteType, ScalingTier, Venue, PinnedWOD, UserCategory, WorldRecord, Exercise } from './types';
+import { User, Log, Notification, Workout, VerificationStatus, Gender, GroupType, AthleteType, ScalingTier, Venue, PinnedWOD, UserCategory, WorldRecord, Exercise, CollaborativeWorkout, CollaborationStatus } from './types';
 import { DataService } from './services/dataService';
 import { GeminiService } from './services/geminiService';
 import Navbar from './components/Navbar';
 import ActiveWorkout from './components/ActiveWorkout';
 import WitnessInbox from './components/WitnessInbox';
 import AdminDashboard from './components/AdminDashboard';
+import CollaborativeWorkoutBuilder from './components/CollaborativeWorkoutBuilder';
 import AuthScreen from './components/AuthScreen';
 import DIYWorkout from './components/DIYWorkout';
-import { Trophy, Flame, MapPin, ChevronRight, ChevronDown, ChevronUp, Bot, Loader2, ShieldAlert, Filter, Dumbbell, Settings, Edit2, Save, X, RefreshCcw, Search, Calendar, Wand2, Star, RotateCcw, Pin, Users, Baby, Trash2, Check } from 'lucide-react';
+import { Trophy, Flame, MapPin, ChevronRight, ChevronDown, ChevronUp, Bot, Loader2, ShieldAlert, Filter, Dumbbell, Settings, Edit2, Save, X, RefreshCcw, Search, Calendar, Wand2, Star, RotateCcw, Pin, Users, Baby, Trash2, Check, UsersRound } from 'lucide-react';
 import { MOCK_EXERCISES, WORLD_RECORDS } from './constants';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth, storage } from './firebaseConfig';
@@ -29,8 +30,10 @@ const HomeTab: React.FC<{
   onUnjoinPinned: (id: string) => void,
   onUnpinWOD?: (id: string) => void, // Add unpin handler
   onAssignWorkout: (targetUserId: string, workoutId: string, workoutName: string) => Promise<void>,
-  allUsers: User[]
-}> = ({ user, workouts, pinnedWods, onStartWorkout, onStartDIY, onJoinPinned, onUnjoinPinned, onUnpinWOD, onAssignWorkout, allUsers }) => {
+  allUsers: User[],
+  collabWorkouts?: CollaborativeWorkout[],
+  onOpenCollab?: (collab: CollaborativeWorkout) => void
+}> = ({ user, workouts, pinnedWods, onStartWorkout, onStartDIY, onJoinPinned, onUnjoinPinned, onUnpinWOD, onAssignWorkout, allUsers, collabWorkouts = [], onOpenCollab }) => {
     const [aiTip, setAiTip] = useState<string>('');
     const [loadingTip, setLoadingTip] = useState(false);
     const [showParticipants, setShowParticipants] = useState<string | null>(null); // ID of WOD to show list for
@@ -303,6 +306,50 @@ const HomeTab: React.FC<{
                                  </div>
                              );
                         })}
+                    </div>
+                </section>
+            )}
+
+            {/* MY COLLABORATIONS SECTION */}
+            {collabWorkouts.length > 0 && (
+                <section>
+                    <h2 className={`${isKid ? 'text-blue-900' : 'text-white'} font-bold text-lg mb-3 flex items-center gap-2`}>
+                        <Users size={20} className="text-purple-500" />
+                        My Collaborations
+                    </h2>
+                    <div className="space-y-3">
+                        {collabWorkouts.filter(c => c.status === CollaborationStatus.ACTIVE).map(collab => (
+                            <div 
+                                key={collab.id}
+                                onClick={() => onOpenCollab && onOpenCollab(collab)}
+                                className={`${isKid ? 'bg-white border-purple-200 hover:border-purple-400' : 'bg-slate-900 border-purple-500/30 hover:border-purple-500'} border p-4 rounded-xl cursor-pointer transition-colors`}
+                            >
+                                <div className="flex items-start justify-between mb-2">
+                                    <div>
+                                        <h3 className={`font-bold ${isKid ? 'text-purple-900' : 'text-white'}`}>{collab.name}</h3>
+                                        <p className={`text-xs ${isKid ? 'text-purple-600' : 'text-slate-400'}`}>
+                                            {collab.initiator_id === user.id ? 'You are the admin' : `By ${collab.initiator_name}`}
+                                        </p>
+                                    </div>
+                                    <span className="bg-purple-500/20 text-purple-400 text-[10px] font-bold uppercase px-2 py-0.5 rounded">
+                                        {collab.components.length} exercises
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="flex -space-x-2">
+                                        {allUsers.filter(u => collab.collaborator_ids.includes(u.id) || u.id === collab.initiator_id).slice(0, 4).map(u => (
+                                            <div key={u.id} className={`w-6 h-6 rounded-full overflow-hidden border-2 ${isKid ? 'border-white' : 'border-slate-900'}`}>
+                                                <img src={u.avatar_url} className="w-full h-full object-cover" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <span className={`text-xs ${isKid ? 'text-purple-600' : 'text-slate-500'}`}>
+                                        {collab.collaborator_ids.length + 1} collaborators
+                                    </span>
+                                    <ChevronRight className={`ml-auto ${isKid ? 'text-purple-400' : 'text-purple-500'}`} size={16} />
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </section>
             )}
@@ -886,7 +933,7 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState(() => {
     const savedTab = localStorage.getItem('hdb_fitx_activeTab');
     // Validate that saved tab is a valid tab name
-    const validTabs = ['home', 'workout', 'leaderboard', 'profile', 'inbox', 'admin'];
+    const validTabs = ['home', 'workout', 'leaderboard', 'profile', 'inbox', 'admin', 'collab'];
     if (savedTab && validTabs.includes(savedTab)) {
       return savedTab;
     }
@@ -900,6 +947,8 @@ const App: React.FC = () => {
   const [pinnedWods, setPinnedWods] = useState<PinnedWOD[]>([]); // New Pinned WOD State
   const [pendingCollabId, setPendingCollabId] = useState<string | null>(null); // For navigating to specific collab
   const [customExercises, setCustomExercises] = useState<Exercise[]>([]); // Custom exercises from Firestore
+  const [userCollabs, setUserCollabs] = useState<CollaborativeWorkout[]>([]); // User's collaborations
+  const [activeCollab, setActiveCollab] = useState<CollaborativeWorkout | null>(null); // For viewing collaboration directly
 
   // Workout State
   const [activeWorkout, setActiveWorkout] = useState<Workout | null>(null);
@@ -1004,6 +1053,11 @@ const App: React.FC = () => {
             setVenues(v);
             const ex = await DataService.getExercises(); // Load custom exercises from Firestore
             setCustomExercises(ex);
+            // Load user's collaborations
+            if (currentUser) {
+                const collabs = await DataService.getCollaborativeWorkouts(currentUser.id);
+                setUserCollabs(collabs);
+            }
             refreshData();
         };
         initData();
@@ -1371,6 +1425,11 @@ const App: React.FC = () => {
                     onUnpinWOD={currentUser.is_admin ? handleUnpinWOD : undefined}
                     onAssignWorkout={handleAssignWorkout}
                     allUsers={allUsers}
+                    collabWorkouts={userCollabs}
+                    onOpenCollab={(collab) => {
+                        setActiveCollab(collab);
+                        setActiveTab('collab');
+                    }}
                 />
             )}
             
@@ -1385,10 +1444,13 @@ const App: React.FC = () => {
                   refreshData={refreshData}
                   onNavigateToHome={() => setActiveTab('home')}
                   onStartAssignedWorkout={handleStartAssignedWorkout}
-                  onNavigateToCollab={(collabId) => {
-                    // Navigate to admin tab and open the specific collaboration
-                    setPendingCollabId(collabId);
-                    setActiveTab('admin');
+                  onNavigateToCollab={async (collabId) => {
+                    // Navigate to collab tab and open the specific collaboration
+                    const collab = await DataService.getCollaborativeWorkout(collabId);
+                    if (collab) {
+                      setActiveCollab(collab);
+                      setActiveTab('collab');
+                    }
                   }}
                 />
             )}
@@ -1403,6 +1465,82 @@ const App: React.FC = () => {
                     pendingCollabId={pendingCollabId}
                     onClearPendingCollab={() => setPendingCollabId(null)}
                 />
+            )}
+
+            {/* COLLAB TAB - For all users to view/participate in collaborations */}
+            {activeTab === 'collab' && (
+                activeCollab ? (
+                    <CollaborativeWorkoutBuilder
+                        collabWorkout={activeCollab}
+                        currentUser={currentUser}
+                        allUsers={allUsers}
+                        exercises={customExercises}
+                        onBack={() => { 
+                            setActiveCollab(null);
+                            // Refresh collabs
+                            DataService.getCollaborativeWorkouts(currentUser.id).then(setUserCollabs);
+                        }}
+                        onRefresh={async () => {
+                            const updated = await DataService.getCollaborativeWorkout(activeCollab.id);
+                            if (updated) setActiveCollab(updated);
+                        }}
+                    />
+                ) : (
+                    <div className={`p-5 pb-24 ${isKid ? 'bg-blue-50' : ''}`}>
+                        <div className="mb-6">
+                            <h1 className={`text-2xl font-black ${isKid ? 'text-blue-900' : 'text-white'} uppercase italic`}>Collaborations</h1>
+                            <p className={`text-sm ${isKid ? 'text-blue-600' : 'text-slate-400'}`}>Build workouts together with your community</p>
+                        </div>
+
+                        {userCollabs.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-16 text-slate-500">
+                                <UsersRound size={64} className="opacity-30 mb-4" />
+                                <p className="text-lg font-bold">No Collaborations Yet</p>
+                                <p className="text-sm text-center mt-2">
+                                    {currentUser.is_admin 
+                                        ? "Go to Admin → Collabs to start one!" 
+                                        : "When an admin invites you to collaborate, it will appear here."}
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {userCollabs.map(collab => (
+                                    <button
+                                        key={collab.id}
+                                        onClick={() => setActiveCollab(collab)}
+                                        className={`w-full ${isKid ? 'bg-white border-blue-200 hover:border-blue-400' : 'bg-slate-900 border-slate-800 hover:border-purple-500/50'} border p-4 rounded-xl text-left transition-colors`}
+                                    >
+                                        <div className="flex items-start justify-between mb-2">
+                                            <div>
+                                                <h4 className={`font-bold ${isKid ? 'text-blue-900' : 'text-white'}`}>{collab.name}</h4>
+                                                <p className={`text-xs ${isKid ? 'text-blue-600' : 'text-slate-500'}`}>
+                                                    {collab.initiator_id === currentUser.id ? 'You started this' : `By ${collab.initiator_name}`}
+                                                </p>
+                                            </div>
+                                            <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
+                                                collab.status === CollaborationStatus.ACTIVE 
+                                                    ? 'bg-green-500/20 text-green-400'
+                                                    : collab.status === CollaborationStatus.FINALIZED
+                                                    ? 'bg-blue-500/20 text-blue-400'
+                                                    : 'bg-red-500/20 text-red-400'
+                                            }`}>
+                                                {collab.status}
+                                            </span>
+                                        </div>
+                                        <div className={`flex items-center gap-4 text-xs ${isKid ? 'text-blue-500' : 'text-slate-400'}`}>
+                                            <span className="flex items-center gap-1">
+                                                <Dumbbell size={12} /> {collab.components.length} exercises
+                                            </span>
+                                            <span className="flex items-center gap-1">
+                                                <Users size={12} /> {collab.collaborator_ids.length + 1} people
+                                            </span>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )
             )}
 
             {activeTab === 'profile' && (
@@ -1837,7 +1975,8 @@ const App: React.FC = () => {
           <Navbar 
             activeTab={activeTab === 'admin' ? 'profile' : activeTab} 
             setActiveTab={setActiveTab} 
-            notificationCount={notifications.filter(n => !n.read).length} 
+            notificationCount={notifications.filter(n => !n.read).length}
+            collabCount={userCollabs.filter(c => c.status === 'active').length}
           />
       )}
     </div>

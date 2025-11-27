@@ -1,16 +1,17 @@
 import React from 'react';
-import { Home, Dumbbell, Trophy, User, Bell } from 'lucide-react';
+import { Home, Dumbbell, Trophy, User, Bell, UsersRound } from 'lucide-react';
 
 interface NavbarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   notificationCount: number;
+  collabCount?: number; // Number of active collaborations
 }
 
-const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, notificationCount }) => {
+const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, notificationCount, collabCount = 0 }) => {
   const navItems = [
     { id: 'home', icon: Home, label: 'Home' },
-    { id: 'workout', icon: Dumbbell, label: 'Workout' },
+    { id: 'collab', icon: UsersRound, label: 'Collab', badge: collabCount > 0 ? collabCount : undefined },
     { id: 'leaderboard', icon: Trophy, label: 'Rank' },
     { id: 'profile', icon: User, label: 'Me' },
     { id: 'inbox', icon: Bell, label: 'Inbox', badge: notificationCount }
