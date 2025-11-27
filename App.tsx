@@ -800,7 +800,7 @@ Maintain a professional tone throughout. Avoid slang or casual language. Be anal
 
             {/* DIY / Quick Start Card */}
             <button 
-                onClick={onStartDIY}
+                onClick={() => onStartDIY()}
                 className={`w-full ${isKid ? 'bg-white border-blue-200 hover:border-blue-400' : 'bg-slate-900 border-slate-800 hover:border-orange-500'} border p-4 rounded-xl text-left transition-colors group relative overflow-hidden`}
             >
                  <div className="absolute top-0 right-0 p-2 opacity-5">
