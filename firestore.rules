@@ -155,5 +155,56 @@
         // This allows mock admin users (who don't use Firebase Auth) to delete exercises
         allow delete: if true;
         }
+        
+        // COLLABORATIVE WORKOUTS Collection
+        match /collaborativeWorkouts/{collabId} {
+        // Anyone can read collaborative workouts (participants check is done app-level)
+        allow read: if true;
+        
+        // Allow creating collaborative workouts
+        // Note: App-level security ensures only admins can initiate collaborations
+        allow create: if true;
+        
+        // Allow updating collaborative workouts (add components, collaborators, etc.)
+        // Note: App-level security ensures only initiators/collaborators can update
+        allow update: if true;
+        
+        // Allow deleting collaborative workouts
+        // Note: App-level security ensures only initiators can delete/cancel
+        allow delete: if true;
+        }
+        
+        // COLLABORATION SUGGESTIONS Collection
+        match /collabSuggestions/{suggestionId} {
+        // Anyone can read suggestions (filtering is done app-level)
+        allow read: if true;
+        
+        // Allow creating suggestions
+        // Note: App-level security ensures only collaborators can submit suggestions
+        allow create: if true;
+        
+        // Allow updating suggestions (accept/reject)
+        // Note: App-level security ensures only initiators can resolve suggestions
+        allow update: if true;
+        
+        // Allow deleting suggestions
+        allow delete: if true;
+        }
+        
+        // COLLABORATION MESSAGES Collection
+        match /collabMessages/{messageId} {
+        // Anyone can read messages (filtering is done app-level)
+        allow read: if true;
+        
+        // Allow creating messages
+        // Note: App-level security ensures only collaborators can send messages
+        allow create: if true;
+        
+        // Allow updating messages
+        allow update: if true;
+        
+        // Allow deleting messages
+        allow delete: if true;
+        }
     }
     }
