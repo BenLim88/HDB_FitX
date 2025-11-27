@@ -43,6 +43,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
   // Sync Workouts State
   const [isSyncingWorkouts, setIsSyncingWorkouts] = useState(false);
 
+  // Workout Search & Filter State
+  const [workoutSearchQuery, setWorkoutSearchQuery] = useState('');
+  const [workoutExerciseFilter, setWorkoutExerciseFilter] = useState('');
+  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
+
   // Pin WOD State
   const [pinningWorkoutId, setPinningWorkoutId] = useState<string | null>(null);
   const [intendedDate, setIntendedDate] = useState('');
@@ -529,6 +534,59 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       setComponentRound('1');
   };
 
+  // Toggle category collapse
+  const toggleCategoryCollapse = (category: string) => {
+      setCollapsedCategories(prev => {
+          const newSet = new Set(prev);
+          if (newSet.has(category)) {
+              newSet.delete(category);
+          } else {
+              newSet.add(category);
+          }
+          return newSet;
+      });
+  };
+
+  // Filter and group workouts
+  const getFilteredAndGroupedWorkouts = () => {
+      let filtered = workouts;
+
+      // Filter by search query (name)
+      if (workoutSearchQuery.trim()) {
+          const query = workoutSearchQuery.toLowerCase();
+          filtered = filtered.filter(w => 
+              w.name.toLowerCase().includes(query) ||
+              w.description?.toLowerCase().includes(query)
+          );
+      }
+
+      // Filter by exercise
+      if (workoutExerciseFilter) {
+          filtered = filtered.filter(w => 
+              w.components.some(c => c.exercise_id === workoutExerciseFilter)
+          );
+      }
+
+      // Group by category
+      const grouped = new Map<string, Workout[]>();
+      filtered.forEach(w => {
+          const category = w.category || 'General';
+          if (!grouped.has(category)) {
+              grouped.set(category, []);
+          }
+          grouped.get(category)!.push(w);
+      });
+
+      // Sort categories alphabetically, but put "General" last
+      const sortedCategories = Array.from(grouped.keys()).sort((a, b) => {
+          if (a === 'General') return 1;
+          if (b === 'General') return -1;
+          return a.localeCompare(b);
+      });
+
+      return { grouped, sortedCategories, totalFiltered: filtered.length };
+  };
+
   const handleDeleteWorkout = async (id: string) => {
       if (!id) {
           console.error('No workout ID provided for deletion');
@@ -975,64 +1033,167 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                                 {isSyncingWorkouts ? <Loader2 size={20} className="animate-spin" /> : <RefreshCcw size={20} />}
                             </button>
                         </div>
-                        <p className="text-xs text-slate-500 text-center">
+                        <p className="text-xs text-slate-500 text-center mb-4">
                             Tap <RefreshCcw size={12} className="inline" /> to sync new workouts
                         </p>
 
-                        <div className="space-y-3">
-                            {workouts.length === 0 ? (
-                                <div className="text-center py-8 text-slate-500 text-sm">
-                                    No workouts yet. Click "Build New Workout" to create one.
+                        {/* Search and Filter */}
+                        <div className="bg-slate-900 border border-slate-800 rounded-xl p-3 space-y-3 mb-4">
+                            <div className="flex gap-2">
+                                <div className="flex-1 relative">
+                                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                                    <input
+                                        type="text"
+                                        placeholder="Search workouts by name..."
+                                        value={workoutSearchQuery}
+                                        onChange={e => setWorkoutSearchQuery(e.target.value)}
+                                        className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-3 py-2 text-sm text-white placeholder:text-slate-600 outline-none focus:border-orange-500"
+                                    />
                                 </div>
-                            ) : (
-                            workouts.map(w => (
-                                <div key={w.id} className={`bg-slate-900 border p-4 rounded-xl relative transition-colors ${w.is_featured ? 'border-yellow-500/40 shadow-lg shadow-yellow-500/5' : 'border-slate-800'}`}>
-                                    {w.is_featured && (
-                                        <div className="absolute -top-2 -left-2 bg-yellow-500 text-black text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
-                                            <Star size={10} fill="black" /> Featured
-                                        </div>
-                                    )}
-                                    <div className="flex justify-between items-start mt-1">
-                                        <div>
-                                            <h3 className="text-white font-bold">{w.name}</h3>
-                                            <div className="flex gap-2 mt-1">
-                                                 <span className="text-[10px] text-orange-500 bg-orange-900/20 px-1.5 py-0.5 rounded border border-orange-900/50">{w.scheme}</span>
-                                                 {w.time_cap_seconds && <span className="text-[10px] text-slate-400 flex items-center gap-1"><Timer size={10} /> {w.time_cap_seconds / 60}m Cap</span>}
-                                            </div>
-                                            <p className="text-xs text-slate-400 mt-2 line-clamp-1">{w.description}</p>
-                                        </div>
-                                        <div className="flex items-center gap-1">
-                                            <button
-                                                onClick={() => toggleFeaturedWorkout(w.id)}
-                                                className={`p-2 hover:bg-slate-800 rounded transition-colors ${w.is_featured ? 'text-yellow-500' : 'text-slate-600 hover:text-yellow-500'}`}
-                                                title="Toggle Featured"
-                                            >
-                                                <Star size={18} fill={w.is_featured ? 'currentColor' : 'none'} />
-                                            </button>
-                                            <button 
-                                                onClick={() => handleStartPinning(w.id)}
-                                                className="p-2 text-slate-600 hover:text-blue-400 hover:bg-slate-800 rounded transition-colors"
-                                                title="Pin WOD"
-                                            >
-                                                <Pin size={18} />
-                                            </button>
-                                            <button 
-                                                onClick={() => startEditingWorkout(w)}
-                                                className="p-2 text-slate-600 hover:text-orange-500 hover:bg-slate-800 rounded transition-colors"
-                                            >
-                                                <Edit size={18} />
-                                            </button>
-                                            <button 
-                                                onClick={() => handleDeleteWorkout(w.id)}
-                                                className="p-2 text-slate-600 hover:text-red-500 hover:bg-slate-800 rounded transition-colors"
-                                            >
-                                                <Trash2 size={18} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            )))}
+                                {(workoutSearchQuery || workoutExerciseFilter) && (
+                                    <button
+                                        onClick={() => { setWorkoutSearchQuery(''); setWorkoutExerciseFilter(''); }}
+                                        className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs font-bold rounded-lg"
+                                    >
+                                        Clear
+                                    </button>
+                                )}
+                            </div>
+                            <div>
+                                <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Filter by Exercise</label>
+                                <select
+                                    value={workoutExerciseFilter}
+                                    onChange={e => setWorkoutExerciseFilter(e.target.value)}
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-orange-500"
+                                >
+                                    <option value="">All Exercises</option>
+                                    {exercises.map(ex => (
+                                        <option key={ex.id} value={ex.id}>{ex.name} ({ex.category})</option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
+
+                        {/* Categorized Workout List */}
+                        {(() => {
+                            const { grouped, sortedCategories, totalFiltered } = getFilteredAndGroupedWorkouts();
+                            
+                            if (workouts.length === 0) {
+                                return (
+                                    <div className="text-center py-8 text-slate-500 text-sm">
+                                        No workouts yet. Click "Build New Workout" to create one.
+                                    </div>
+                                );
+                            }
+
+                            if (totalFiltered === 0) {
+                                return (
+                                    <div className="text-center py-8 text-slate-500 text-sm">
+                                        No workouts match your search/filter.
+                                    </div>
+                                );
+                            }
+
+                            return (
+                                <div className="space-y-3">
+                                    <p className="text-xs text-slate-500">
+                                        Showing {totalFiltered} of {workouts.length} workouts
+                                    </p>
+                                    {sortedCategories.map(category => {
+                                        const categoryWorkouts = grouped.get(category) || [];
+                                        const isCollapsed = collapsedCategories.has(category);
+                                        
+                                        // Category color mapping
+                                        const categoryColors: Record<string, string> = {
+                                            'Hyrox': 'border-red-500/50 bg-red-500/10',
+                                            'CrossFit': 'border-blue-500/50 bg-blue-500/10',
+                                            'Calisthenics': 'border-purple-500/50 bg-purple-500/10',
+                                            'Cardio': 'border-green-500/50 bg-green-500/10',
+                                            'Street Lift': 'border-yellow-500/50 bg-yellow-500/10',
+                                            'Kids Friendly': 'border-pink-500/50 bg-pink-500/10',
+                                            'General': 'border-slate-600/50 bg-slate-600/10',
+                                        };
+                                        const categoryColor = categoryColors[category] || categoryColors['General'];
+                                        
+                                        return (
+                                            <div key={category} className="border border-slate-800 rounded-xl overflow-hidden">
+                                                {/* Category Header */}
+                                                <button
+                                                    onClick={() => toggleCategoryCollapse(category)}
+                                                    className={`w-full flex items-center justify-between p-3 ${categoryColor} hover:bg-opacity-20 transition-colors`}
+                                                >
+                                                    <div className="flex items-center gap-2">
+                                                        <Dumbbell size={16} className="text-slate-400" />
+                                                        <span className="text-white font-bold text-sm">{category}</span>
+                                                        <span className="text-slate-500 text-xs">({categoryWorkouts.length})</span>
+                                                    </div>
+                                                    {isCollapsed ? <ChevronRight size={18} className="text-slate-500" /> : <ChevronDown size={18} className="text-slate-500" />}
+                                                </button>
+                                                
+                                                {/* Category Workouts */}
+                                                {!isCollapsed && (
+                                                    <div className="p-2 space-y-2 bg-slate-950/50">
+                                                        {categoryWorkouts.map(w => (
+                                                            <div key={w.id} className={`bg-slate-900 border p-3 rounded-lg relative transition-colors ${w.is_featured ? 'border-yellow-500/40 shadow-lg shadow-yellow-500/5' : 'border-slate-800'}`}>
+                                                                {w.is_featured && (
+                                                                    <div className="absolute -top-2 -left-2 bg-yellow-500 text-black text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
+                                                                        <Star size={10} fill="black" /> Featured
+                                                                    </div>
+                                                                )}
+                                                                <div className="flex justify-between items-start">
+                                                                    <div className="flex-1 min-w-0 pr-2">
+                                                                        <h3 className="text-white font-bold text-sm truncate">{w.name}</h3>
+                                                                        <div className="flex gap-2 mt-1 flex-wrap">
+                                                                            <span className="text-[10px] text-orange-500 bg-orange-900/20 px-1.5 py-0.5 rounded border border-orange-900/50">{w.scheme}</span>
+                                                                            {w.time_cap_seconds && <span className="text-[10px] text-slate-400 flex items-center gap-1"><Timer size={10} /> {Math.floor(w.time_cap_seconds / 60)}m</span>}
+                                                                            {w.rounds && w.rounds > 1 && <span className="text-[10px] text-purple-400">{w.rounds} Rounds</span>}
+                                                                            <span className="text-[10px] text-slate-500">{w.components.length} exercises</span>
+                                                                        </div>
+                                                                        {w.description && (
+                                                                            <p className="text-[11px] text-slate-400 mt-1 line-clamp-1">{w.description}</p>
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="flex items-center gap-0.5 flex-shrink-0">
+                                                                        <button
+                                                                            onClick={() => toggleFeaturedWorkout(w.id)}
+                                                                            className={`p-1.5 hover:bg-slate-800 rounded transition-colors ${w.is_featured ? 'text-yellow-500' : 'text-slate-600 hover:text-yellow-500'}`}
+                                                                            title="Toggle Featured"
+                                                                        >
+                                                                            <Star size={16} fill={w.is_featured ? 'currentColor' : 'none'} />
+                                                                        </button>
+                                                                        <button 
+                                                                            onClick={() => handleStartPinning(w.id)}
+                                                                            className="p-1.5 text-slate-600 hover:text-blue-400 hover:bg-slate-800 rounded transition-colors"
+                                                                            title="Pin WOD"
+                                                                        >
+                                                                            <Pin size={16} />
+                                                                        </button>
+                                                                        <button 
+                                                                            onClick={() => startEditingWorkout(w)}
+                                                                            className="p-1.5 text-slate-600 hover:text-orange-500 hover:bg-slate-800 rounded transition-colors"
+                                                                            title="Edit"
+                                                                        >
+                                                                            <Edit size={16} />
+                                                                        </button>
+                                                                        <button 
+                                                                            onClick={() => handleDeleteWorkout(w.id)}
+                                                                            className="p-1.5 text-slate-600 hover:text-red-500 hover:bg-slate-800 rounded transition-colors"
+                                                                            title="Delete"
+                                                                        >
+                                                                            <Trash2 size={16} />
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            );
+                        })()}
 
                         {/* PIN WOD MODAL */}
                         {pinningWorkoutId && (() => {
