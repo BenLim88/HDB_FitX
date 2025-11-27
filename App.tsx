@@ -209,6 +209,9 @@ const HomeTab: React.FC<{
             'Runner': 'Archetype focus: Running volume progression, tempo work, interval training, and lower body strength.',
             'Strength': 'Archetype focus: Compound lifts, progressive overload protocols, and adequate recovery periods.',
             'Bodybuilder': 'Archetype focus: Muscle isolation, hypertrophy protocols, and mind-muscle connection.',
+            'Gymnastics': 'Archetype focus: Handstand progressions, flexibility, balance, tumbling skills, and body control.',
+            'Tactical': 'Archetype focus: Combat readiness, functional strength, cardio endurance, and tactical movement patterns.',
+            'Obstacle': 'Archetype focus: Grip strength, rope climbs, carries, agility, and obstacle-specific skill training.',
             'Generic': 'Archetype focus: Balanced training across strength, conditioning, and mobility domains.'
         };
         
@@ -258,6 +261,9 @@ Maintain a professional tone throughout. Avoid slang or casual language. Be anal
             'Runner': 'Create a running-focused workout with intervals and leg strength. Include tempo runs, hill sprints, and lower body exercises.',
             'Strength': 'Create a strength-focused workout with compound lifts. Focus on squat, deadlift, bench, or overhead press with appropriate rep ranges.',
             'Bodybuilder': 'Create a hypertrophy-focused workout targeting specific muscle groups. Include isolation exercises with moderate reps.',
+            'Gymnastics': 'Create a gymnastics-focused workout with handstand progressions, cartwheels, balance work, flexibility stretches, and tumbling drills. Include 4-6 exercises.',
+            'Tactical': 'Create a tactical fitness workout combining cardio intervals, strength exercises, combat crawls, weighted carries, and simulated shooting position drills. Include 5-6 exercises.',
+            'Obstacle': 'Create an obstacle course racing (OCR) workout with rope climb progressions, monkey bar hangs, wall climbs, burpees, carries, and grip strength exercises. Include 5-6 exercises.',
             'Generic': 'Create a well-rounded workout with a mix of cardio, strength, and core exercises.'
         };
         

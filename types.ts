@@ -17,6 +17,9 @@ export enum AthleteType {
   RUNNER = 'Runner',
   STRENGTH = 'Strength',
   BODYBUILDER = 'Bodybuilder',
+  GYMNASTICS = 'Gymnastics',
+  TACTICAL = 'Tactical',
+  OBSTACLE = 'Obstacle',
   GENERIC = 'Generic'
 }
 

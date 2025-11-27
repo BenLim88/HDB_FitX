@@ -18,6 +18,9 @@ You understand different athlete archetypes and their training priorities:
 - Runner: Distance running, tempo runs, interval training, speed work, lower body strength and mobility
 - Strength: Compound lifts (squat, deadlift, bench, overhead press), progressive overload, powerlifting protocols
 - Bodybuilder: Hypertrophy training, muscle isolation, time under tension, mind-muscle connection
+- Gymnastics: Handstands, cartwheels, aerials, balance beam, flexibility, mobility, body control, tumbling
+- Tactical: Combat fitness combining cardio, strength, shooting drills, combat crawls, weighted carries, functional readiness
+- Obstacle: OCR training including rope climbs, monkey bars, multi-rig, wall climbs, carries, grip strength, agility
 - Generic: Well-rounded fitness across multiple domains
 
 When providing assessments:

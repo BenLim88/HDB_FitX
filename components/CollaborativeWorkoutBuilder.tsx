@@ -788,15 +788,15 @@ const CollaborativeWorkoutBuilder: React.FC<CollaborativeWorkoutBuilderProps> = 
       {/* Suggestion Form Modal */}
       {showSuggestionForm && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl shadow-2xl max-h-[90vh] flex flex-col">
+            <div className="p-4 border-b border-slate-800 flex items-center justify-between shrink-0">
               <h3 className="font-bold text-white text-lg">Make a Suggestion</h3>
               <button onClick={resetSuggestionForm} className="p-2 text-slate-500 hover:text-white">
                 <X size={20} />
               </button>
             </div>
             
-            <div className="p-4 space-y-4">
+            <div className="p-4 space-y-4 flex-1 overflow-y-auto">
               {/* Suggestion Type */}
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Type</label>
@@ -975,8 +975,10 @@ const CollaborativeWorkoutBuilder: React.FC<CollaborativeWorkoutBuilderProps> = 
                   className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-white text-sm outline-none resize-none"
                 />
               </div>
-
-              {/* Submit */}
+            </div>
+            
+            {/* Fixed Footer with Submit Button */}
+            <div className="p-4 border-t border-slate-800 shrink-0">
               <button
                 onClick={handleSubmitSuggestion}
                 disabled={
