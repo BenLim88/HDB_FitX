@@ -638,7 +638,6 @@ export const DataService = {
               ...doc.data(),
               id: doc.id
           } as Notification));
-          console.log(`Fetched ${notifications.length} notifications for user ${userId}`);
           return notifications;
       } catch (error) {
           console.error('Error fetching notifications:', error);
