@@ -14,15 +14,16 @@ interface DIYComponent {
 
 interface DIYWorkoutProps {
     onExit: () => void;
+    initialComponents?: DIYComponent[]; // Pre-populated components from AI suggestion
 }
 
-const DIYWorkout: React.FC<DIYWorkoutProps> = ({ onExit }) => {
+const DIYWorkout: React.FC<DIYWorkoutProps> = ({ onExit, initialComponents }) => {
     const [mode, setMode] = useState<'setup' | 'active'>('setup');
     const [aiPrompt, setAiPrompt] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     
-    // Setup State
-    const [components, setComponents] = useState<DIYComponent[]>([]);
+    // Setup State - initialize with provided components if available
+    const [components, setComponents] = useState<DIYComponent[]>(initialComponents || []);
     const [selectedExId, setSelectedExId] = useState<string>(MOCK_EXERCISES[0]?.id || '');
     const [manualTarget, setManualTarget] = useState('');
     const [manualSets, setManualSets] = useState(3);

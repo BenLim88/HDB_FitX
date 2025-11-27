@@ -11,7 +11,7 @@ import AdminDashboard from './components/AdminDashboard';
 import CollaborativeWorkoutBuilder from './components/CollaborativeWorkoutBuilder';
 import AuthScreen from './components/AuthScreen';
 import DIYWorkout from './components/DIYWorkout';
-import { Trophy, Flame, MapPin, ChevronRight, ChevronDown, ChevronUp, Bot, Loader2, ShieldAlert, Filter, Dumbbell, Settings, Edit2, Save, X, RefreshCcw, Search, Calendar, Wand2, Star, RotateCcw, Pin, Users, Baby, Trash2, Check, UsersRound, Zap } from 'lucide-react';
+import { Trophy, Flame, MapPin, ChevronRight, ChevronDown, ChevronUp, Bot, Loader2, ShieldAlert, Filter, Dumbbell, Settings, Edit2, Save, X, RefreshCcw, Search, Calendar, Wand2, Star, RotateCcw, Pin, Users, Baby, Trash2, Check, UsersRound, Zap, Play } from 'lucide-react';
 import { MOCK_EXERCISES, WORLD_RECORDS } from './constants';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth, storage } from './firebaseConfig';
@@ -26,7 +26,7 @@ const HomeTab: React.FC<{
   logs: Log[], // Add logs for personalized recommendations
   pinnedWods: PinnedWOD[], 
   onStartWorkout: (w: Workout) => void, 
-  onStartDIY: () => void,
+  onStartDIY: (initialComponents?: { id: string; name: string; target: string; weight?: string; sets: number }[]) => void,
   onJoinPinned: (id: string) => void,
   onUnjoinPinned: (id: string) => void,
   onUnpinWOD?: (id: string) => void, // Add unpin handler
@@ -39,6 +39,10 @@ const HomeTab: React.FC<{
     const [loadingTip, setLoadingTip] = useState(false);
     const [showParticipants, setShowParticipants] = useState<string | null>(null); // ID of WOD to show list for
     const [workoutCategoryFilter, setWorkoutCategoryFilter] = useState<string>('All');
+    
+    // AI Suggested Workout State
+    const [suggestedWorkout, setSuggestedWorkout] = useState<{ id: string; name: string; target: string; weight?: string; sets: number }[] | null>(null);
+    const [isGeneratingWorkout, setIsGeneratingWorkout] = useState(false);
     
     // Assign Modal State
     const [assigningWorkoutId, setAssigningWorkoutId] = useState<string | null>(null);
@@ -235,6 +239,49 @@ Maintain a professional tone throughout. Avoid slang or casual language. Be anal
         const tip = await GeminiService.generateAdvice(prompt);
         setAiTip(tip);
         setLoadingTip(false);
+    };
+
+    // Generate AI-suggested workout based on archetype and training gaps
+    const handleGenerateSuggestedWorkout = async () => {
+        setIsGeneratingWorkout(true);
+        setSuggestedWorkout(null);
+        
+        // Build context for workout generation
+        const archetypeWorkouts: Record<string, string> = {
+            'Hyrox': 'Create a Hyrox-style workout with running intervals, sled pushes, rowing, burpee broad jumps, farmer carries, and wall balls. Include 4-6 exercises.',
+            'CrossFit': 'Create a CrossFit-style WOD with varied functional movements. Can include Olympic lifts (snatch, clean), gymnastics (pull-ups, muscle-ups), and cardio. Format as AMRAP or For Time.',
+            'Calisthenics': 'Create a bodyweight-focused workout with progressions. Include pull-ups, dips, push-up variations, pistol squats, and core work.',
+            'Hybrid': 'Create a balanced workout mixing strength and conditioning. Include compound lifts with cardio intervals.',
+            'Runner': 'Create a running-focused workout with intervals and leg strength. Include tempo runs, hill sprints, and lower body exercises.',
+            'Strength': 'Create a strength-focused workout with compound lifts. Focus on squat, deadlift, bench, or overhead press with appropriate rep ranges.',
+            'Bodybuilder': 'Create a hypertrophy-focused workout targeting specific muscle groups. Include isolation exercises with moderate reps.',
+            'Generic': 'Create a well-rounded workout with a mix of cardio, strength, and core exercises.'
+        };
+        
+        const workoutPrompt = archetypeWorkouts[user.athlete_type] || archetypeWorkouts['Generic'];
+        
+        try {
+            const generated = await GeminiService.generateWorkoutPlan(workoutPrompt);
+            
+            if (Array.isArray(generated) && generated.length > 0) {
+                const timestamp = Date.now();
+                const mapped = generated.map((g: any, i: number) => ({
+                    id: `ai_${timestamp}_${i}`,
+                    name: g.name || 'Exercise',
+                    target: g.target || '10 reps',
+                    weight: g.weight,
+                    sets: typeof g.sets === 'number' ? g.sets : 1
+                }));
+                setSuggestedWorkout(mapped);
+            } else {
+                alert("Could not generate workout. Please try again.");
+            }
+        } catch (e) {
+            console.error("Workout generation error:", e);
+            alert("Failed to generate workout. Please try again.");
+        } finally {
+            setIsGeneratingWorkout(false);
+        }
     };
 
     const toggleAthleteSelection = (userId: string) => {
@@ -621,17 +668,20 @@ Maintain a professional tone throughout. Avoid slang or casual language. Be anal
                     <p className={`${isKid ? 'text-blue-600' : 'text-slate-500'} text-[10px] mt-1`}>
                         Personalized for {user.athlete_type} athletes
                     </p>
+                    
+                    {/* Assessment Section */}
                     <p className={`${isKid ? 'text-blue-800' : 'text-slate-200'} text-sm mt-2 font-medium italic min-h-[3rem]`}>
-                        {loadingTip ? <Loader2 className="animate-spin" /> : (aiTip || "Ready to crush it? Get personalized motivation based on your recent activity!")}
+                        {loadingTip ? <Loader2 className="animate-spin" /> : (aiTip || "Get your personalized assessment and AI-generated workout recommendation!")}
                     </p>
-                    <div className="flex gap-2 mt-3">
+                    
+                    <div className="flex flex-wrap gap-2 mt-3">
                         {!aiTip ? (
                             <button 
                                 onClick={handleGetTip}
                                 disabled={loadingTip}
                                 className={`text-xs ${isKid ? 'bg-blue-500 hover:bg-blue-400' : 'bg-indigo-600 hover:bg-indigo-500'} disabled:opacity-50 text-white px-3 py-1.5 rounded font-bold transition-colors flex items-center gap-1`}
                             >
-                                <Zap size={12} /> Get My Personalized Tip
+                                <Zap size={12} /> Get Assessment
                             </button>
                         ) : (
                             <button 
@@ -639,10 +689,58 @@ Maintain a professional tone throughout. Avoid slang or casual language. Be anal
                                 disabled={loadingTip}
                                 className={`text-xs ${isKid ? 'bg-blue-400/80 hover:bg-blue-400' : 'bg-indigo-500/50 hover:bg-indigo-500'} disabled:opacity-50 text-white px-3 py-1.5 rounded font-bold transition-colors flex items-center gap-1`}
                             >
-                                <RefreshCcw size={12} /> New Tip
+                                <RefreshCcw size={12} /> Refresh
                             </button>
                         )}
+                        
+                        {/* Generate Workout Button */}
+                        <button 
+                            onClick={handleGenerateSuggestedWorkout}
+                            disabled={isGeneratingWorkout}
+                            className={`text-xs ${isKid ? 'bg-green-500 hover:bg-green-400' : 'bg-green-600 hover:bg-green-500'} disabled:opacity-50 text-white px-3 py-1.5 rounded font-bold transition-colors flex items-center gap-1`}
+                        >
+                            {isGeneratingWorkout ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
+                            {isGeneratingWorkout ? 'Generating...' : 'Generate Workout'}
+                        </button>
                     </div>
+                    
+                    {/* Suggested Workout Display */}
+                    {suggestedWorkout && suggestedWorkout.length > 0 && (
+                        <div className={`mt-4 p-3 rounded-lg ${isKid ? 'bg-green-50 border border-green-200' : 'bg-green-900/20 border border-green-500/30'}`}>
+                            <h4 className={`${isKid ? 'text-green-700' : 'text-green-400'} text-xs font-bold uppercase mb-2 flex items-center gap-1`}>
+                                <Dumbbell size={12} /> AI Suggested Workout ({user.athlete_type})
+                            </h4>
+                            <ul className="space-y-1">
+                                {suggestedWorkout.map((ex, i) => (
+                                    <li key={ex.id} className={`${isKid ? 'text-green-800' : 'text-green-200'} text-xs flex items-start gap-2`}>
+                                        <span className={`${isKid ? 'text-green-600' : 'text-green-500'} font-bold`}>{i + 1}.</span>
+                                        <span>
+                                            <strong>{ex.name}</strong> - {ex.target}
+                                            {ex.weight && ` @ ${ex.weight}`}
+                                            {ex.sets > 1 && ` (${ex.sets} sets)`}
+                                        </span>
+                                    </li>
+                                ))}
+                            </ul>
+                            <div className="flex gap-2 mt-3">
+                                <button 
+                                    onClick={() => onStartDIY(suggestedWorkout)}
+                                    className={`flex-1 text-xs ${isKid ? 'bg-green-600 hover:bg-green-500' : 'bg-green-600 hover:bg-green-500'} text-white px-3 py-2 rounded font-bold transition-colors flex items-center justify-center gap-1`}
+                                >
+                                    <Play size={12} fill="currentColor" /> Start This Workout
+                                </button>
+                                <button 
+                                    onClick={() => setSuggestedWorkout(null)}
+                                    className={`text-xs ${isKid ? 'bg-slate-200 hover:bg-slate-300 text-slate-600' : 'bg-slate-700 hover:bg-slate-600 text-slate-300'} px-3 py-2 rounded font-bold transition-colors`}
+                                >
+                                    <X size={12} />
+                                </button>
+                            </div>
+                            <p className={`${isKid ? 'text-green-600' : 'text-green-500/70'} text-[10px] mt-2 text-center`}>
+                                You can customize this workout in the FREE Train builder
+                            </p>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -1222,6 +1320,7 @@ const App: React.FC = () => {
   // Workout State
   const [activeWorkout, setActiveWorkout] = useState<Workout | null>(null);
   const [activeDIY, setActiveDIY] = useState(false); // DIY Mode State
+  const [diyInitialComponents, setDiyInitialComponents] = useState<{ id: string; name: string; target: string; weight?: string; sets: number }[] | undefined>(undefined);
 
   // Edit Profile State
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -1385,7 +1484,8 @@ const App: React.FC = () => {
     setActiveTab('workout');
   };
 
-  const handleStartDIY = () => {
+  const handleStartDIY = (initialComponents?: { id: string; name: string; target: string; weight?: string; sets: number }[]) => {
+      setDiyInitialComponents(initialComponents);
       setActiveDIY(true);
       setActiveWorkout(null);
       setActiveTab('workout');
@@ -1676,8 +1776,10 @@ const App: React.FC = () => {
                  <DIYWorkout 
                     onExit={() => {
                         setActiveDIY(false);
+                        setDiyInitialComponents(undefined);
                         setActiveTab('home');
                     }}
+                    initialComponents={diyInitialComponents}
                  />
              </div>
         )}
