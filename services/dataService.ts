@@ -625,6 +625,35 @@ export const DataService = {
       }
   },
 
+  // Sync new exercises from MOCK_EXERCISES that don't exist in Firestore
+  syncNewExercises: async (): Promise<{ added: number; existing: number }> => {
+      try {
+          const exercisesSnapshot = await getDocs(collection(db, COLLECTIONS.EXERCISES));
+          const existingIds = new Set(exercisesSnapshot.docs.map(doc => doc.id));
+          
+          const batch = writeBatch(db);
+          let addedCount = 0;
+          
+          for (const exercise of MOCK_EXERCISES) {
+              if (!existingIds.has(exercise.id)) {
+                  const exerciseRef = doc(db, COLLECTIONS.EXERCISES, exercise.id);
+                  batch.set(exerciseRef, exercise);
+                  addedCount++;
+              }
+          }
+          
+          if (addedCount > 0) {
+              await batch.commit();
+          }
+          
+          console.log(`Synced exercises: ${addedCount} added, ${existingIds.size} already existed`);
+          return { added: addedCount, existing: existingIds.size };
+      } catch (error) {
+          console.error('Error syncing exercises:', error);
+          throw error;
+      }
+  },
+
   getLogs: async (): Promise<Log[]> => {
       const logsSnapshot = await getDocs(
           query(collection(db, COLLECTIONS.LOGS), orderBy('timestamp', 'desc'))

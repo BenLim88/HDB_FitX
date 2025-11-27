@@ -42,6 +42,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
 
   // Sync Workouts State
   const [isSyncingWorkouts, setIsSyncingWorkouts] = useState(false);
+  
+  // Sync Exercises State
+  const [isSyncingExercises, setIsSyncingExercises] = useState(false);
 
   // Workout Search & Filter State
   const [workoutSearchQuery, setWorkoutSearchQuery] = useState('');
@@ -226,6 +229,24 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
           alert('Failed to sync workouts. Check console for details.');
       } finally {
           setIsSyncingWorkouts(false);
+      }
+  };
+
+  const handleSyncExercises = async () => {
+      setIsSyncingExercises(true);
+      try {
+          const result = await DataService.syncNewExercises();
+          if (result.added > 0) {
+              alert(`✅ Synced ${result.added} new exercise(s) to the database!`);
+              await loadExercises(); // Reload exercises to show the new ones
+          } else {
+              alert(`All ${result.existing} exercises are already synced.`);
+          }
+      } catch (error) {
+          console.error('Error syncing exercises:', error);
+          alert('Failed to sync exercises. Check console for details.');
+      } finally {
+          setIsSyncingExercises(false);
       }
   };
 
@@ -942,6 +963,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
 
         {activeTab === 'exercises' && (
             <div className="p-4 space-y-6">
+                {/* Sync Button */}
+                <div className="flex gap-2 items-center">
+                    <button 
+                        onClick={handleSyncExercises}
+                        disabled={isSyncingExercises}
+                        className="flex-1 py-3 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-bold rounded-lg flex items-center justify-center gap-2"
+                        title="Sync new exercises from library"
+                    >
+                        {isSyncingExercises ? <Loader2 size={20} className="animate-spin" /> : <RefreshCcw size={20} />}
+                        <span>Sync New Exercises</span>
+                    </button>
+                </div>
+                <p className="text-xs text-slate-500 text-center">
+                    Tap to sync new Obstacle, Tactical, and Gymnastics exercises
+                </p>
+
                 {/* Add New Form */}
                 <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl">
                     <h3 className="text-white font-bold text-sm mb-3 flex items-center gap-2">
@@ -963,11 +1000,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                                 <option value="General">General</option>
                                 <option value="Cardio">Cardio</option>
                                 <option value="Strength">Strength</option>
-                                <option value="Plyo">Plyometrics</option>
-                                <option value="Weightlifting">Weightlifting</option>
-                                <option value="Powerlifting">Powerlifting</option>
                                 <option value="Bodyweight">Bodyweight</option>
+                                <option value="Hyrox">Hyrox</option>
+                                <option value="Obstacle">Obstacle</option>
+                                <option value="Tactical">Tactical</option>
                                 <option value="Gymnastics">Gymnastics</option>
+                                <option value="Plyometric">Plyometric</option>
                             </select>
                             <select 
                                 className="flex-1 bg-slate-950 border border-slate-800 rounded px-3 py-2 text-white text-sm outline-none"
@@ -989,27 +1027,50 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                     </button>
                 </div>
 
-                {/* List */}
+                {/* List with Category Grouping */}
                 <div className="space-y-2">
-                    {exercises.map(ex => (
-                        <div key={ex.id} className="flex items-center justify-between bg-slate-900/50 border border-slate-800 p-3 rounded-lg">
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded bg-slate-800 flex items-center justify-center text-slate-500">
-                                    <Dumbbell size={14} />
+                    <p className="text-xs text-slate-500 mb-2">
+                        {exercises.length} exercises in database
+                    </p>
+                    {(() => {
+                        // Group exercises by category
+                        const grouped = new Map<string, typeof exercises>();
+                        exercises.forEach(ex => {
+                            const cat = ex.category || 'General';
+                            if (!grouped.has(cat)) grouped.set(cat, []);
+                            grouped.get(cat)!.push(ex);
+                        });
+                        const sortedCats = Array.from(grouped.keys()).sort();
+                        
+                        return sortedCats.map(cat => (
+                            <div key={cat} className="mb-3">
+                                <div className="text-[10px] uppercase font-bold text-slate-500 mb-1 px-1">
+                                    {cat} ({grouped.get(cat)!.length})
                                 </div>
-                                <div>
-                                    <p className="text-white font-bold text-sm">{ex.name}</p>
-                                    <p className="text-xs text-slate-500 uppercase">{ex.category} • {ex.type}</p>
+                                <div className="space-y-1">
+                                    {grouped.get(cat)!.map(ex => (
+                                        <div key={ex.id} className="flex items-center justify-between bg-slate-900/50 border border-slate-800 p-2 rounded-lg">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-6 h-6 rounded bg-slate-800 flex items-center justify-center text-slate-500">
+                                                    <Dumbbell size={12} />
+                                                </div>
+                                                <div>
+                                                    <p className="text-white font-bold text-xs">{ex.name}</p>
+                                                    <p className="text-[10px] text-slate-500 uppercase">{ex.type}</p>
+                                                </div>
+                                            </div>
+                                            <button 
+                                                onClick={() => handleDeleteExercise(ex.id)}
+                                                className="p-1.5 text-slate-600 hover:text-red-500 transition-colors"
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
-                            <button 
-                                onClick={() => handleDeleteExercise(ex.id)}
-                                className="p-2 text-slate-600 hover:text-red-500 transition-colors"
-                            >
-                                <Trash2 size={16} />
-                            </button>
-                        </div>
-                    ))}
+                        ));
+                    })()}
                 </div>
             </div>
         )}
