@@ -44,6 +44,7 @@ const HomeTab: React.FC<{
     const [assigningWorkoutId, setAssigningWorkoutId] = useState<string | null>(null);
     const [assignSearchTerm, setAssignSearchTerm] = useState('');
     const [isAssigning, setIsAssigning] = useState(false);
+    const [selectedAthleteIds, setSelectedAthleteIds] = useState<Set<string>>(new Set());
     
     // Get personalized AI motivation based on archetype and recent activity
     const handleGetTip = async () => {
@@ -111,20 +112,39 @@ Keep it punchy, Singapore-style tough love!
         setLoadingTip(false);
     };
 
-    const handleConfirmAssign = async (targetUser: User) => {
+    const toggleAthleteSelection = (userId: string) => {
+        setSelectedAthleteIds(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(userId)) {
+                newSet.delete(userId);
+            } else {
+                newSet.add(userId);
+            }
+            return newSet;
+        });
+    };
+
+    const handleConfirmAssignMultiple = async () => {
         const workout = workouts.find(w => w.id === assigningWorkoutId);
-        if (!workout) return;
+        if (!workout || selectedAthleteIds.size === 0) return;
         
-        if (confirm(`Assign "${workout.name}" to ${targetUser.name}?`)) {
+        const selectedUsers = allUsers.filter(u => selectedAthleteIds.has(u.id));
+        const names = selectedUsers.map(u => u.name).join(', ');
+        
+        if (confirm(`Assign "${workout.name}" to ${selectedUsers.length} athlete(s)?\n\n${names}`)) {
             setIsAssigning(true);
             try {
-                await onAssignWorkout(targetUser.id, workout.id, workout.name);
-                alert(`Workout assigned to ${targetUser.name}`);
+                // Assign to all selected athletes
+                for (const targetUser of selectedUsers) {
+                    await onAssignWorkout(targetUser.id, workout.id, workout.name);
+                }
+                alert(`Workout assigned to ${selectedUsers.length} athlete(s)!`);
                 setAssigningWorkoutId(null);
                 setAssignSearchTerm('');
+                setSelectedAthleteIds(new Set());
             } catch (error) {
                 console.error("Error assigning workout", error);
-                alert("Failed to assign workout");
+                alert("Failed to assign workout to some athletes");
             } finally {
                 setIsAssigning(false);
             }
@@ -185,12 +205,19 @@ Keep it punchy, Singapore-style tough love!
                     <div className={`${isKid ? 'bg-white' : 'bg-slate-900'} border ${isKid ? 'border-blue-200' : 'border-slate-800'} w-full max-w-md rounded-2xl p-6 shadow-2xl flex flex-col max-h-[80vh]`}>
                         <div className="flex justify-between items-center mb-4">
                             <h3 className={`${isKid ? 'text-blue-900' : 'text-white'} font-bold text-lg flex items-center gap-2`}>
-                                <Users size={20} className={isKid ? 'text-blue-500' : 'text-orange-500'} /> Assign to Athlete
+                                <Users size={20} className={isKid ? 'text-blue-500' : 'text-orange-500'} /> Assign to Athletes
                             </h3>
-                            <button onClick={() => setAssigningWorkoutId(null)} className="p-2 text-slate-500 hover:text-red-500">
+                            <button onClick={() => { setAssigningWorkoutId(null); setSelectedAthleteIds(new Set()); }} className="p-2 text-slate-500 hover:text-red-500">
                                 <X size={20} />
                             </button>
                         </div>
+                        
+                        {/* Selection count */}
+                        {selectedAthleteIds.size > 0 && (
+                            <div className={`mb-3 px-3 py-2 rounded-lg text-sm font-medium ${isKid ? 'bg-blue-100 text-blue-800' : 'bg-orange-500/20 text-orange-400'}`}>
+                                {selectedAthleteIds.size} athlete{selectedAthleteIds.size > 1 ? 's' : ''} selected
+                            </div>
+                        )}
                         
                         <div className="mb-4 relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
@@ -203,36 +230,78 @@ Keep it punchy, Singapore-style tough love!
                             />
                         </div>
 
-                        <div className="flex-1 overflow-y-auto space-y-2 pr-2">
+                        <div className="flex-1 overflow-y-auto space-y-2 pr-2 mb-4">
                             {allUsers
                                 .filter(u => u.id !== user.id && u.name.toLowerCase().includes(assignSearchTerm.toLowerCase()))
-                                .map(u => (
-                                <button
-                                    key={u.id}
-                                    onClick={() => handleConfirmAssign(u)}
-                                    disabled={isAssigning}
-                                    className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all ${
-                                        isKid 
-                                            ? 'bg-white border-blue-100 hover:border-blue-400 hover:bg-blue-50' 
-                                            : 'bg-slate-950 border-slate-800 hover:border-orange-500 hover:bg-slate-900'
-                                    }`}
-                                >
-                                    <div className="w-10 h-10 rounded-full bg-slate-800 overflow-hidden border border-slate-700">
-                                        <img src={u.avatar_url} className="w-full h-full object-cover" />
-                                    </div>
-                                    <div className="text-left">
-                                        <p className={`${isKid ? 'text-blue-900' : 'text-white'} font-bold text-sm`}>{u.name}</p>
-                                        <p className="text-xs text-slate-500">{u.athlete_type}</p>
-                                    </div>
-                                    <ChevronRight className="ml-auto text-slate-500" size={16} />
-                                </button>
-                            ))}
+                                .map(u => {
+                                    const isSelected = selectedAthleteIds.has(u.id);
+                                    return (
+                                        <button
+                                            key={u.id}
+                                            onClick={() => toggleAthleteSelection(u.id)}
+                                            disabled={isAssigning}
+                                            className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all ${
+                                                isSelected
+                                                    ? isKid 
+                                                        ? 'bg-blue-100 border-blue-400 ring-2 ring-blue-400' 
+                                                        : 'bg-orange-500/20 border-orange-500 ring-2 ring-orange-500'
+                                                    : isKid 
+                                                        ? 'bg-white border-blue-100 hover:border-blue-400 hover:bg-blue-50' 
+                                                        : 'bg-slate-950 border-slate-800 hover:border-orange-500 hover:bg-slate-900'
+                                            }`}
+                                        >
+                                            {/* Checkbox indicator */}
+                                            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                                                isSelected
+                                                    ? isKid ? 'bg-blue-500 border-blue-500' : 'bg-orange-500 border-orange-500'
+                                                    : isKid ? 'border-blue-300' : 'border-slate-600'
+                                            }`}>
+                                                {isSelected && (
+                                                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                )}
+                                            </div>
+                                            <div className="w-10 h-10 rounded-full bg-slate-800 overflow-hidden border border-slate-700">
+                                                <img src={u.avatar_url} className="w-full h-full object-cover" />
+                                            </div>
+                                            <div className="text-left flex-1">
+                                                <p className={`${isKid ? 'text-blue-900' : 'text-white'} font-bold text-sm`}>{u.name}</p>
+                                                <p className="text-xs text-slate-500">{u.athlete_type}</p>
+                                            </div>
+                                        </button>
+                                    );
+                                })}
                             {allUsers.filter(u => u.id !== user.id && u.name.toLowerCase().includes(assignSearchTerm.toLowerCase())).length === 0 && (
                                 <div className="text-center py-8 text-slate-500 italic text-sm">
                                     No athletes found.
                                 </div>
                             )}
                         </div>
+                        
+                        {/* Confirm Button */}
+                        <button
+                            onClick={handleConfirmAssignMultiple}
+                            disabled={isAssigning || selectedAthleteIds.size === 0}
+                            className={`w-full py-3 rounded-xl font-bold text-sm uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
+                                selectedAthleteIds.size === 0
+                                    ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                                    : isKid
+                                        ? 'bg-blue-500 hover:bg-blue-400 text-white'
+                                        : 'bg-orange-600 hover:bg-orange-500 text-white'
+                            }`}
+                        >
+                            {isAssigning ? (
+                                <>
+                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                    Assigning...
+                                </>
+                            ) : (
+                                <>
+                                    Assign to {selectedAthleteIds.size || '...'} Athlete{selectedAthleteIds.size !== 1 ? 's' : ''}
+                                </>
+                            )}
+                        </button>
                     </div>
                 </div>
             )}
