@@ -1,7 +1,7 @@
 import React from 'react';
 import { Notification, VerificationStatus } from '../types';
 import { DataService } from '../services/dataService';
-import { Check, X, UserCheck, Pin, ArrowRight, Dumbbell, UsersRound, MessageSquare, Sparkles } from 'lucide-react';
+import { Check, X, UserCheck, Pin, ArrowRight, Dumbbell, UsersRound, MessageSquare, Sparkles, User } from 'lucide-react';
 
 interface WitnessInboxProps {
   notifications: Notification[];
@@ -10,9 +10,10 @@ interface WitnessInboxProps {
   onNavigateToHome?: () => void;
   onStartAssignedWorkout?: (workoutId: string) => void; // Add handler for assigned workouts
   onNavigateToCollab?: (collabId: string) => void; // Add handler for collaboration notifications
+  onNavigateToProfile?: () => void; // Add handler for profile update reminders
 }
 
-const WitnessInbox: React.FC<WitnessInboxProps> = ({ notifications, currentUserId, refreshData, onNavigateToHome, onStartAssignedWorkout, onNavigateToCollab }) => {
+const WitnessInbox: React.FC<WitnessInboxProps> = ({ notifications, currentUserId, refreshData, onNavigateToHome, onStartAssignedWorkout, onNavigateToCollab, onNavigateToProfile }) => {
 
   const handleAction = async (logId: string | undefined, action: 'verify' | 'reject') => {
     if (!logId) {
@@ -57,8 +58,9 @@ const WitnessInbox: React.FC<WitnessInboxProps> = ({ notifications, currentUserI
   const collabNotifications = notifications.filter(n => 
     (n.type === 'collab_invite' || n.type === 'collab_suggestion' || n.type === 'collab_update') && !n.read
   );
+  const profileReminders = notifications.filter(n => n.type === 'profile_reminder' && !n.read);
 
-  const hasUnreadNotifications = witnessRequests.length > 0 || pinnedInvitations.length > 0 || workoutAssignments.length > 0 || collabNotifications.length > 0;
+  const hasUnreadNotifications = witnessRequests.length > 0 || pinnedInvitations.length > 0 || workoutAssignments.length > 0 || collabNotifications.length > 0 || profileReminders.length > 0;
 
   if (!hasUnreadNotifications) {
     return (
@@ -71,6 +73,50 @@ const WitnessInbox: React.FC<WitnessInboxProps> = ({ notifications, currentUserI
 
   return (
     <div className="space-y-6 p-4">
+      {/* Profile Update Reminders - Show first for new users */}
+      {profileReminders.length > 0 && (
+        <div>
+          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+            <User size={20} className="text-green-500" /> Welcome to HDB FitX!
+          </h2>
+          <div className="space-y-3">
+            {profileReminders.map(notif => (
+              <div key={notif.id} className="bg-gradient-to-br from-green-900/30 to-slate-900 border border-green-500/40 p-4 rounded-xl shadow-sm flex flex-col gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full bg-green-600/20 flex items-center justify-center text-green-500">
+                    <User size={20} />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-white font-medium">{notif.message}</p>
+                    <p className="text-xs text-slate-400 mt-1">Set your designation, group, and athlete type to get the most out of HDB FitX.</p>
+                  </div>
+                </div>
+                
+                <div className="flex gap-2 mt-2">
+                  {onNavigateToProfile && (
+                    <button 
+                      onClick={() => {
+                        handleMarkAsRead(notif.id);
+                        onNavigateToProfile();
+                      }}
+                      className="flex-1 bg-green-600 hover:bg-green-500 text-white text-xs font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2"
+                    >
+                      Update Profile <ArrowRight size={14} />
+                    </button>
+                  )}
+                  <button 
+                    onClick={() => handleDismiss(notif.id)}
+                    className="px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold py-2 rounded-lg"
+                  >
+                    Later
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Pinned WOD Invitations */}
       {pinnedInvitations.length > 0 && (
         <div>

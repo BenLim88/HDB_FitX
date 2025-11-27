@@ -1531,6 +1531,7 @@ const App: React.FC = () => {
                       setActiveTab('collab');
                     }
                   }}
+                  onNavigateToProfile={() => setActiveTab('profile')}
                 />
             )}
 
@@ -2012,6 +2013,7 @@ const App: React.FC = () => {
                                             value={editProfileForm.title}
                                             onChange={e => setEditProfileForm({...editProfileForm, title: e.target.value})}
                                         >
+                                             <option value="">-</option>
                                              {['Mr', 'Ms', 'Mrs', 'Dr', 'Er', 'Ar', 'Rs', 'Master', 'Miss'].map(t => <option key={t} value={t}>{t}</option>)}
                                         </select>
                                         <input 

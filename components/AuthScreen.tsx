@@ -19,7 +19,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [title, setTitle] = useState('Mr');
+  const [title, setTitle] = useState(''); // Empty by default - user should set their own designation
   const [gender, setGender] = useState<Gender>(Gender.MALE);
   const [category, setCategory] = useState<UserCategory>(UserCategory.ADULT);
   const [group, setGroup] = useState<GroupType>(GroupType.NONE);
@@ -227,6 +227,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
                                 onChange={e => setTitle(e.target.value)}
                                 className={`w-full ${isKid ? 'bg-blue-50 border-blue-200 text-blue-900' : 'bg-slate-950 border-slate-800 text-white focus:border-orange-500'} border rounded-lg px-2 py-3 text-sm outline-none`}
                             >
+                                <option value="">-</option>
                                 {['Mr', 'Ms', 'Mrs', 'Dr', 'Er', 'Ar', 'Rs', 'Master', 'Miss'].map(t => <option key={t} value={t}>{t}</option>)}
                             </select>
                          </div>

@@ -124,7 +124,7 @@ export interface Log {
 export interface Notification {
   id: string;
   target_user_id: string;
-  type: 'witness_request' | 'system' | 'pinned_wod_invitation' | 'workout_assignment' | 'collab_invite' | 'collab_suggestion' | 'collab_update';
+  type: 'witness_request' | 'system' | 'pinned_wod_invitation' | 'workout_assignment' | 'collab_invite' | 'collab_suggestion' | 'collab_update' | 'profile_reminder';
   message: string;
   payload: {
     log_id?: string;
@@ -132,6 +132,7 @@ export interface Notification {
     workout_id?: string;
     collab_workout_id?: string;
     suggestion_id?: string;
+    action?: string; // For profile_reminder: 'update_profile'
   };
   read: boolean;
 }

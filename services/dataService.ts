@@ -226,7 +226,7 @@ export const DataService = {
           const newUser: User = {
               id: fbUser.uid,
               name: fbUser.displayName || 'Unknown Athlete',
-              title: 'Mr', // Default
+              title: '', // Empty - user should set their own designation
               gender: Gender.UNSPECIFIED,
               group_id: GroupType.NONE,
               athlete_type: AthleteType.GENERIC,
@@ -236,6 +236,16 @@ export const DataService = {
           };
           
           await setDoc(userRef, newUser);
+          
+          // Create welcome notification prompting user to update their profile
+          await DataService.addNotification({
+              target_user_id: newUser.id,
+              type: 'profile_reminder',
+              message: `Welcome to HDB FitX, ${newUser.name}! Please update your profile to set your designation, gender, group, and athlete type.`,
+              payload: { action: 'update_profile' },
+              read: false
+          });
+          
           return newUser;
       } catch (error) {
           console.error("Google Sign In Error", error);
@@ -318,13 +328,13 @@ export const DataService = {
     return null; 
   },
 
-  register: async (data: { name: string, title: string, gender: Gender, group_id: GroupType, athlete_type: AthleteType, category: UserCategory }): Promise<User> => {
+  register: async (data: { name: string, title?: string, gender: Gender, group_id: GroupType, athlete_type: AthleteType, category: UserCategory }): Promise<User> => {
     await seedDatabase(); // Ensure database is seeded
     
     const newUser: User = {
         id: `u_${Date.now()}`,
         name: data.name,
-        title: data.title,
+        title: data.title || '', // Empty by default - user should set their own designation
         gender: data.gender,
         group_id: data.group_id,
         athlete_type: data.athlete_type,
@@ -335,6 +345,16 @@ export const DataService = {
     
     const userRef = doc(db, COLLECTIONS.USERS, newUser.id);
     await setDoc(userRef, newUser);
+    
+    // Create welcome notification prompting user to update their profile
+    await DataService.addNotification({
+        target_user_id: newUser.id,
+        type: 'profile_reminder',
+        message: `Welcome to HDB FitX, ${newUser.name}! Please update your profile to complete your registration.`,
+        payload: { action: 'update_profile' },
+        read: false
+    });
+    
     return newUser;
   },
 
