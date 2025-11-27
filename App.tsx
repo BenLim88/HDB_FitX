@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { MOCK_USERS, CURRENT_USER_ID } from './constants';
-import { User, Log, Notification, Workout, VerificationStatus, Gender, GroupType, AthleteType, ScalingTier, Venue, PinnedWOD, UserCategory, WorldRecord } from './types';
+import { User, Log, Notification, Workout, VerificationStatus, Gender, GroupType, AthleteType, ScalingTier, Venue, PinnedWOD, UserCategory, WorldRecord, Exercise } from './types';
 import { DataService } from './services/dataService';
 import { GeminiService } from './services/geminiService';
 import Navbar from './components/Navbar';
@@ -898,6 +898,8 @@ const App: React.FC = () => {
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [venues, setVenues] = useState<Venue[]>([]); // New Venue State
   const [pinnedWods, setPinnedWods] = useState<PinnedWOD[]>([]); // New Pinned WOD State
+  const [pendingCollabId, setPendingCollabId] = useState<string | null>(null); // For navigating to specific collab
+  const [customExercises, setCustomExercises] = useState<Exercise[]>([]); // Custom exercises from Firestore
 
   // Workout State
   const [activeWorkout, setActiveWorkout] = useState<Workout | null>(null);
@@ -1000,6 +1002,8 @@ const App: React.FC = () => {
             setAllUsers(users);
             const v = await DataService.getVenues(); // Load Venues
             setVenues(v);
+            const ex = await DataService.getExercises(); // Load custom exercises from Firestore
+            setCustomExercises(ex);
             refreshData();
         };
         initData();
@@ -1325,7 +1329,8 @@ const App: React.FC = () => {
                     workout={activeWorkout} 
                     currentUser={currentUser} 
                     allUsers={allUsers}
-                    venues={venues} 
+                    venues={venues}
+                    exercises={customExercises}
                     onExit={() => {
                         setActiveWorkout(null);
                         setActiveTab('home');
@@ -1381,7 +1386,8 @@ const App: React.FC = () => {
                   onNavigateToHome={() => setActiveTab('home')}
                   onStartAssignedWorkout={handleStartAssignedWorkout}
                   onNavigateToCollab={(collabId) => {
-                    // Navigate to admin tab where collaborations are managed
+                    // Navigate to admin tab and open the specific collaboration
+                    setPendingCollabId(collabId);
                     setActiveTab('admin');
                   }}
                 />
@@ -1394,6 +1400,8 @@ const App: React.FC = () => {
                     initialVenues={venues}
                     onUpdateVenues={handleUpdateVenues}
                     currentUser={currentUser}
+                    pendingCollabId={pendingCollabId}
+                    onClearPendingCollab={() => setPendingCollabId(null)}
                 />
             )}
 

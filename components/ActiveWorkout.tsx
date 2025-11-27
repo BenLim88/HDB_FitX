@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Play, Pause, Square, CheckCircle, SkipForward, Timer, Volume2, VolumeX, X as XIcon, Save, Info, List, ChevronRight, ChevronDown, ChevronUp, AlertTriangle, MapPin, Settings, Trash2 } from 'lucide-react';
-import { Workout, ScalingTier, Log, VerificationStatus, User, Venue } from '../types';
+import { Workout, ScalingTier, Log, VerificationStatus, User, Venue, Exercise } from '../types';
 import { DataService } from '../services/dataService';
 import { MOCK_EXERCISES } from '../constants';
 
@@ -10,11 +10,12 @@ interface ActiveWorkoutProps {
   currentUser: User;
   allUsers: User[];
   venues: Venue[];
+  exercises?: Exercise[]; // Custom exercises from Firestore (for collaboration workouts)
   onComplete: () => void;
   onExit: () => void;
 }
 
-const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, allUsers, venues, onComplete, onExit }) => {
+const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, allUsers, venues, exercises = [], onComplete, onExit }) => {
   // Mode State
   const [isStarted, setIsStarted] = useState(false);
   const [showQuitModal, setShowQuitModal] = useState(false);
@@ -79,6 +80,13 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
     if (expandedComponents.length === 0) return 1;
     return expandedComponents[activeComponentIndex]?._roundNumber || 1;
   }, [activeComponentIndex, expandedComponents]);
+
+  // Helper to find exercise from both MOCK_EXERCISES and custom exercises
+  const findExercise = (exerciseId: string) => {
+    return MOCK_EXERCISES.find(e => e.id === exerciseId) || 
+           exercises.find(e => e.id === exerciseId) ||
+           null;
+  };
 
   // Initialize Audio Context
   useEffect(() => {
@@ -362,7 +370,7 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
   };
 
   const currentComponent = expandedComponents[activeComponentIndex];
-  const exerciseDetail = currentComponent ? MOCK_EXERCISES.find(e => e.id === currentComponent.exercise_id) : null;
+  const exerciseDetail = currentComponent ? findExercise(currentComponent.exercise_id) : null;
 
   // --- SCREEN 1A: MANUAL LOG FORM ---
   if (showLogWithoutTimer && !isStarted && !showFinishScreen) {
@@ -643,7 +651,7 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
                     )}
                 </div>
                 {expandedComponents.map((comp, idx) => {
-                     const ex = MOCK_EXERCISES.find(e => e.id === comp.exercise_id);
+                     const ex = findExercise(comp.exercise_id);
                      const isNewRound = idx === 0 || expandedComponents[idx - 1]._roundNumber !== comp._roundNumber;
                      return (
                          <React.Fragment key={idx}>
@@ -934,7 +942,7 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
          
          <div className="mt-4 flex justify-between text-xs text-slate-500 font-bold uppercase">
             <span>Progress: {activeComponentIndex + 1} / {expandedComponents.length}{totalRounds > 1 ? ` (Round ${currentRound}/${totalRounds})` : ''}</span>
-            <span>Next: {expandedComponents[activeComponentIndex + 1] ? MOCK_EXERCISES.find(e => e.id === expandedComponents[activeComponentIndex + 1].exercise_id)?.name : 'Finish'}</span>
+            <span>Next: {expandedComponents[activeComponentIndex + 1] ? findExercise(expandedComponents[activeComponentIndex + 1].exercise_id)?.name : 'Finish'}</span>
          </div>
       </div>
     </div>

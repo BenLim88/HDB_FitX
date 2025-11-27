@@ -35,7 +35,8 @@ import {
   Dumbbell,
   Target,
   Loader2,
-  RotateCcw
+  RotateCcw,
+  GripVertical
 } from 'lucide-react';
 
 interface CollaborativeWorkoutBuilderProps {
@@ -81,6 +82,10 @@ const CollaborativeWorkoutBuilder: React.FC<CollaborativeWorkoutBuilderProps> = 
   // Invite Modal
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteSearch, setInviteSearch] = useState('');
+  
+  // Drag Reorder State (for initiator only)
+  const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
   
   // Refs
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -296,6 +301,49 @@ const CollaborativeWorkoutBuilder: React.FC<CollaborativeWorkoutBuilderProps> = 
     return exercises.find(e => e.id === exerciseId)?.name || MOCK_EXERCISES.find(e => e.id === exerciseId)?.name || 'Unknown Exercise';
   };
 
+  // Drag handlers for reordering (initiator only)
+  const handleDragStart = (idx: number) => {
+    setDraggedIdx(idx);
+  };
+
+  const handleDragOver = (e: React.DragEvent, idx: number) => {
+    e.preventDefault();
+    setDragOverIdx(idx);
+  };
+
+  const handleDrop = async (idx: number) => {
+    if (draggedIdx === null || draggedIdx === idx) {
+      setDraggedIdx(null);
+      setDragOverIdx(null);
+      return;
+    }
+
+    const components = [...collabWorkout.components];
+    const [movedItem] = components.splice(draggedIdx, 1);
+    components.splice(idx, 0, movedItem);
+
+    // Reorder
+    const reordered = components.map((c, i) => ({ ...c, order: i + 1 }));
+
+    try {
+      await DataService.updateCollaborativeWorkout(collabWorkout.id, {
+        components: reordered
+      });
+      onRefresh();
+    } catch (error) {
+      console.error('Error reordering components:', error);
+      alert('Failed to reorder exercises');
+    }
+
+    setDraggedIdx(null);
+    setDragOverIdx(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIdx(null);
+    setDragOverIdx(null);
+  };
+
   const pendingSuggestions = suggestions.filter(s => s.status === SuggestionStatus.PENDING);
   const resolvedSuggestions = suggestions.filter(s => s.status !== SuggestionStatus.PENDING);
 
@@ -434,8 +482,29 @@ const CollaborativeWorkoutBuilder: React.FC<CollaborativeWorkoutBuilderProps> = 
               </div>
             ) : (
               <div className="space-y-2 mb-4">
+                {isInitiator && isActive && collabWorkout.components.length > 1 && (
+                  <p className="text-[10px] text-slate-500 italic mb-1">💡 Drag to reorder exercises</p>
+                )}
                 {collabWorkout.components.map((comp, idx) => (
-                  <div key={idx} className="bg-slate-900 border border-slate-800 p-3 rounded-lg flex items-center gap-3">
+                  <div 
+                    key={idx} 
+                    draggable={isInitiator && isActive}
+                    onDragStart={() => handleDragStart(idx)}
+                    onDragOver={(e) => handleDragOver(e, idx)}
+                    onDrop={() => handleDrop(idx)}
+                    onDragEnd={handleDragEnd}
+                    className={`bg-slate-900 border p-3 rounded-lg flex items-center gap-3 transition-all ${
+                      dragOverIdx === idx ? 'border-orange-500 bg-orange-500/10' : 
+                      draggedIdx === idx ? 'opacity-50 border-slate-700' : 
+                      'border-slate-800'
+                    } ${isInitiator && isActive ? 'cursor-grab active:cursor-grabbing' : ''}`}
+                  >
+                    {/* Drag Handle (initiator only) */}
+                    {isInitiator && isActive && (
+                      <div className="text-slate-600 hover:text-slate-400 cursor-grab">
+                        <GripVertical size={16} />
+                      </div>
+                    )}
                     <div className="w-8 h-8 bg-orange-600/20 rounded-lg flex items-center justify-center text-orange-500 font-bold text-sm">
                       {comp.order}
                     </div>

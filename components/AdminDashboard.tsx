@@ -11,10 +11,12 @@ interface AdminDashboardProps {
   onUpdateWorkouts: (workouts: Workout[]) => void;
   initialVenues: Venue[];
   onUpdateVenues: (venues: Venue[]) => void;
-  currentUser: User; // Add currentUser prop
+  currentUser: User;
+  pendingCollabId?: string | null; // For navigating directly to a collaboration
+  onClearPendingCollab?: () => void;
 }
 
-const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpdateWorkouts, initialVenues, onUpdateVenues, currentUser }) => {
+const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpdateWorkouts, initialVenues, onUpdateVenues, currentUser, pendingCollabId, onClearPendingCollab }) => {
   // Data States
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [workouts, setWorkouts] = useState<Workout[]>(initialWorkouts);
@@ -125,6 +127,25 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
   useEffect(() => {
       loadExercises();
   }, []);
+
+  // Handle pending collaboration navigation from inbox
+  useEffect(() => {
+      if (pendingCollabId) {
+          // Switch to collab tab and load the specific collaboration
+          setActiveTab('collab');
+          const loadAndOpenCollab = async () => {
+              const collab = await DataService.getCollaborativeWorkout(pendingCollabId);
+              if (collab) {
+                  setSelectedCollab(collab);
+              }
+              // Clear the pending ID after handling
+              if (onClearPendingCollab) {
+                  onClearPendingCollab();
+              }
+          };
+          loadAndOpenCollab();
+      }
+  }, [pendingCollabId]);
 
   const loadUsers = async () => {
       const allUsers = await DataService.getAllUsers();
