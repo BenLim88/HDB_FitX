@@ -54,7 +54,9 @@ const WitnessInbox: React.FC<WitnessInboxProps> = ({ notifications, currentUserI
   const pinnedInvitations = notifications.filter(n => n.type === 'pinned_wod_invitation' && !n.read);
   const workoutAssignments = notifications.filter(n => n.type === 'workout_assignment' && !n.read);
 
-  if (notifications.length === 0) {
+  const hasUnreadNotifications = witnessRequests.length > 0 || pinnedInvitations.length > 0 || workoutAssignments.length > 0;
+
+  if (!hasUnreadNotifications) {
     return (
       <div className="flex flex-col items-center justify-center h-64 text-slate-500">
         <UserCheck size={48} className="mb-4 opacity-50" />
