@@ -119,7 +119,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
           loadCollabs();
           loadUsers(); // Also load users for invite list
       }
-  }, [activeTab, currentUser]);
+  }, [activeTab, currentUser?.id]); // Only depend on currentUser.id, not the whole object
 
   // Load exercises on component mount
   useEffect(() => {
@@ -132,7 +132,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
   };
 
   const loadCollabs = async () => {
-      setIsLoadingCollabs(true);
+      // Only show loading spinner on first load, not on refreshes
+      if (collabWorkouts.length === 0) {
+          setIsLoadingCollabs(true);
+      }
       try {
           const collabs = await DataService.getCollaborativeWorkouts(currentUser.id);
           setCollabWorkouts(collabs);
