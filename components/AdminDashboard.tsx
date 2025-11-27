@@ -1033,7 +1033,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                     </button>
                 </div>
                 <p className="text-xs text-slate-500 text-center">
-                    Tap to sync new Obstacle, Tactical, and Gymnastics exercises
+                    Tap to sync new exercises
                 </p>
 
                 {/* Search and Filter */}
