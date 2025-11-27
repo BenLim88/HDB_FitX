@@ -822,6 +822,11 @@ export const DataService = {
   ): Promise<CollaborativeWorkout> => {
     try {
       const now = Date.now();
+      const isAdmin = initiator.is_admin;
+      
+      // For non-admin users, set expiration to 3 days from now
+      const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
+      
       const collabData: Omit<CollaborativeWorkout, 'id'> = {
         name: workoutData.name || 'Untitled Collaboration',
         description: workoutData.description || '',
@@ -839,10 +844,12 @@ export const DataService = {
         },
         initiator_id: initiator.id,
         initiator_name: initiator.name,
+        initiator_is_admin: isAdmin,
         collaborator_ids: invitedUserIds,
         status: CollaborationStatus.ACTIVE,
         created_at: now,
-        updated_at: now
+        updated_at: now,
+        expires_at: isAdmin ? undefined : now + THREE_DAYS_MS
       };
 
       const docRef = await addDoc(collection(db, COLLECTIONS.COLLAB_WORKOUTS), removeUndefined(collabData));
@@ -869,6 +876,7 @@ export const DataService = {
   getCollaborativeWorkouts: async (userId: string): Promise<CollaborativeWorkout[]> => {
     try {
       const allCollabs: CollaborativeWorkout[] = [];
+      const now = Date.now();
       
       // Get where user is initiator
       const initiatorQuery = query(
@@ -892,6 +900,24 @@ export const DataService = {
           allCollabs.push({ ...d.data(), id: d.id } as CollaborativeWorkout);
         }
       });
+
+      // Check for expired collabs and auto-cancel them
+      for (const collab of allCollabs) {
+        if (collab.status === CollaborationStatus.ACTIVE && 
+            collab.expires_at && 
+            collab.expires_at < now) {
+          // Auto-expire this collab
+          try {
+            await updateDoc(doc(db, COLLECTIONS.COLLAB_WORKOUTS, collab.id), {
+              status: CollaborationStatus.CANCELLED,
+              updated_at: now
+            });
+            collab.status = CollaborationStatus.CANCELLED;
+          } catch (e) {
+            console.error('Error auto-expiring collab:', e);
+          }
+        }
+      }
 
       return allCollabs.sort((a, b) => b.updated_at - a.updated_at);
     } catch (error) {

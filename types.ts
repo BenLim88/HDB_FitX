@@ -192,12 +192,14 @@ export interface CollaborativeWorkout {
   components: WorkoutComponent[]; // Current accepted components
   scaling: Record<ScalingTier, string>;
   // Collaboration metadata
-  initiator_id: string; // Admin who started the collaboration
+  initiator_id: string; // User/Admin who started the collaboration
   initiator_name: string;
+  initiator_is_admin: boolean; // Whether the initiator is an admin
   collaborator_ids: string[]; // Users invited to collaborate
   status: CollaborationStatus;
   created_at: number;
   updated_at: number;
+  expires_at?: number; // For non-admin collabs, auto-expires after 3 days
 }
 
 export interface WorkoutSuggestion {

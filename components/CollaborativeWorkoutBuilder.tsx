@@ -247,15 +247,33 @@ const CollaborativeWorkoutBuilder: React.FC<CollaborativeWorkoutBuilderProps> = 
 
   const handleFinalize = async () => {
     if (!isInitiator) return;
-    if (!confirm('Finalize this workout? It will be added to the workout library and the collaboration will be closed.')) return;
     
-    try {
-      await DataService.finalizeCollaborativeWorkout(collabWorkout.id, currentUser.id);
-      alert('Workout finalized successfully!');
-      onBack();
-    } catch (error) {
-      console.error('Error finalizing workout:', error);
-      alert('Failed to finalize workout');
+    // Only admin-initiated collabs can be added to workout library
+    if (collabWorkout.initiator_is_admin) {
+      if (!confirm('Finalize this workout? It will be added to the workout library and the collaboration will be closed.')) return;
+      
+      try {
+        await DataService.finalizeCollaborativeWorkout(collabWorkout.id, currentUser.id);
+        alert('Workout finalized and added to library!');
+        onBack();
+      } catch (error) {
+        console.error('Error finalizing workout:', error);
+        alert('Failed to finalize workout');
+      }
+    } else {
+      // For user-initiated collabs, just close/complete without adding to library
+      if (!confirm('Complete this collaboration? (Note: Community collabs are not added to the workout library)')) return;
+      
+      try {
+        await DataService.updateCollaborativeWorkout(collabWorkout.id, {
+          status: CollaborationStatus.FINALIZED
+        });
+        alert('Collaboration completed!');
+        onBack();
+      } catch (error) {
+        console.error('Error completing collaboration:', error);
+        alert('Failed to complete collaboration');
+      }
     }
   };
 
@@ -550,13 +568,27 @@ const CollaborativeWorkoutBuilder: React.FC<CollaborativeWorkoutBuilderProps> = 
             {/* Initiator Actions */}
             {isInitiator && isActive && (
               <div className="mt-6 pt-4 border-t border-slate-800 space-y-3">
+                {/* Show expiration warning for user collabs */}
+                {!collabWorkout.initiator_is_admin && collabWorkout.expires_at && (
+                  <div className="text-center py-2 px-3 bg-orange-500/10 border border-orange-500/30 rounded-lg">
+                    <p className="text-orange-400 text-xs font-bold">
+                      ⏰ Expires: {new Date(collabWorkout.expires_at).toLocaleDateString()} at {new Date(collabWorkout.expires_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                    </p>
+                  </div>
+                )}
                 <button
                   onClick={handleFinalize}
                   disabled={collabWorkout.components.length === 0}
                   className="w-full py-3 bg-green-600 hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold uppercase rounded-xl flex items-center justify-center gap-2"
                 >
-                  <CheckCircle2 size={18} /> Finalize Workout
+                  <CheckCircle2 size={18} /> 
+                  {collabWorkout.initiator_is_admin ? 'Finalize & Add to Library' : 'Complete Collaboration'}
                 </button>
+                {!collabWorkout.initiator_is_admin && (
+                  <p className="text-center text-[10px] text-slate-500">
+                    Community collabs are not added to the workout library
+                  </p>
+                )}
                 <button
                   onClick={handleCancel}
                   className="w-full py-2 text-red-400 hover:text-red-300 text-sm font-bold uppercase flex items-center justify-center gap-2"

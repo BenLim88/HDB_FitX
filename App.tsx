@@ -1492,51 +1492,131 @@ const App: React.FC = () => {
                             <p className={`text-sm ${isKid ? 'text-blue-600' : 'text-slate-400'}`}>Build workouts together with your community</p>
                         </div>
 
+                        {/* User Collab Restrictions Info */}
+                        {!currentUser.is_admin && (() => {
+                            const activeUserCollabs = userCollabs.filter(c => 
+                                c.status === CollaborationStatus.ACTIVE && 
+                                c.initiator_id === currentUser.id
+                            );
+                            const hasActiveCollab = activeUserCollabs.length > 0;
+                            
+                            return hasActiveCollab ? (
+                                <div className={`mb-4 p-3 rounded-lg border ${isKid ? 'bg-yellow-50 border-yellow-200 text-yellow-700' : 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400'}`}>
+                                    <p className="text-xs font-bold">⚠️ You can only have 1 active collaboration at a time</p>
+                                    <p className="text-[10px] mt-1 opacity-80">Complete or wait for your current collab to expire before starting a new one.</p>
+                                </div>
+                            ) : null;
+                        })()}
+
+                        {/* Start Collaboration Button for Users */}
+                        {!currentUser.is_admin && (() => {
+                            const activeUserCollabs = userCollabs.filter(c => 
+                                c.status === CollaborationStatus.ACTIVE && 
+                                c.initiator_id === currentUser.id
+                            );
+                            const canStartNew = activeUserCollabs.length === 0;
+                            
+                            return canStartNew ? (
+                                <button
+                                    onClick={async () => {
+                                        const name = prompt('Enter a name for your collaboration:');
+                                        if (!name) return;
+                                        
+                                        try {
+                                            const newCollab = await DataService.createCollaborativeWorkout(
+                                                currentUser,
+                                                { name, description: '' },
+                                                []
+                                            );
+                                            // Refresh collabs
+                                            const collabs = await DataService.getCollaborativeWorkouts(currentUser.id);
+                                            setUserCollabs(collabs);
+                                            setActiveCollab(newCollab);
+                                        } catch (error) {
+                                            console.error('Error creating collaboration:', error);
+                                            alert('Failed to create collaboration');
+                                        }
+                                    }}
+                                    className={`w-full mb-4 py-3 ${isKid ? 'bg-blue-500 hover:bg-blue-400' : 'bg-purple-600 hover:bg-purple-500'} text-white font-bold uppercase rounded-xl flex items-center justify-center gap-2`}
+                                >
+                                    <UsersRound size={18} /> Start Collaboration (3-Day Limit)
+                                </button>
+                            ) : null;
+                        })()}
+
+                        {/* Admin: Link to Admin Panel */}
+                        {currentUser.is_admin && (
+                            <button
+                                onClick={() => setActiveTab('admin')}
+                                className="w-full mb-4 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold uppercase rounded-xl flex items-center justify-center gap-2"
+                            >
+                                <ShieldAlert size={18} /> Manage Collabs in Admin Panel
+                            </button>
+                        )}
+
                         {userCollabs.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-16 text-slate-500">
                                 <UsersRound size={64} className="opacity-30 mb-4" />
                                 <p className="text-lg font-bold">No Collaborations Yet</p>
                                 <p className="text-sm text-center mt-2">
                                     {currentUser.is_admin 
-                                        ? "Go to Admin → Collabs to start one!" 
-                                        : "When an admin invites you to collaborate, it will appear here."}
+                                        ? "Use Admin Panel to create collaborations" 
+                                        : "Start one above or wait for an invite!"}
                                 </p>
                             </div>
                         ) : (
                             <div className="space-y-3">
-                                {userCollabs.map(collab => (
-                                    <button
-                                        key={collab.id}
-                                        onClick={() => setActiveCollab(collab)}
-                                        className={`w-full ${isKid ? 'bg-white border-blue-200 hover:border-blue-400' : 'bg-slate-900 border-slate-800 hover:border-purple-500/50'} border p-4 rounded-xl text-left transition-colors`}
-                                    >
-                                        <div className="flex items-start justify-between mb-2">
-                                            <div>
-                                                <h4 className={`font-bold ${isKid ? 'text-blue-900' : 'text-white'}`}>{collab.name}</h4>
-                                                <p className={`text-xs ${isKid ? 'text-blue-600' : 'text-slate-500'}`}>
-                                                    {collab.initiator_id === currentUser.id ? 'You started this' : `By ${collab.initiator_name}`}
-                                                </p>
+                                {userCollabs.map(collab => {
+                                    // Calculate expiration info for user collabs
+                                    const isExpiring = collab.expires_at && collab.status === CollaborationStatus.ACTIVE;
+                                    const expiresIn = collab.expires_at ? Math.max(0, collab.expires_at - Date.now()) : 0;
+                                    const hoursLeft = Math.floor(expiresIn / (1000 * 60 * 60));
+                                    const daysLeft = Math.floor(hoursLeft / 24);
+                                    
+                                    return (
+                                        <button
+                                            key={collab.id}
+                                            onClick={() => setActiveCollab(collab)}
+                                            className={`w-full ${isKid ? 'bg-white border-blue-200 hover:border-blue-400' : 'bg-slate-900 border-slate-800 hover:border-purple-500/50'} border p-4 rounded-xl text-left transition-colors`}
+                                        >
+                                            <div className="flex items-start justify-between mb-2">
+                                                <div>
+                                                    <h4 className={`font-bold ${isKid ? 'text-blue-900' : 'text-white'}`}>{collab.name}</h4>
+                                                    <p className={`text-xs ${isKid ? 'text-blue-600' : 'text-slate-500'}`}>
+                                                        {collab.initiator_id === currentUser.id ? 'You started this' : `By ${collab.initiator_name}`}
+                                                    </p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
+                                                        collab.status === CollaborationStatus.ACTIVE 
+                                                            ? 'bg-green-500/20 text-green-400'
+                                                            : collab.status === CollaborationStatus.FINALIZED
+                                                            ? 'bg-blue-500/20 text-blue-400'
+                                                            : 'bg-red-500/20 text-red-400'
+                                                    }`}>
+                                                        {collab.status}
+                                                    </span>
+                                                    {isExpiring && (
+                                                        <p className={`text-[10px] mt-1 ${hoursLeft < 24 ? 'text-red-400' : 'text-orange-400'}`}>
+                                                            ⏰ {daysLeft > 0 ? `${daysLeft}d ${hoursLeft % 24}h` : `${hoursLeft}h`} left
+                                                        </p>
+                                                    )}
+                                                </div>
                                             </div>
-                                            <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
-                                                collab.status === CollaborationStatus.ACTIVE 
-                                                    ? 'bg-green-500/20 text-green-400'
-                                                    : collab.status === CollaborationStatus.FINALIZED
-                                                    ? 'bg-blue-500/20 text-blue-400'
-                                                    : 'bg-red-500/20 text-red-400'
-                                            }`}>
-                                                {collab.status}
-                                            </span>
-                                        </div>
-                                        <div className={`flex items-center gap-4 text-xs ${isKid ? 'text-blue-500' : 'text-slate-400'}`}>
-                                            <span className="flex items-center gap-1">
-                                                <Dumbbell size={12} /> {collab.components.length} exercises
-                                            </span>
-                                            <span className="flex items-center gap-1">
-                                                <Users size={12} /> {collab.collaborator_ids.length + 1} people
-                                            </span>
-                                        </div>
-                                    </button>
-                                ))}
+                                            <div className={`flex items-center gap-4 text-xs ${isKid ? 'text-blue-500' : 'text-slate-400'}`}>
+                                                <span className="flex items-center gap-1">
+                                                    <Dumbbell size={12} /> {collab.components.length} exercises
+                                                </span>
+                                                <span className="flex items-center gap-1">
+                                                    <Users size={12} /> {collab.collaborator_ids.length + 1} people
+                                                </span>
+                                                {!collab.initiator_is_admin && (
+                                                    <span className="text-purple-400 text-[10px]">Community</span>
+                                                )}
+                                            </div>
+                                        </button>
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
