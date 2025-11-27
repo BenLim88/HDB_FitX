@@ -42,6 +42,38 @@ Build workouts together with your community:
 *   **Round Indicators**: Visual separators between rounds during workout execution
 *   **Progress Tracking**: Shows current round progress (e.g., "Round 2/3")
 
+### 🏃 HYROX Division Workouts (NEW!)
+Complete official HYROX race simulations:
+
+| Division | Description | Sled Push/Pull (Men) | Sled Push/Pull (Women) |
+|----------|-------------|---------------------|------------------------|
+| **Individual Open (Men)** | Standard men's division | 102kg / 78kg | - |
+| **Individual Open (Women)** | Standard women's division | - | 70kg / 52kg |
+| **Individual Pro (Men)** | Elite men's weights | 152kg / 103kg | - |
+| **Individual Pro (Women)** | Elite women's weights | - | 102kg / 78kg |
+| **Men's Doubles** | Partners alternate/split | 102kg / 78kg | - |
+| **Women's Doubles** | Partners alternate/split | - | 70kg / 52kg |
+| **Mixed Doubles** | Male + Female team | Gender-specific | Gender-specific |
+| **Pro Doubles** | Elite partner division | Pro weights | Pro weights |
+
+### 💀 Deadly Dozen Workout
+12 grueling labours testing strength, endurance, and mental fortitude:
+
+| # | Exercise | Reps/Distance | Men's Weight | Women's Weight |
+|---|----------|---------------|--------------|----------------|
+| 1 | Farmers Carry (KB) | 240m | 2×24kg | 2×16kg |
+| 2 | KB Deadlift | 60 reps | 32kg | 24kg |
+| 3 | DB Lunges | 60m | 2×12.5kg | 2×7.5kg |
+| 4 | DB Snatch (Alt) | 60 reps | 15kg | 9kg |
+| 5 | Burpee Broad Jump | 60m | BW | BW |
+| 6 | Goblet Squat | 60 reps | 16kg | 12kg |
+| 7 | Front Carry (WP) | 240m | 25kg | 20kg |
+| 8 | Push Press (DB) | 60 reps | 2×12.5kg | 2×6kg |
+| 9 | Bear Crawl | 120m | BW | BW |
+| 10 | Clean & Press (WP) | 60 reps | 15kg | 10kg |
+| 11 | Overhead Carry (WP) | 180m | 15kg | 10kg |
+| 12 | Devil Press (DB) | 20 reps | 2×10kg | 2×5kg |
+
 ---
 
 ## 🛠️ Tech Stack & Integrations
@@ -193,7 +225,14 @@ hdb-fitx/
 
 ### Recent Updates
 
-#### v1.3.0 - Personalized AI Motivation (Latest)
+#### v1.4.0 - HYROX Division Workouts (Latest)
+*   **🏃 HYROX Individual Open**: Men's and Women's Open division simulations
+*   **🏆 HYROX Individual Pro**: Elite Pro division with heavier weights
+*   **👥 HYROX Doubles**: Men's, Women's, Mixed, and Pro Doubles formats
+*   **💀 Deadly Dozen**: 12 grueling labours workout (Men's & Women's)
+*   **🏋️ New Exercises**: KB Deadlift, DB Snatch, Goblet Squat, Bear Crawl, Devil Press, Carries, and more
+
+#### v1.3.0 - Personalized AI Motivation
 *   **🤖 Personalized Tips**: AI motivation tailored to your athlete archetype
 *   **📊 Activity Analysis**: Recommendations based on last 7 days of workouts
 *   **💪 Archetype-Specific**: Different advice for Hyrox, CrossFit, Calisthenics, etc.
