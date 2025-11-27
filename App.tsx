@@ -1491,6 +1491,8 @@ const App: React.FC = () => {
     setActiveWorkout(workout);
     setActiveDIY(false);
     setActiveTab('workout');
+    // Scroll to top when starting a workout
+    window.scrollTo(0, 0);
   };
 
   const handleStartDIY = (initialComponents?: { id: string; name: string; target: string; weight?: string; sets: number }[]) => {
@@ -1498,6 +1500,8 @@ const App: React.FC = () => {
       setActiveDIY(true);
       setActiveWorkout(null);
       setActiveTab('workout');
+      // Scroll to top when starting DIY
+      window.scrollTo(0, 0);
   };
 
   // Compute User Stats (Personal Bests)
