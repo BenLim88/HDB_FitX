@@ -46,65 +46,92 @@ const HomeTab: React.FC<{
     const [isAssigning, setIsAssigning] = useState(false);
     const [selectedAthleteIds, setSelectedAthleteIds] = useState<Set<string>>(new Set());
     
-    // Get personalized AI motivation based on archetype and recent activity
+    // Get personalized AI assessment based on archetype, workout history, and leaderboard
     const handleGetTip = async () => {
         setLoadingTip(true);
         
         // Get user's recent workout logs (last 7 days)
         const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
-        const userLogs = logs.filter(l => l.user_id === user.id && l.timestamp > sevenDaysAgo);
+        const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+        const userLogsWeek = logs.filter(l => l.user_id === user.id && l.timestamp > sevenDaysAgo);
+        const userLogsMonth = logs.filter(l => l.user_id === user.id && l.timestamp > thirtyDaysAgo);
+        const allUserLogs = logs.filter(l => l.user_id === user.id);
         
         // Calculate workout stats
-        const totalWorkouts = userLogs.length;
-        const recentWorkoutNames = userLogs.slice(0, 5).map(l => l.workout_name);
-        const lastWorkoutDate = userLogs.length > 0 
-            ? new Date(Math.max(...userLogs.map(l => l.timestamp))).toLocaleDateString()
-            : null;
+        const weeklyWorkouts = userLogsWeek.length;
+        const monthlyWorkouts = userLogsMonth.length;
+        const totalWorkouts = allUserLogs.length;
+        const recentWorkoutNames = userLogsWeek.slice(0, 5).map(l => l.workout_name);
         
         // Days since last workout
-        const daysSinceLastWorkout = userLogs.length > 0
-            ? Math.floor((Date.now() - Math.max(...userLogs.map(l => l.timestamp))) / (1000 * 60 * 60 * 24))
+        const daysSinceLastWorkout = allUserLogs.length > 0
+            ? Math.floor((Date.now() - Math.max(...allUserLogs.map(l => l.timestamp))) / (1000 * 60 * 60 * 24))
             : null;
         
-        // Build personalized context
-        let activityContext = '';
-        if (totalWorkouts === 0) {
-            activityContext = `They haven't logged any workouts in the past week and need motivation to get started.`;
-        } else if (daysSinceLastWorkout !== null && daysSinceLastWorkout > 3) {
-            activityContext = `They did ${totalWorkouts} workout(s) this week but haven't trained in ${daysSinceLastWorkout} days. They might be slacking!`;
-        } else if (totalWorkouts >= 5) {
-            activityContext = `They're on fire with ${totalWorkouts} workouts this week! Recent: ${recentWorkoutNames.join(', ')}. Keep the momentum going!`;
+        // Calculate leaderboard position
+        const userWorkoutCounts = new Map<string, number>();
+        logs.forEach(l => {
+            userWorkoutCounts.set(l.user_id, (userWorkoutCounts.get(l.user_id) || 0) + 1);
+        });
+        const sortedUsers = Array.from(userWorkoutCounts.entries()).sort((a, b) => b[1] - a[1]);
+        const userRank = sortedUsers.findIndex(([id]) => id === user.id) + 1;
+        const totalUsers = sortedUsers.length;
+        const topPercentile = totalUsers > 0 ? Math.round((userRank / totalUsers) * 100) : 100;
+        
+        // Workout frequency analysis
+        const avgWorkoutsPerWeek = monthlyWorkouts > 0 ? (monthlyWorkouts / 4).toFixed(1) : '0';
+        
+        // Build professional assessment context
+        let performanceAssessment = '';
+        if (weeklyWorkouts === 0 && daysSinceLastWorkout !== null && daysSinceLastWorkout > 7) {
+            performanceAssessment = `Assessment: ${daysSinceLastWorkout} days since last recorded workout. Training consistency has declined significantly. Recommend immediate resumption of training protocol.`;
+        } else if (weeklyWorkouts === 0) {
+            performanceAssessment = `Assessment: No workouts logged this week. Current training frequency is below optimal levels for maintaining fitness gains.`;
+        } else if (weeklyWorkouts >= 5) {
+            performanceAssessment = `Assessment: Excellent training volume with ${weeklyWorkouts} sessions this week. Current output demonstrates strong commitment. Recent activities: ${recentWorkoutNames.join(', ')}.`;
+        } else if (weeklyWorkouts >= 3) {
+            performanceAssessment = `Assessment: Solid training consistency with ${weeklyWorkouts} sessions this week. On track for maintenance goals. Recent activities: ${recentWorkoutNames.join(', ')}.`;
         } else {
-            activityContext = `They've done ${totalWorkouts} workout(s) this week. Recent: ${recentWorkoutNames.join(', ')}. Encourage them to stay consistent!`;
+            performanceAssessment = `Assessment: ${weeklyWorkouts} session(s) logged this week. Consider increasing frequency to 3-4 sessions for optimal progress. Recent: ${recentWorkoutNames.join(', ')}.`;
         }
         
-        // Archetype-specific focus
-        const archetypeFocus: Record<string, string> = {
-            'Hyrox': 'Focus on running endurance and functional fitness stations like sled push, rowing, and farmer carries.',
-            'CrossFit': 'Emphasize varied functional movements, Olympic lifts, and high-intensity metcons.',
-            'Calisthenics': 'Focus on bodyweight mastery, skill progressions like muscle-ups, and controlled movements.',
-            'Hybrid': 'Balance strength training with cardio and functional fitness elements.',
-            'Runner': 'Prioritize running volume, tempo runs, and leg strength work.',
-            'Strength': 'Focus on compound lifts, progressive overload, and recovery.',
-            'Bodybuilder': 'Emphasize muscle isolation, hypertrophy training, and proper form.',
-            'Generic': 'Provide general fitness motivation and balanced training advice.'
+        // Leaderboard context
+        const leaderboardContext = userRank > 0 
+            ? `Leaderboard standing: Rank #${userRank} of ${totalUsers} athletes (top ${topPercentile}%). Total logged workouts: ${totalWorkouts}. Monthly average: ${avgWorkoutsPerWeek} sessions/week.`
+            : `No leaderboard data available yet. Begin logging workouts to establish ranking.`;
+        
+        // Archetype-specific recommendations
+        const archetypeRecommendations: Record<string, string> = {
+            'Hyrox': 'Recommended focus: Running endurance, sled work, rowing, and functional fitness stations. Prioritize race-simulation training.',
+            'CrossFit': 'Recommended focus: Varied functional movements, Olympic lifting technique, and high-intensity metabolic conditioning.',
+            'Calisthenics': 'Recommended focus: Bodyweight skill progressions, movement control, and strength-to-weight ratio optimization.',
+            'Hybrid': 'Recommended focus: Balanced programming combining strength, conditioning, and functional fitness elements.',
+            'Runner': 'Recommended focus: Running volume progression, tempo work, interval training, and lower body strength.',
+            'Strength': 'Recommended focus: Compound lifts, progressive overload protocols, and adequate recovery periods.',
+            'Bodybuilder': 'Recommended focus: Muscle isolation, hypertrophy protocols, and mind-muscle connection.',
+            'Generic': 'Recommended focus: Balanced training across strength, conditioning, and mobility domains.'
         };
         
-        const focus = archetypeFocus[user.athlete_type] || archetypeFocus['Generic'];
+        const recommendation = archetypeRecommendations[user.athlete_type] || archetypeRecommendations['Generic'];
         
         const prompt = `
-You are Coach FitX giving personalized motivation to ${user.name}.
-Their archetype: ${user.athlete_type}
-${focus}
+You are Coach FitX, a professional fitness consultant providing a performance assessment.
+Athlete: ${user.name}
+Training archetype: ${user.athlete_type}
 
-Recent activity: ${activityContext}
+${performanceAssessment}
 
-Give a SHORT (2-3 sentences max) motivational message with:
-1. Acknowledgment of their recent effort (or lack thereof)
-2. One specific workout recommendation based on their archetype
-3. An aggressive but encouraging call to action
+${leaderboardContext}
 
-Keep it punchy, Singapore-style tough love!
+${recommendation}
+
+Provide a CONCISE professional assessment (3-4 sentences) that includes:
+1. A brief evaluation of their current training status and consistency
+2. Their competitive standing relative to other athletes
+3. One specific, actionable recommendation for improvement based on their archetype
+4. A professional but encouraging closing statement
+
+Maintain a professional tone throughout. Avoid slang, colloquialisms, or overly casual language. Be direct, analytical, and constructive.
         `.trim();
         
         const tip = await GeminiService.generateAdvice(prompt);
@@ -324,7 +351,7 @@ Keep it punchy, Singapore-style tough love!
                 <section>
                      <h2 className={`${isKid ? 'text-blue-900' : 'text-white'} font-bold text-lg mb-3 flex items-center gap-2`}>
                         <Pin size={20} className="text-blue-500" fill="currentColor" />
-                        Command Directives
+                        HQ Directives
                     </h2>
                     <div className="space-y-3">
                         {pinnedWods.map(pw => {
