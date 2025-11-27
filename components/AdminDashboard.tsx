@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Exercise, Workout, User, GroupType, AthleteType, WorkoutComponent, ScalingTier, WorkoutScheme, Venue, UserCategory, CollaborativeWorkout, CollaborationStatus } from '../types';
 import { DataService } from '../services/dataService';
 import { MOCK_EXERCISES } from '../constants';
-import { Plus, Trash2, Dumbbell, LayoutList, Users, Edit, Shield, Save, X, Lock, ChevronRight, ArrowLeft, Timer, Settings, MapPin, Star, Calendar, Pin, Baby, UsersRound, Loader2, Search, MessageSquare, RefreshCcw } from 'lucide-react';
+import { Plus, Trash2, Dumbbell, LayoutList, Users, Edit, Shield, Save, X, Lock, ChevronRight, ChevronUp, ChevronDown, ArrowLeft, Timer, Settings, MapPin, Star, Calendar, Pin, Baby, UsersRound, Loader2, Search, MessageSquare, RefreshCcw, GripVertical } from 'lucide-react';
 import CollaborativeWorkoutBuilder from './CollaborativeWorkoutBuilder';
 
 interface AdminDashboardProps {
@@ -352,6 +352,24 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
 
   const removeComponent = (idx: number) => {
       const updated = workoutComponents.filter((_, i) => i !== idx);
+      // Re-index orders
+      const reordered = updated.map((c, i) => ({ ...c, order: i + 1 }));
+      setWorkoutComponents(reordered);
+  };
+
+  const moveComponentUp = (idx: number) => {
+      if (idx === 0) return;
+      const updated = [...workoutComponents];
+      [updated[idx - 1], updated[idx]] = [updated[idx], updated[idx - 1]];
+      // Re-index orders
+      const reordered = updated.map((c, i) => ({ ...c, order: i + 1 }));
+      setWorkoutComponents(reordered);
+  };
+
+  const moveComponentDown = (idx: number) => {
+      if (idx === workoutComponents.length - 1) return;
+      const updated = [...workoutComponents];
+      [updated[idx], updated[idx + 1]] = [updated[idx + 1], updated[idx]];
       // Re-index orders
       const reordered = updated.map((c, i) => ({ ...c, order: i + 1 }));
       setWorkoutComponents(reordered);
@@ -1331,58 +1349,65 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                             </div>
 
                             <div className="border-t border-slate-800 pt-4">
-                                <label className="block text-xs font-bold text-orange-500 uppercase mb-2">Workout Components</label>
+                                <label className="block text-xs font-bold text-orange-500 uppercase mb-2">
+                                    Workout Components
+                                    {workoutComponents.length > 1 && (
+                                        <span className="text-slate-500 font-normal ml-2">(drag to reorder)</span>
+                                    )}
+                                </label>
                                 
-                                {/* List of added components */}
+                                {/* List of added components with reorder */}
                                 {workoutComponents.length > 0 && (
-                                    <div className="mb-4 space-y-3">
-                                        {(() => {
-                                            // Group components by round
-                                            const roundsMap = new Map<number, WorkoutComponent[]>();
-                                            workoutComponents.forEach(comp => {
-                                                const round = comp.round || 1;
-                                                if (!roundsMap.has(round)) {
-                                                    roundsMap.set(round, []);
-                                                }
-                                                roundsMap.get(round)!.push(comp);
-                                            });
-                                            
-                                            return Array.from(roundsMap.entries())
-                                                .sort((a, b) => a[0] - b[0])
-                                                .map(([roundNum, roundComponents]) => (
-                                                    <div key={roundNum} className="space-y-2">
-                                                        {roundsMap.size > 1 && (
-                                                            <div className="text-[10px] text-purple-400 font-bold uppercase mb-1">
-                                                                Round {roundNum}
-                                                            </div>
-                                                        )}
-                                                        {roundComponents.map((comp, compIdx) => {
-                                                            const globalIdx = workoutComponents.findIndex(c => c === comp);
+                                    <div className="mb-4 space-y-2">
+                                        {workoutComponents.map((comp, idx) => {
                                             const ex = exercises.find(e => e.id === comp.exercise_id);
                                             return (
-                                                                <div key={globalIdx} className="flex items-center justify-between bg-slate-950 p-2 rounded border border-slate-800">
-                                                    <div className="flex items-center gap-3">
-                                                                        <span className="text-slate-600 font-mono font-bold text-xs">#{globalIdx + 1}</span>
-                                                        <div>
-                                                            <p className="text-white text-xs font-bold">{ex?.name || 'Unknown'}</p>
-                                                                            <div className="flex gap-2 items-center flex-wrap">
-                                                                                {(comp.sets && comp.sets > 1) && (
-                                                                                    <span className="text-[10px] text-blue-400 font-bold">{comp.sets}x</span>
-                                                                                )}
-                                                                <span className="text-[10px] text-orange-500">{comp.target}</span>
-                                                                {comp.weight && <span className="text-[10px] text-slate-400">@ {comp.weight}</span>}
-                                                            </div>
+                                                <div key={idx} className="flex items-center gap-2 bg-slate-950 p-2 rounded border border-slate-800 group">
+                                                    {/* Reorder buttons */}
+                                                    <div className="flex flex-col gap-0.5">
+                                                        <button 
+                                                            onClick={() => moveComponentUp(idx)}
+                                                            disabled={idx === 0}
+                                                            className={`p-0.5 rounded ${idx === 0 ? 'text-slate-700 cursor-not-allowed' : 'text-slate-500 hover:text-orange-500 hover:bg-slate-800'}`}
+                                                            title="Move up"
+                                                        >
+                                                            <ChevronUp size={12} />
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => moveComponentDown(idx)}
+                                                            disabled={idx === workoutComponents.length - 1}
+                                                            className={`p-0.5 rounded ${idx === workoutComponents.length - 1 ? 'text-slate-700 cursor-not-allowed' : 'text-slate-500 hover:text-orange-500 hover:bg-slate-800'}`}
+                                                            title="Move down"
+                                                        >
+                                                            <ChevronDown size={12} />
+                                                        </button>
+                                                    </div>
+                                                    
+                                                    {/* Order number */}
+                                                    <span className="text-slate-600 font-mono font-bold text-xs w-6">#{idx + 1}</span>
+                                                    
+                                                    {/* Exercise info */}
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-white text-xs font-bold truncate">{ex?.name || 'Unknown'}</p>
+                                                        <div className="flex gap-2 items-center flex-wrap">
+                                                            {(comp.sets && comp.sets > 1) && (
+                                                                <span className="text-[10px] text-blue-400 font-bold">{comp.sets}x</span>
+                                                            )}
+                                                            <span className="text-[10px] text-orange-500">{comp.target}</span>
+                                                            {comp.weight && <span className="text-[10px] text-slate-400">@ {comp.weight}</span>}
+                                                            {comp.round && comp.round > 1 && (
+                                                                <span className="text-[10px] text-purple-400">R{comp.round}</span>
+                                                            )}
                                                         </div>
                                                     </div>
-                                                                    <button onClick={() => removeComponent(globalIdx)} className="text-slate-600 hover:text-red-500">
+                                                    
+                                                    {/* Delete button */}
+                                                    <button onClick={() => removeComponent(idx)} className="text-slate-600 hover:text-red-500 p-1">
                                                         <X size={14} />
                                                     </button>
                                                 </div>
-                                                            );
+                                            );
                                         })}
-                                                    </div>
-                                                ));
-                                        })()}
                                     </div>
                                 )}
 
