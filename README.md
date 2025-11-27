@@ -1,16 +1,39 @@
 # HDB FitX - Community Fitness Protocol
 
-HDB FitX is a gamified community fitness application. It encourages workouts through a "witness" verification system and AI-generated coaching.
+HDB FitX is a gamified community fitness application. It encourages workouts through a "witness" verification system, AI-generated coaching, and collaborative workout building.
 
 ---
 
 ## 🚀 Features
 
+### Core Features
 *   **AI Coach FitX**: Custom workout generation powered by Google Gemini AI.
 *   **Witness Verification**: 'BTO-style' proof-of-work where peers verify your exercise logs.
 *   **Gamification**: Rank up from 'Recruit' to 'Encik' with avatar customization.
 *   **Authentication**: Google Sign-In (Firebase Auth) and guest access.
 *   **Firestore Database**: Persistent data storage for users, workouts, logs, and notifications.
+
+### 🤝 Collaborative Workout Builder (NEW!)
+Build workouts together with your community:
+*   **Real-time Collaboration**: Admins can initiate collaborative workout sessions
+*   **Suggestion System**: Collaborators can suggest adding, removing, or modifying exercises
+*   **New Exercise Proposals**: Propose exercises not in the database (admin approval required)
+*   **Live Chat**: Built-in chat for discussing workout ideas with collaborators
+*   **Drag-to-Reorder**: Initiators can drag and drop to reorder exercises
+*   **Invite System**: Add collaborators by searching and inviting users
+
+### User Collaboration Limits
+| Feature | Regular Users | Admins |
+|---------|--------------|--------|
+| Max active collabs | **1** | Unlimited |
+| Collab validity | **3 days** | No expiration |
+| Add to workout library | ❌ No | ✅ Yes |
+| Start new collab | Via Collab tab | Via Admin Panel |
+
+### Workout Rounds System
+*   **Multi-Round Workouts**: Define how many times to repeat all exercises
+*   **Round Indicators**: Visual separators between rounds during workout execution
+*   **Progress Tracking**: Shows current round progress (e.g., "Round 2/3")
 
 ---
 
@@ -128,14 +151,24 @@ If "Sign in with Google" fails on the live site:
 
 ```
 hdb-fitx/
-├── components/         # React UI Components (Auth, Dashboard, etc.)
-├── services/           # Business Logic
-│   ├── dataService.ts  # Handles user data (Mock + Firebase adapter)
-│   └── geminiService.ts# Handles AI interaction
-├── firebaseConfig.ts   # Firebase initialization
-├── types.ts            # TypeScript interfaces
-├── .env                # API Keys (GitIgnored)
-└── vite.config.ts      # Vite Configuration
+├── components/
+│   ├── ActiveWorkout.tsx           # Workout execution with timer & rounds
+│   ├── AdminDashboard.tsx          # Admin panel for managing content
+│   ├── AuthScreen.tsx              # Login/Registration screen
+│   ├── CollaborativeWorkoutBuilder.tsx  # 🆕 Collaborative workout builder
+│   ├── DIYWorkout.tsx              # Custom workout creator
+│   ├── Navbar.tsx                  # Bottom navigation with Collab tab
+│   └── WitnessInbox.tsx            # Notifications & verification requests
+├── services/
+│   ├── dataService.ts              # Firebase CRUD operations
+│   └── geminiService.ts            # Google Gemini AI integration
+├── App.tsx                         # Main application component
+├── firebaseConfig.ts               # Firebase initialization
+├── types.ts                        # TypeScript interfaces
+├── constants.ts                    # Mock data & exercises
+├── firestore.rules                 # Firestore security rules
+├── .env                            # API Keys (GitIgnored)
+└── vite.config.ts                  # Vite Configuration
 ```
 
 ---
@@ -152,6 +185,25 @@ hdb-fitx/
 ---
 
 ### Recent Updates
+
+#### v1.2.0 - Collaborative Workout Builder (Latest)
+*   **🤝 Collaborative Workouts**: Build workouts together with community members
+*   **💬 Real-time Chat**: Chat with collaborators while building workouts
+*   **📝 Suggestion System**: Propose exercise additions, removals, and modifications
+*   **✨ New Exercise Proposals**: Suggest exercises not in the database
+*   **🔄 Drag-to-Reorder**: Initiators can reorder exercises via drag & drop
+*   **👥 User Collab Limits**: Regular users limited to 1 active collab with 3-day expiry
+*   **🔔 Collab Notifications**: Get notified of invites, suggestions, and updates
+*   **📱 Collab Tab**: New dedicated tab in navigation for all users
+
+#### v1.1.0 - Workout Enhancements
+*   **🔁 Workout Rounds**: Support for multi-round workouts (repeat all exercises X times)
+*   **📊 Round Progress**: Visual indicators showing current round during execution
+*   **🎯 Rounds Picker**: Stepper-style picker for setting workout rounds in Admin
+*   **🔧 Exercise Lookup Fix**: Custom exercises from collabs now display correctly
+*   **🚪 Logout Fix**: Fixed race condition causing immediate re-login after logout
+
+#### v1.0.0 - Foundation
 *   **Firestore Migration**: Migrated from in-memory storage to Firebase Firestore for persistent data storage.
 *   **Data Persistence**: All user data (logs, workouts, profiles) now persists across deployments and page refreshes.
 *   **Auth Integration**: Migrated from pure mock auth to real Firebase Google Sign-In.
@@ -175,17 +227,88 @@ Now with Firestore:
 
 ### Collections Structure
 The app uses the following Firestore collections:
-- `users` - User profiles and settings
-- `workouts` - Workout definitions
-- `logs` - Workout completion logs
-- `venues` - Training locations
-- `pinnedWods` - Pinned Workouts of the Day
-- `notifications` - User notifications
+
+| Collection | Description |
+|------------|-------------|
+| `users` | User profiles and settings |
+| `workouts` | Workout definitions |
+| `logs` | Workout completion logs |
+| `venues` | Training locations |
+| `pinnedWods` | Pinned Workouts of the Day |
+| `notifications` | User notifications (witness requests, collab invites, etc.) |
+| `exercises` | Custom exercises (from collaborations) |
+| `collaborativeWorkouts` | 🆕 Collaborative workout sessions |
+| `collabSuggestions` | 🆕 Exercise suggestions for collabs |
+| `collabMessages` | 🆕 Chat messages for collabs |
 
 ### Automatic Seeding
 On first load, the app automatically seeds Firestore with:
 - Initial workout templates
 - Sample venues
 - Mock user data (for testing)
+- Default exercises
 
 This only happens if collections are empty, so existing data won't be overwritten.
+
+---
+
+## 🤝 Collaborative Workout Builder Guide
+
+### For Admins
+1. Go to **Profile** → **Admin Panel** → **Collabs** tab
+2. Click **Start New Collaboration**
+3. Enter workout details (name, description, scheme, category)
+4. Search and invite collaborators
+5. Click **Create & Start Building**
+
+### For Regular Users
+1. Go to **Collab** tab in bottom navigation
+2. Click **Start Collaboration (3-Day Limit)** if you don't have an active collab
+3. Or wait for an admin to invite you
+
+### During Collaboration
+- **Workout Tab**: View current exercises, suggest additions/removals
+- **Suggestions Tab**: View pending suggestions (admins can accept/reject)
+- **Chat Tab**: Discuss ideas with collaborators
+
+### Finalizing
+- **Admin-initiated**: "Finalize & Add to Library" adds workout to the library
+- **User-initiated**: "Complete Collaboration" closes the collab (not added to library)
+
+---
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+**Logout doesn't work / Immediately logs back in**
+- This was fixed in v1.1.0. The issue was a race condition with background data refresh.
+
+**Exercise names not showing in workout**
+- Ensure custom exercises from Firestore are loaded. Check browser console for errors.
+
+**Collaboration permission errors**
+- Update Firestore security rules to include `collaborativeWorkouts`, `collabSuggestions`, and `collabMessages` collections.
+
+**Can't create more than 1 collaboration (regular users)**
+- Regular users are limited to 1 active collaboration at a time. Complete or wait for the current one to expire (3 days).
+
+---
+
+## 🔐 Firestore Security Rules
+
+Make sure your `firestore.rules` includes rules for all collections:
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow read/write for all collections (adjust for production)
+    match /{collection}/{docId} {
+      allow read, write: if true;
+    }
+  }
+}
+```
+
+**Note**: For production, implement proper authentication-based rules.
