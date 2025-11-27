@@ -11,7 +11,7 @@ import AdminDashboard from './components/AdminDashboard';
 import CollaborativeWorkoutBuilder from './components/CollaborativeWorkoutBuilder';
 import AuthScreen from './components/AuthScreen';
 import DIYWorkout from './components/DIYWorkout';
-import { Trophy, Flame, MapPin, ChevronRight, ChevronDown, ChevronUp, Bot, Loader2, ShieldAlert, Filter, Dumbbell, Settings, Edit2, Save, X, RefreshCcw, Search, Calendar, Wand2, Star, RotateCcw, Pin, Users, Baby, Trash2, Check, UsersRound } from 'lucide-react';
+import { Trophy, Flame, MapPin, ChevronRight, ChevronDown, ChevronUp, Bot, Loader2, ShieldAlert, Filter, Dumbbell, Settings, Edit2, Save, X, RefreshCcw, Search, Calendar, Wand2, Star, RotateCcw, Pin, Users, Baby, Trash2, Check, UsersRound, Zap } from 'lucide-react';
 import { MOCK_EXERCISES, WORLD_RECORDS } from './constants';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth, storage } from './firebaseConfig';
@@ -23,6 +23,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 const HomeTab: React.FC<{ 
   user: User, 
   workouts: Workout[], 
+  logs: Log[], // Add logs for personalized recommendations
   pinnedWods: PinnedWOD[], 
   onStartWorkout: (w: Workout) => void, 
   onStartDIY: () => void,
@@ -33,7 +34,7 @@ const HomeTab: React.FC<{
   allUsers: User[],
   collabWorkouts?: CollaborativeWorkout[],
   onOpenCollab?: (collab: CollaborativeWorkout) => void
-}> = ({ user, workouts, pinnedWods, onStartWorkout, onStartDIY, onJoinPinned, onUnjoinPinned, onUnpinWOD, onAssignWorkout, allUsers, collabWorkouts = [], onOpenCollab }) => {
+}> = ({ user, workouts, logs, pinnedWods, onStartWorkout, onStartDIY, onJoinPinned, onUnjoinPinned, onUnpinWOD, onAssignWorkout, allUsers, collabWorkouts = [], onOpenCollab }) => {
     const [aiTip, setAiTip] = useState<string>('');
     const [loadingTip, setLoadingTip] = useState(false);
     const [showParticipants, setShowParticipants] = useState<string | null>(null); // ID of WOD to show list for
@@ -43,9 +44,69 @@ const HomeTab: React.FC<{
     const [assigningWorkoutId, setAssigningWorkoutId] = useState<string | null>(null);
     const [assignSearchTerm, setAssignSearchTerm] = useState('');
     const [isAssigning, setIsAssigning] = useState(false);
+    
+    // Get personalized AI motivation based on archetype and recent activity
     const handleGetTip = async () => {
         setLoadingTip(true);
-        const tip = await GeminiService.generateAdvice(`Give me a short, aggressive motivation tip for a ${user.athlete_type} athlete.`);
+        
+        // Get user's recent workout logs (last 7 days)
+        const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+        const userLogs = logs.filter(l => l.user_id === user.id && l.timestamp > sevenDaysAgo);
+        
+        // Calculate workout stats
+        const totalWorkouts = userLogs.length;
+        const recentWorkoutNames = userLogs.slice(0, 5).map(l => l.workout_name);
+        const lastWorkoutDate = userLogs.length > 0 
+            ? new Date(Math.max(...userLogs.map(l => l.timestamp))).toLocaleDateString()
+            : null;
+        
+        // Days since last workout
+        const daysSinceLastWorkout = userLogs.length > 0
+            ? Math.floor((Date.now() - Math.max(...userLogs.map(l => l.timestamp))) / (1000 * 60 * 60 * 24))
+            : null;
+        
+        // Build personalized context
+        let activityContext = '';
+        if (totalWorkouts === 0) {
+            activityContext = `They haven't logged any workouts in the past week and need motivation to get started.`;
+        } else if (daysSinceLastWorkout !== null && daysSinceLastWorkout > 3) {
+            activityContext = `They did ${totalWorkouts} workout(s) this week but haven't trained in ${daysSinceLastWorkout} days. They might be slacking!`;
+        } else if (totalWorkouts >= 5) {
+            activityContext = `They're on fire with ${totalWorkouts} workouts this week! Recent: ${recentWorkoutNames.join(', ')}. Keep the momentum going!`;
+        } else {
+            activityContext = `They've done ${totalWorkouts} workout(s) this week. Recent: ${recentWorkoutNames.join(', ')}. Encourage them to stay consistent!`;
+        }
+        
+        // Archetype-specific focus
+        const archetypeFocus: Record<string, string> = {
+            'Hyrox': 'Focus on running endurance and functional fitness stations like sled push, rowing, and farmer carries.',
+            'CrossFit': 'Emphasize varied functional movements, Olympic lifts, and high-intensity metcons.',
+            'Calisthenics': 'Focus on bodyweight mastery, skill progressions like muscle-ups, and controlled movements.',
+            'Hybrid': 'Balance strength training with cardio and functional fitness elements.',
+            'Runner': 'Prioritize running volume, tempo runs, and leg strength work.',
+            'Strength': 'Focus on compound lifts, progressive overload, and recovery.',
+            'Bodybuilder': 'Emphasize muscle isolation, hypertrophy training, and proper form.',
+            'Generic': 'Provide general fitness motivation and balanced training advice.'
+        };
+        
+        const focus = archetypeFocus[user.athlete_type] || archetypeFocus['Generic'];
+        
+        const prompt = `
+You are Coach FitX giving personalized motivation to ${user.name}.
+Their archetype: ${user.athlete_type}
+${focus}
+
+Recent activity: ${activityContext}
+
+Give a SHORT (2-3 sentences max) motivational message with:
+1. Acknowledgment of their recent effort (or lack thereof)
+2. One specific workout recommendation based on their archetype
+3. An aggressive but encouraging call to action
+
+Keep it punchy, Singapore-style tough love!
+        `.trim();
+        
+        const tip = await GeminiService.generateAdvice(prompt);
         setAiTip(tip);
         setLoadingTip(false);
     };
@@ -363,17 +424,31 @@ const HomeTab: React.FC<{
                     <h3 className={`${isKid ? 'text-blue-600' : 'text-indigo-400'} text-xs font-bold uppercase flex items-center gap-2`}>
                         <Bot size={14} /> Coach FitX AI
                     </h3>
-                    <p className={`${isKid ? 'text-blue-800' : 'text-slate-200'} text-sm mt-2 font-medium italic min-h-[3rem]`}>
-                        {loadingTip ? <Loader2 className="animate-spin" /> : (aiTip || "Ready to crush it? Tap below for your daily briefing.")}
+                    <p className={`${isKid ? 'text-blue-600' : 'text-slate-500'} text-[10px] mt-1`}>
+                        Personalized for {user.athlete_type} athletes
                     </p>
-                    {!aiTip && (
-                        <button 
-                            onClick={handleGetTip}
-                            className={`mt-3 text-xs ${isKid ? 'bg-blue-500 hover:bg-blue-400' : 'bg-indigo-600 hover:bg-indigo-500'} text-white px-3 py-1.5 rounded font-bold transition-colors`}
-                        >
-                            Get Motivated
-                        </button>
-                    )}
+                    <p className={`${isKid ? 'text-blue-800' : 'text-slate-200'} text-sm mt-2 font-medium italic min-h-[3rem]`}>
+                        {loadingTip ? <Loader2 className="animate-spin" /> : (aiTip || "Ready to crush it? Get personalized motivation based on your recent activity!")}
+                    </p>
+                    <div className="flex gap-2 mt-3">
+                        {!aiTip ? (
+                            <button 
+                                onClick={handleGetTip}
+                                disabled={loadingTip}
+                                className={`text-xs ${isKid ? 'bg-blue-500 hover:bg-blue-400' : 'bg-indigo-600 hover:bg-indigo-500'} disabled:opacity-50 text-white px-3 py-1.5 rounded font-bold transition-colors flex items-center gap-1`}
+                            >
+                                <Zap size={12} /> Get My Personalized Tip
+                            </button>
+                        ) : (
+                            <button 
+                                onClick={() => { setAiTip(''); handleGetTip(); }}
+                                disabled={loadingTip}
+                                className={`text-xs ${isKid ? 'bg-blue-400/80 hover:bg-blue-400' : 'bg-indigo-500/50 hover:bg-indigo-500'} disabled:opacity-50 text-white px-3 py-1.5 rounded font-bold transition-colors flex items-center gap-1`}
+                            >
+                                <RefreshCcw size={12} /> New Tip
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -1416,7 +1491,8 @@ const App: React.FC = () => {
             {activeTab === 'home' && (
                 <HomeTab 
                     user={currentUser} 
-                    workouts={workouts} 
+                    workouts={workouts}
+                    logs={logs}
                     pinnedWods={pinnedWods}
                     onStartWorkout={handleStartWorkout} 
                     onStartDIY={handleStartDIY} 

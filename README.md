@@ -7,11 +7,18 @@ HDB FitX is a gamified community fitness application. It encourages workouts thr
 ## 🚀 Features
 
 ### Core Features
-*   **AI Coach FitX**: Custom workout generation powered by Google Gemini AI.
+*   **AI Coach FitX**: Custom workout generation powered by Google Gemini AI with **personalized motivation** based on your athlete archetype and recent workout activity.
 *   **Witness Verification**: 'BTO-style' proof-of-work where peers verify your exercise logs.
 *   **Gamification**: Rank up from 'Recruit' to 'Encik' with avatar customization.
 *   **Authentication**: Google Sign-In (Firebase Auth) and guest access.
 *   **Firestore Database**: Persistent data storage for users, workouts, logs, and notifications.
+
+### 🤖 Personalized AI Motivation (NEW!)
+Coach FitX now provides tailored motivation based on:
+*   **Your Archetype**: Hyrox, CrossFit, Calisthenics, Hybrid, Runner, Strength, Bodybuilder
+*   **Recent Activity**: Analyzes your last 7 days of workouts
+*   **Workout Recommendations**: Specific exercises for your training style
+*   **Singapore-style Tough Love**: Encik-style motivation to keep you on track!
 
 ### 🤝 Collaborative Workout Builder (NEW!)
 Build workouts together with your community:
@@ -186,7 +193,13 @@ hdb-fitx/
 
 ### Recent Updates
 
-#### v1.2.0 - Collaborative Workout Builder (Latest)
+#### v1.3.0 - Personalized AI Motivation (Latest)
+*   **🤖 Personalized Tips**: AI motivation tailored to your athlete archetype
+*   **📊 Activity Analysis**: Recommendations based on last 7 days of workouts
+*   **💪 Archetype-Specific**: Different advice for Hyrox, CrossFit, Calisthenics, etc.
+*   **🔄 Refresh Tips**: Get new personalized motivation anytime
+
+#### v1.2.0 - Collaborative Workout Builder
 *   **🤝 Collaborative Workouts**: Build workouts together with community members
 *   **💬 Real-time Chat**: Chat with collaborators while building workouts
 *   **📝 Suggestion System**: Propose exercise additions, removals, and modifications
