@@ -1256,7 +1256,7 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
       </div>
 
       {/* Controls */}
-      <div className="p-6 bg-slate-950 border-t border-slate-800">
+      <div className={`p-6 bg-slate-950 border-t border-slate-800 ${isAMRAP ? 'pb-28' : ''}`}>
          <div className="flex items-center justify-between gap-4">
             <button 
                 onClick={() => setIsPlaying(!isPlaying)}
