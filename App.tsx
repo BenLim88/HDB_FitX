@@ -1144,6 +1144,9 @@ const App: React.FC = () => {
     setLogs(l);
     const pw = await DataService.getPinnedWODs();
     setPinnedWods(pw);
+    // Refresh workouts to sync Featured status across all admins
+    const w = await DataService.getWorkouts();
+    setWorkouts(w);
     if (currentUser) {
         const n = await DataService.getNotifications(currentUser.id);
         setNotifications(n);

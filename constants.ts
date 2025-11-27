@@ -197,7 +197,7 @@ export const MOCK_WORKOUTS: Workout[] = [
     scheme: WorkoutScheme.FOR_TIME,
     time_cap_seconds: 5400,
     rest_type: 'none',
-    is_featured: true,
+    is_featured: false,
     category: 'Hyrox',
     components: [
       { exercise_id: 'run', target: '1km Run', order: 1 },
@@ -231,7 +231,7 @@ export const MOCK_WORKOUTS: Workout[] = [
     scheme: WorkoutScheme.FOR_TIME,
     time_cap_seconds: 5400,
     rest_type: 'none',
-    is_featured: true,
+    is_featured: false,
     category: 'Hyrox',
     components: [
       { exercise_id: 'run', target: '1km Run', order: 1 },
@@ -265,7 +265,7 @@ export const MOCK_WORKOUTS: Workout[] = [
     scheme: WorkoutScheme.FOR_TIME,
     time_cap_seconds: 5400,
     rest_type: 'none',
-    is_featured: true,
+    is_featured: false,
     category: 'Hyrox',
     components: [
       { exercise_id: 'run', target: '1km Run', order: 1 },
@@ -299,7 +299,7 @@ export const MOCK_WORKOUTS: Workout[] = [
     scheme: WorkoutScheme.FOR_TIME,
     time_cap_seconds: 5400,
     rest_type: 'none',
-    is_featured: true,
+    is_featured: false,
     category: 'Hyrox',
     components: [
       { exercise_id: 'run', target: '1km Run', order: 1 },
@@ -471,7 +471,7 @@ export const MOCK_WORKOUTS: Workout[] = [
     scheme: WorkoutScheme.FOR_TIME,
     time_cap_seconds: 3600,
     rest_type: 'none',
-    is_featured: true,
+    is_featured: false,
     category: 'Hyrox',
     components: [
       { exercise_id: 'kb_farmers', target: '240m Farmers Carry', weight: '2x24kg (53 lbs)', order: 1 },
@@ -501,7 +501,7 @@ export const MOCK_WORKOUTS: Workout[] = [
     scheme: WorkoutScheme.FOR_TIME,
     time_cap_seconds: 3600,
     rest_type: 'none',
-    is_featured: true,
+    is_featured: false,
     category: 'Hyrox',
     components: [
       { exercise_id: 'kb_farmers', target: '240m Farmers Carry', weight: '2x16kg (35 lbs)', order: 1 },

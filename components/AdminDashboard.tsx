@@ -131,6 +131,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       loadExercises();
   }, []);
 
+  // Poll workouts for real-time sync of Featured/Pinned status across admins
+  useEffect(() => {
+      if (activeTab !== 'workouts') return;
+      
+      // Refresh workouts every 10 seconds to sync Featured/Pinned changes from other admins
+      const interval = setInterval(() => {
+          loadWorkouts();
+      }, 10000);
+
+      return () => clearInterval(interval);
+  }, [activeTab]);
+
   // Handle pending collaboration navigation from inbox
   useEffect(() => {
       if (pendingCollabId) {
@@ -946,7 +958,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                             </button>
                         </div>
                         <p className="text-xs text-slate-500 text-center">
-                            Tap <RefreshCcw size={12} className="inline" /> to sync new Hyrox/Deadly Dozen workouts
+                            Tap <RefreshCcw size={12} className="inline" /> to sync new workouts
                         </p>
 
                         <div className="space-y-3">
