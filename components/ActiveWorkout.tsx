@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Play, Pause, Square, CheckCircle, SkipForward, Timer, Volume2, VolumeX, X as XIcon, Save, Info, List, ChevronRight, ChevronDown, ChevronUp, AlertTriangle, MapPin, Settings, Trash2 } from 'lucide-react';
-import { Workout, ScalingTier, Log, VerificationStatus, User, Venue, Exercise } from '../types';
+import { Workout, ScalingTier, Log, VerificationStatus, User, Venue, Exercise, WorkoutScheme } from '../types';
 import { DataService } from '../services/dataService';
 import { MOCK_EXERCISES } from '../constants';
 
