@@ -1118,14 +1118,25 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Rounds</label>
-                                    <input 
-                                        type="number"
-                                        min="1"
-                                        className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-xs outline-none"
-                                        placeholder="1"
-                                        value={workoutRounds}
-                                        onChange={e => setWorkoutRounds(e.target.value || '1')}
-                                    />
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setWorkoutRounds(prev => Math.max(1, parseInt(prev) - 1).toString())}
+                                            className="w-10 h-10 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-white font-bold text-lg flex items-center justify-center transition-colors"
+                                        >
+                                            −
+                                        </button>
+                                        <div className="flex-1 bg-slate-950 border border-slate-800 rounded-lg p-2 text-center">
+                                            <span className="text-white text-xl font-bold font-mono">{workoutRounds}</span>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setWorkoutRounds(prev => Math.min(99, parseInt(prev) + 1).toString())}
+                                            className="w-10 h-10 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-white font-bold text-lg flex items-center justify-center transition-colors"
+                                        >
+                                            +
+                                        </button>
+                                    </div>
                                     <p className="text-[10px] text-slate-500 mt-1">Number of times to repeat all exercises</p>
                                 </div>
                             </div>

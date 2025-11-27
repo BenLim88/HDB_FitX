@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Play, Pause, Square, CheckCircle, SkipForward, Timer, Volume2, VolumeX, X as XIcon, Save, Info, List, ChevronRight, ChevronDown, ChevronUp, AlertTriangle, MapPin, Settings, Trash2 } from 'lucide-react';
 import { Workout, ScalingTier, Log, VerificationStatus, User, Venue } from '../types';
 import { DataService } from '../services/dataService';
@@ -56,6 +56,29 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
   // Refs
   const intervalRef = useRef<number | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
+
+  // Expand components based on workout.rounds
+  // Each round repeats all the workout components
+  const totalRounds = workout.rounds || 1;
+  const expandedComponents = useMemo(() => {
+    const components = [];
+    for (let round = 1; round <= totalRounds; round++) {
+      workout.components.forEach((comp, idx) => {
+        components.push({
+          ...comp,
+          _roundNumber: round,
+          _originalIndex: idx
+        });
+      });
+    }
+    return components;
+  }, [workout.components, totalRounds]);
+
+  // Calculate current round based on active component index
+  const currentRound = useMemo(() => {
+    if (expandedComponents.length === 0) return 1;
+    return expandedComponents[activeComponentIndex]?._roundNumber || 1;
+  }, [activeComponentIndex, expandedComponents]);
 
   // Initialize Audio Context
   useEffect(() => {
@@ -174,7 +197,7 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
     // Transition Sound
     playBeep(600, 0.1);
 
-    if (activeComponentIndex < workout.components.length - 1) {
+    if (activeComponentIndex < expandedComponents.length - 1) {
       const restType = workout.rest_type || 'fixed';
       const restDuration = workout.rest_seconds || 60;
 
@@ -338,8 +361,8 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
       }
   };
 
-  const currentComponent = workout.components[activeComponentIndex];
-  const exerciseDetail = MOCK_EXERCISES.find(e => e.id === currentComponent.exercise_id);
+  const currentComponent = expandedComponents[activeComponentIndex];
+  const exerciseDetail = currentComponent ? MOCK_EXERCISES.find(e => e.id === currentComponent.exercise_id) : null;
 
   // --- SCREEN 1A: MANUAL LOG FORM ---
   if (showLogWithoutTimer && !isStarted && !showFinishScreen) {
@@ -611,24 +634,39 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
 
             {/* Exercise List (Takes remaining space) */}
             <div className="flex-1 overflow-y-auto space-y-2 pr-1 mb-4 custom-scrollbar min-h-0">
-                <div className="flex items-center gap-2 text-slate-500 font-bold text-xs uppercase mb-1 sticky top-0 bg-slate-950 py-2 z-10">
-                    <List size={14} /> Mission Parameters
+                <div className="flex items-center justify-between text-slate-500 font-bold text-xs uppercase mb-1 sticky top-0 bg-slate-950 py-2 z-10">
+                    <div className="flex items-center gap-2">
+                        <List size={14} /> Mission Parameters
+                    </div>
+                    {totalRounds > 1 && (
+                        <span className="text-orange-500">{totalRounds} Rounds</span>
+                    )}
                 </div>
-                {workout.components.map((comp, idx) => {
+                {expandedComponents.map((comp, idx) => {
                      const ex = MOCK_EXERCISES.find(e => e.id === comp.exercise_id);
+                     const isNewRound = idx === 0 || expandedComponents[idx - 1]._roundNumber !== comp._roundNumber;
                      return (
-                         <div key={idx} className="bg-slate-900/50 border border-slate-800 p-3 rounded-lg flex items-center gap-3">
-                             <div className="w-6 h-6 bg-slate-800 rounded flex items-center justify-center font-mono font-bold text-slate-500 text-[10px] shrink-0">
-                                 {idx + 1}
-                             </div>
-                             <div className="flex-1 min-w-0">
-                                 <h4 className="font-bold text-sm text-white truncate">{ex?.name}</h4>
-                                 <div className="flex gap-2 mt-0.5">
-                                     <span className="text-orange-500 text-xs font-bold">{comp.target}</span>
-                                     {comp.weight && <span className="text-slate-500 text-xs font-bold">@ {comp.weight}</span>}
+                         <React.Fragment key={idx}>
+                             {totalRounds > 1 && isNewRound && (
+                                 <div className="flex items-center gap-2 mt-3 mb-1">
+                                     <div className="h-px flex-1 bg-orange-500/30"></div>
+                                     <span className="text-orange-500 text-[10px] font-bold uppercase">Round {comp._roundNumber}</span>
+                                     <div className="h-px flex-1 bg-orange-500/30"></div>
+                                 </div>
+                             )}
+                             <div className="bg-slate-900/50 border border-slate-800 p-3 rounded-lg flex items-center gap-3">
+                                 <div className="w-6 h-6 bg-slate-800 rounded flex items-center justify-center font-mono font-bold text-slate-500 text-[10px] shrink-0">
+                                     {comp._originalIndex + 1}
+                                 </div>
+                                 <div className="flex-1 min-w-0">
+                                     <h4 className="font-bold text-sm text-white truncate">{ex?.name}</h4>
+                                     <div className="flex gap-2 mt-0.5">
+                                         <span className="text-orange-500 text-xs font-bold">{comp.target}</span>
+                                         {comp.weight && <span className="text-slate-500 text-xs font-bold">@ {comp.weight}</span>}
+                                     </div>
                                  </div>
                              </div>
-                         </div>
+                         </React.Fragment>
                      )
                 })}
             </div>
@@ -890,13 +928,13 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
                 onClick={handleNext}
                 className="flex-1 py-4 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-black uppercase italic tracking-wider flex items-center justify-center gap-2"
             >
-                {activeComponentIndex === workout.components.length - 1 ? 'Finish' : 'Next Set'} <ChevronRightIcon size={24} />
+                {activeComponentIndex === expandedComponents.length - 1 ? 'Finish' : 'Next Set'} <ChevronRightIcon size={24} />
             </button>
          </div>
          
          <div className="mt-4 flex justify-between text-xs text-slate-500 font-bold uppercase">
-            <span>Progress: {activeComponentIndex + 1} / {workout.components.length}</span>
-            <span>Next: {workout.components[activeComponentIndex + 1] ? MOCK_EXERCISES.find(e => e.id === workout.components[activeComponentIndex + 1].exercise_id)?.name : 'Finish'}</span>
+            <span>Progress: {activeComponentIndex + 1} / {expandedComponents.length}{totalRounds > 1 ? ` (Round ${currentRound}/${totalRounds})` : ''}</span>
+            <span>Next: {expandedComponents[activeComponentIndex + 1] ? MOCK_EXERCISES.find(e => e.id === expandedComponents[activeComponentIndex + 1].exercise_id)?.name : 'Finish'}</span>
          </div>
       </div>
     </div>
