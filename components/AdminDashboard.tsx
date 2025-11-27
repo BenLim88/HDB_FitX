@@ -46,7 +46,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
   // Workout Search & Filter State
   const [workoutSearchQuery, setWorkoutSearchQuery] = useState('');
   const [workoutExerciseFilter, setWorkoutExerciseFilter] = useState('');
-  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
+  // Start with all categories collapsed - will be populated when workouts load
+  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set(['Hyrox', 'CrossFit', 'Calisthenics', 'Cardio', 'Street Lift', 'Kids Friendly', 'General', 'Obstacle', 'Tactical', 'Gymnastics']));
 
   // Pin WOD State
   const [pinningWorkoutId, setPinningWorkoutId] = useState<string | null>(null);
@@ -1111,6 +1112,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                                             'Cardio': 'border-green-500/50 bg-green-500/10',
                                             'Street Lift': 'border-yellow-500/50 bg-yellow-500/10',
                                             'Kids Friendly': 'border-pink-500/50 bg-pink-500/10',
+                                            'Obstacle': 'border-amber-500/50 bg-amber-500/10',
+                                            'Tactical': 'border-emerald-500/50 bg-emerald-500/10',
+                                            'Gymnastics': 'border-cyan-500/50 bg-cyan-500/10',
                                             'General': 'border-slate-600/50 bg-slate-600/10',
                                         };
                                         const categoryColor = categoryColors[category] || categoryColors['General'];

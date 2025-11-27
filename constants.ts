@@ -152,6 +152,57 @@ export const MOCK_EXERCISES: Exercise[] = [
     
     // === PLYOMETRIC ===
     { id: 'plyo_box_jump', name: 'Plyometric Box Jumps', type: 'reps', category: 'Plyometric' },
+    
+    // === OBSTACLE RACING ===
+    { id: 'sanggup', name: 'Sanggup (Rope Climb)', type: 'reps', category: 'Obstacle' },
+    { id: 'thor', name: 'Thor (Hammer Swing)', type: 'reps', category: 'Obstacle' },
+    { id: 'bars', name: 'Monkey Bars', type: 'reps', category: 'Obstacle' },
+    { id: 'multirig', name: 'Multi-Rig', type: 'reps', category: 'Obstacle' },
+    { id: 'low_rig', name: 'Low Rig (Crawl Under)', type: 'distance', category: 'Obstacle' },
+    { id: 'caddylack', name: 'Caddylack (Cargo Net)', type: 'reps', category: 'Obstacle' },
+    { id: 'nutmeh', name: 'Nutmeh (Through Obstacle)', type: 'reps', category: 'Obstacle' },
+    { id: 'wringer', name: 'Wringer (Squeeze Through)', type: 'reps', category: 'Obstacle' },
+    { id: 'wall_climb', name: 'Wall Climb', type: 'reps', category: 'Obstacle' },
+    { id: 'tire_flip', name: 'Tire Flip', type: 'reps', category: 'Obstacle' },
+    { id: 'rope_traverse', name: 'Rope Traverse', type: 'distance', category: 'Obstacle' },
+    { id: 'mud_crawl', name: 'Mud/Low Crawl', type: 'distance', category: 'Obstacle' },
+    { id: 'balance_beam', name: 'Balance Beam Walk', type: 'distance', category: 'Obstacle' },
+    { id: 'atlas_stone', name: 'Atlas Stone Carry', type: 'distance', category: 'Obstacle' },
+    
+    // === TACTICAL / SHOOTING ===
+    { id: 'nerf_target', name: 'Nerf Target Shooting', type: 'reps', category: 'Tactical' },
+    { id: 'nerf_reload_shoot', name: 'Reload & Shoot Drill', type: 'reps', category: 'Tactical' },
+    { id: 'prone_shoot', name: 'Prone Position Shooting', type: 'reps', category: 'Tactical' },
+    { id: 'kneeling_shoot', name: 'Kneeling Position Shooting', type: 'reps', category: 'Tactical' },
+    { id: 'standing_shoot', name: 'Standing Position Shooting', type: 'reps', category: 'Tactical' },
+    { id: 'moving_shoot', name: 'Shoot While Moving', type: 'reps', category: 'Tactical' },
+    { id: 'combat_crawl', name: 'Combat Crawl', type: 'distance', category: 'Tactical' },
+    { id: 'tactical_sprint', name: 'Tactical Sprint', type: 'distance', category: 'Tactical' },
+    { id: 'cover_drill', name: 'Cover & Concealment Drill', type: 'time', category: 'Tactical' },
+    { id: 'ammo_carry', name: 'Ammo Can Carry', type: 'distance', category: 'Tactical' },
+    { id: 'dummy_drag', name: 'Casualty Drag', type: 'distance', category: 'Tactical' },
+    { id: 'sandbag_toss', name: 'Sandbag Toss', type: 'reps', category: 'Tactical' },
+    
+    // === GYMNASTICS / MOBILITY ===
+    { id: 'handstand', name: 'Handstand Hold', type: 'time', category: 'Gymnastics' },
+    { id: 'handstand_walk', name: 'Handstand Walk', type: 'distance', category: 'Gymnastics' },
+    { id: 'cartwheel', name: 'Cartwheel', type: 'reps', category: 'Gymnastics' },
+    { id: 'forward_roll', name: 'Forward Roll', type: 'reps', category: 'Gymnastics' },
+    { id: 'backward_roll', name: 'Backward Roll', type: 'reps', category: 'Gymnastics' },
+    { id: 'bridge', name: 'Bridge/Backbend Hold', type: 'time', category: 'Gymnastics' },
+    { id: 'splits', name: 'Splits (Straddle/Front)', type: 'time', category: 'Gymnastics' },
+    { id: 'pike_stretch', name: 'Pike Stretch', type: 'time', category: 'Gymnastics' },
+    { id: 'shoulder_stretch', name: 'Shoulder Mobility', type: 'time', category: 'Gymnastics' },
+    { id: 'hip_opener', name: 'Hip Opener Stretch', type: 'time', category: 'Gymnastics' },
+    { id: 'beam_walk', name: 'Balance Beam Walk', type: 'distance', category: 'Gymnastics' },
+    { id: 'beam_turns', name: 'Balance Beam Turns', type: 'reps', category: 'Gymnastics' },
+    { id: 'aerial', name: 'Aerial (No-Hand Cartwheel)', type: 'reps', category: 'Gymnastics' },
+    { id: 'roundoff', name: 'Roundoff', type: 'reps', category: 'Gymnastics' },
+    { id: 'ring_support', name: 'Ring Support Hold', type: 'time', category: 'Gymnastics' },
+    { id: 'ring_dip', name: 'Ring Dips', type: 'reps', category: 'Gymnastics' },
+    { id: 'ring_row', name: 'Ring Rows', type: 'reps', category: 'Gymnastics' },
+    { id: 'tuck_jump', name: 'Tuck Jumps', type: 'reps', category: 'Gymnastics' },
+    { id: 'straddle_jump', name: 'Straddle Jumps', type: 'reps', category: 'Gymnastics' },
 ];
 
 // Mock Workouts (Hyrox, CrossFit, HDB Specials)
@@ -1019,6 +1070,409 @@ export const MOCK_WORKOUTS: Workout[] = [
       [ScalingTier.ADVANCED]: 'Romanian Deadlift (RDL)',
       [ScalingTier.INTERMEDIATE]: 'Trap bar deadlift or reduced range',
       [ScalingTier.BEGINNER]: 'Kettlebell deadlift or bodyweight hinge',
+    }
+  },
+  // === OBSTACLE RACING WORKOUTS ===
+  {
+    id: 'w_obstacle_spartan_sprint',
+    name: 'Spartan Sprint Simulation',
+    description: 'A fast-paced obstacle course simulation combining running with classic OCR obstacles.',
+    scheme: WorkoutScheme.FOR_TIME,
+    time_cap_seconds: 2700, // 45 mins
+    rest_type: 'none',
+    is_featured: false,
+    category: 'Obstacle',
+    components: [
+      { exercise_id: 'run', target: '800m Run', order: 1 },
+      { exercise_id: 'sanggup', target: '3 Rope Climbs', order: 2 },
+      { exercise_id: 'run', target: '400m Run', order: 3 },
+      { exercise_id: 'bars', target: '1 Set Monkey Bars', order: 4 },
+      { exercise_id: 'run', target: '400m Run', order: 5 },
+      { exercise_id: 'wall_climb', target: '3 Wall Climbs', order: 6 },
+      { exercise_id: 'run', target: '400m Run', order: 7 },
+      { exercise_id: 'burpee', target: '30 Burpees (Penalty)', order: 8 },
+      { exercise_id: 'run', target: '800m Run', order: 9 },
+    ],
+    scaling: {
+      [ScalingTier.RX]: 'All obstacles as written',
+      [ScalingTier.ADVANCED]: 'Reduce rope climbs to 2',
+      [ScalingTier.INTERMEDIATE]: 'Assisted rope climbs, reduce burpees',
+      [ScalingTier.BEGINNER]: 'Skip rope climbs, walk/run intervals',
+    }
+  },
+  {
+    id: 'w_obstacle_rig_master',
+    name: 'Rig Master Challenge',
+    description: 'Focus on upper body grip and traverse obstacles. Multi-rig, low rig, and bar work.',
+    scheme: WorkoutScheme.FOR_TIME,
+    time_cap_seconds: 1800, // 30 mins
+    rest_type: 'manual',
+    is_featured: false,
+    category: 'Obstacle',
+    components: [
+      { exercise_id: 'multirig', target: '3 Multi-Rig Traverses', order: 1 },
+      { exercise_id: 'low_rig', target: '20m Low Rig Crawl', order: 2 },
+      { exercise_id: 'bars', target: '2 Sets Monkey Bars', order: 3 },
+      { exercise_id: 'rope_traverse', target: '10m Rope Traverse', order: 4 },
+      { exercise_id: 'pullup', target: '15 Pull-ups', order: 5 },
+      { exercise_id: 'multirig', target: '2 Multi-Rig Traverses', order: 6 },
+    ],
+    scaling: {
+      [ScalingTier.RX]: 'All obstacles unassisted',
+      [ScalingTier.ADVANCED]: 'Reduce traverses by 1',
+      [ScalingTier.INTERMEDIATE]: 'Band-assisted, reduce reps',
+      [ScalingTier.BEGINNER]: 'Partial traverses with rest',
+    }
+  },
+  {
+    id: 'w_obstacle_thor_hammer',
+    name: 'Thor\'s Hammer Workout',
+    description: 'Hammer swings combined with heavy carries and strength obstacles.',
+    scheme: WorkoutScheme.FOR_TIME,
+    time_cap_seconds: 2400, // 40 mins
+    rest_type: 'none',
+    is_featured: false,
+    category: 'Obstacle',
+    components: [
+      { exercise_id: 'thor', target: '20 Hammer Swings', order: 1 },
+      { exercise_id: 'atlas_stone', target: '50m Atlas Stone Carry', order: 2 },
+      { exercise_id: 'thor', target: '20 Hammer Swings', order: 3 },
+      { exercise_id: 'tire_flip', target: '10 Tire Flips', order: 4 },
+      { exercise_id: 'thor', target: '20 Hammer Swings', order: 5 },
+      { exercise_id: 'farmers', target: '100m Farmers Carry', weight: '2x24kg', order: 6 },
+      { exercise_id: 'thor', target: '20 Hammer Swings', order: 7 },
+    ],
+    scaling: {
+      [ScalingTier.RX]: 'Heavy hammer and carries',
+      [ScalingTier.ADVANCED]: 'Medium weight',
+      [ScalingTier.INTERMEDIATE]: 'Light weight, reduce reps',
+      [ScalingTier.BEGINNER]: 'Bodyweight alternatives',
+    }
+  },
+  {
+    id: 'w_obstacle_squeeze_crawl',
+    name: 'Squeeze & Crawl',
+    description: 'Navigate through tight spaces - wringer, nutmeh, and crawling obstacles.',
+    scheme: WorkoutScheme.FOR_TIME,
+    time_cap_seconds: 1800, // 30 mins
+    rest_type: 'none',
+    is_featured: false,
+    category: 'Obstacle',
+    components: [
+      { exercise_id: 'wringer', target: '5 Wringer Passes', order: 1 },
+      { exercise_id: 'mud_crawl', target: '30m Low Crawl', order: 2 },
+      { exercise_id: 'nutmeh', target: '5 Nutmeh Passes', order: 3 },
+      { exercise_id: 'bear_crawl', target: '40m Bear Crawl', order: 4 },
+      { exercise_id: 'caddylack', target: '3 Cargo Net Climbs', order: 5 },
+      { exercise_id: 'low_rig', target: '20m Low Rig', order: 6 },
+      { exercise_id: 'wringer', target: '5 Wringer Passes', order: 7 },
+    ],
+    scaling: {
+      [ScalingTier.RX]: 'Full speed, minimal rest',
+      [ScalingTier.ADVANCED]: 'Moderate pace',
+      [ScalingTier.INTERMEDIATE]: 'Rest between obstacles',
+      [ScalingTier.BEGINNER]: 'Reduce reps/distance by 50%',
+    }
+  },
+  {
+    id: 'w_obstacle_beast_mode',
+    name: 'Beast Mode OCR',
+    description: 'Ultimate obstacle course challenge combining all obstacle types with running.',
+    scheme: WorkoutScheme.FOR_TIME,
+    time_cap_seconds: 3600, // 60 mins
+    rest_type: 'none',
+    is_featured: false,
+    category: 'Obstacle',
+    components: [
+      { exercise_id: 'run', target: '1km Run', order: 1 },
+      { exercise_id: 'sanggup', target: '2 Rope Climbs', order: 2 },
+      { exercise_id: 'multirig', target: '1 Multi-Rig Traverse', order: 3 },
+      { exercise_id: 'run', target: '800m Run', order: 4 },
+      { exercise_id: 'thor', target: '15 Hammer Swings', order: 5 },
+      { exercise_id: 'wall_climb', target: '2 Wall Climbs', order: 6 },
+      { exercise_id: 'run', target: '800m Run', order: 7 },
+      { exercise_id: 'bars', target: '1 Set Monkey Bars', order: 8 },
+      { exercise_id: 'caddylack', target: '2 Cargo Net Climbs', order: 9 },
+      { exercise_id: 'run', target: '800m Run', order: 10 },
+      { exercise_id: 'balance_beam', target: '10m Balance Beam', order: 11 },
+      { exercise_id: 'atlas_stone', target: '30m Atlas Stone', order: 12 },
+      { exercise_id: 'run', target: '1km Run', order: 13 },
+    ],
+    scaling: {
+      [ScalingTier.RX]: 'Full course, 30 burpee penalty per fail',
+      [ScalingTier.ADVANCED]: 'Full course, 15 burpee penalty',
+      [ScalingTier.INTERMEDIATE]: 'Reduce distances, assisted climbs',
+      [ScalingTier.BEGINNER]: 'Walk/run, skip difficult obstacles',
+    }
+  },
+  // === TACTICAL WORKOUTS ===
+  {
+    id: 'w_tactical_operator',
+    name: 'Tactical Operator',
+    description: 'Military-style workout combining shooting drills with physical training.',
+    scheme: WorkoutScheme.FOR_TIME,
+    time_cap_seconds: 2400, // 40 mins
+    rest_type: 'none',
+    is_featured: false,
+    category: 'Tactical',
+    components: [
+      { exercise_id: 'run', target: '400m Run', order: 1 },
+      { exercise_id: 'nerf_target', target: '10 Target Hits (Standing)', order: 2 },
+      { exercise_id: 'pushup', target: '20 Push-ups', order: 3 },
+      { exercise_id: 'tactical_sprint', target: '50m Tactical Sprint', order: 4 },
+      { exercise_id: 'prone_shoot', target: '10 Prone Shots', order: 5 },
+      { exercise_id: 'burpee', target: '15 Burpees', order: 6 },
+      { exercise_id: 'run', target: '400m Run', order: 7 },
+      { exercise_id: 'kneeling_shoot', target: '10 Kneeling Shots', order: 8 },
+      { exercise_id: 'air_squat', target: '30 Air Squats', order: 9 },
+    ],
+    scaling: {
+      [ScalingTier.RX]: 'Full workout, max 2 misses per station',
+      [ScalingTier.ADVANCED]: 'Full workout, unlimited attempts',
+      [ScalingTier.INTERMEDIATE]: 'Reduce reps by 25%',
+      [ScalingTier.BEGINNER]: 'Reduce reps by 50%, walk intervals',
+    }
+  },
+  {
+    id: 'w_tactical_combat_ready',
+    name: 'Combat Ready',
+    description: 'High-intensity combat conditioning with shooting under fatigue.',
+    scheme: WorkoutScheme.AMRAP,
+    time_cap_seconds: 1200, // 20 mins AMRAP
+    rest_type: 'none',
+    is_featured: false,
+    category: 'Tactical',
+    components: [
+      { exercise_id: 'combat_crawl', target: '20m Combat Crawl', order: 1 },
+      { exercise_id: 'nerf_reload_shoot', target: '5 Reload & Shoot', order: 2 },
+      { exercise_id: 'burpee', target: '10 Burpees', order: 3 },
+      { exercise_id: 'moving_shoot', target: '5 Moving Shots', order: 4 },
+      { exercise_id: 'forward_lunge', target: '20 Walking Lunges', order: 5 },
+    ],
+    scaling: {
+      [ScalingTier.RX]: 'Max rounds in 20 mins',
+      [ScalingTier.ADVANCED]: 'Reduce crawl distance',
+      [ScalingTier.INTERMEDIATE]: 'Reduce reps by 25%',
+      [ScalingTier.BEGINNER]: 'Reduce reps by 50%',
+    }
+  },
+  {
+    id: 'w_tactical_rescue_mission',
+    name: 'Rescue Mission',
+    description: 'Simulate a rescue scenario with casualty drag and equipment carries.',
+    scheme: WorkoutScheme.FOR_TIME,
+    time_cap_seconds: 1800, // 30 mins
+    rest_type: 'none',
+    is_featured: false,
+    category: 'Tactical',
+    components: [
+      { exercise_id: 'tactical_sprint', target: '100m Sprint to Location', order: 1 },
+      { exercise_id: 'nerf_target', target: '15 Suppressive Fire Shots', order: 2 },
+      { exercise_id: 'dummy_drag', target: '30m Casualty Drag', order: 3 },
+      { exercise_id: 'ammo_carry', target: '50m Ammo Can Carry', order: 4 },
+      { exercise_id: 'combat_crawl', target: '20m Crawl to Cover', order: 5 },
+      { exercise_id: 'cover_drill', target: '30s Cover & Reload', order: 6 },
+      { exercise_id: 'tactical_sprint', target: '100m Sprint to Extraction', order: 7 },
+    ],
+    scaling: {
+      [ScalingTier.RX]: 'Full distances, heavy dummy/ammo',
+      [ScalingTier.ADVANCED]: 'Medium weight carries',
+      [ScalingTier.INTERMEDIATE]: 'Reduce distances, light weight',
+      [ScalingTier.BEGINNER]: '50% distances, partner assist',
+    }
+  },
+  {
+    id: 'w_tactical_shoot_move',
+    name: 'Shoot & Move Drill',
+    description: 'Practice shooting from multiple positions while maintaining cardiovascular output.',
+    scheme: WorkoutScheme.FOR_TIME,
+    time_cap_seconds: 1500, // 25 mins
+    rest_type: 'manual',
+    is_featured: false,
+    category: 'Tactical',
+    rounds: 3,
+    components: [
+      { exercise_id: 'standing_shoot', target: '5 Standing Shots', order: 1 },
+      { exercise_id: 'run', target: '200m Run', order: 2 },
+      { exercise_id: 'kneeling_shoot', target: '5 Kneeling Shots', order: 3 },
+      { exercise_id: 'bear_crawl', target: '20m Bear Crawl', order: 4 },
+      { exercise_id: 'prone_shoot', target: '5 Prone Shots', order: 5 },
+      { exercise_id: 'burpee', target: '10 Burpees', order: 6 },
+    ],
+    scaling: {
+      [ScalingTier.RX]: '3 rounds, all hits required',
+      [ScalingTier.ADVANCED]: '3 rounds, 80% accuracy',
+      [ScalingTier.INTERMEDIATE]: '2 rounds',
+      [ScalingTier.BEGINNER]: '1 round, rest as needed',
+    }
+  },
+  {
+    id: 'w_tactical_sandbag_assault',
+    name: 'Sandbag Assault',
+    description: 'Strength endurance with sandbag work and integrated shooting.',
+    scheme: WorkoutScheme.FOR_TIME,
+    time_cap_seconds: 2100, // 35 mins
+    rest_type: 'none',
+    is_featured: false,
+    category: 'Tactical',
+    components: [
+      { exercise_id: 'sandbag_toss', target: '20 Sandbag Tosses', order: 1 },
+      { exercise_id: 'nerf_target', target: '10 Target Hits', order: 2 },
+      { exercise_id: 'lunge', target: '50m Sandbag Lunges', weight: '20kg', order: 3 },
+      { exercise_id: 'nerf_reload_shoot', target: '10 Reload Drills', order: 4 },
+      { exercise_id: 'sandbag_toss', target: '20 Sandbag Tosses', order: 5 },
+      { exercise_id: 'run', target: '400m Run', order: 6 },
+      { exercise_id: 'moving_shoot', target: '10 Moving Shots', order: 7 },
+    ],
+    scaling: {
+      [ScalingTier.RX]: 'Heavy sandbag (20kg+)',
+      [ScalingTier.ADVANCED]: 'Medium sandbag (15kg)',
+      [ScalingTier.INTERMEDIATE]: 'Light sandbag (10kg)',
+      [ScalingTier.BEGINNER]: 'Light sandbag, reduce reps',
+    }
+  },
+  // === GYMNASTICS / MOBILITY WORKOUTS ===
+  {
+    id: 'w_gymnastics_handstand_flow',
+    name: 'Handstand Flow',
+    description: 'Build handstand strength and balance with progressive holds and walks.',
+    scheme: WorkoutScheme.FOR_TIME,
+    time_cap_seconds: 1800, // 30 mins
+    rest_type: 'manual',
+    is_featured: false,
+    category: 'Gymnastics',
+    components: [
+      { exercise_id: 'shoulder_stretch', target: '2 min Shoulder Mobility', order: 1 },
+      { exercise_id: 'pike_pushup', target: '15 Pike Push-ups', order: 2 },
+      { exercise_id: 'handstand', target: '5 x 20s Handstand Hold', order: 3 },
+      { exercise_id: 'handstand_walk', target: '10m Handstand Walk', order: 4 },
+      { exercise_id: 'handstand_pushup', target: '10 Handstand Push-ups', order: 5 },
+      { exercise_id: 'handstand', target: '3 x 30s Handstand Hold', order: 6 },
+    ],
+    scaling: {
+      [ScalingTier.RX]: 'Freestanding handstands',
+      [ScalingTier.ADVANCED]: 'Wall-assisted handstands',
+      [ScalingTier.INTERMEDIATE]: 'Wall walks and holds',
+      [ScalingTier.BEGINNER]: 'Pike holds on box',
+    }
+  },
+  {
+    id: 'w_gymnastics_tumbling_basics',
+    name: 'Tumbling Basics',
+    description: 'Fundamental tumbling skills - rolls, cartwheels, and roundoffs.',
+    scheme: WorkoutScheme.FOR_TIME,
+    time_cap_seconds: 1500, // 25 mins
+    rest_type: 'manual',
+    is_featured: false,
+    category: 'Gymnastics',
+    components: [
+      { exercise_id: 'forward_roll', target: '10 Forward Rolls', order: 1 },
+      { exercise_id: 'backward_roll', target: '10 Backward Rolls', order: 2 },
+      { exercise_id: 'cartwheel', target: '10 Cartwheels (each side)', order: 3 },
+      { exercise_id: 'roundoff', target: '10 Roundoffs', order: 4 },
+      { exercise_id: 'tuck_jump', target: '15 Tuck Jumps', order: 5 },
+      { exercise_id: 'straddle_jump', target: '15 Straddle Jumps', order: 6 },
+    ],
+    scaling: {
+      [ScalingTier.RX]: 'All movements unassisted',
+      [ScalingTier.ADVANCED]: 'Reduce reps by 25%',
+      [ScalingTier.INTERMEDIATE]: 'Assisted rolls, reduce reps',
+      [ScalingTier.BEGINNER]: 'Focus on forward rolls only',
+    }
+  },
+  {
+    id: 'w_gymnastics_flexibility',
+    name: 'Flexibility & Mobility Flow',
+    description: 'Deep stretching routine for splits, bridges, and overall flexibility.',
+    scheme: WorkoutScheme.FOR_TIME,
+    time_cap_seconds: 2400, // 40 mins
+    rest_type: 'manual',
+    is_featured: false,
+    category: 'Gymnastics',
+    components: [
+      { exercise_id: 'hip_opener', target: '3 min Hip Openers', order: 1 },
+      { exercise_id: 'pike_stretch', target: '2 min Pike Stretch', order: 2 },
+      { exercise_id: 'splits', target: '2 min Front Splits (each)', order: 3 },
+      { exercise_id: 'splits', target: '2 min Straddle Splits', order: 4 },
+      { exercise_id: 'bridge', target: '5 x 30s Bridge Hold', order: 5 },
+      { exercise_id: 'shoulder_stretch', target: '3 min Shoulder Stretches', order: 6 },
+    ],
+    scaling: {
+      [ScalingTier.RX]: 'Full range of motion',
+      [ScalingTier.ADVANCED]: 'Use blocks for support',
+      [ScalingTier.INTERMEDIATE]: 'Reduce hold times',
+      [ScalingTier.BEGINNER]: 'Partial range, props allowed',
+    }
+  },
+  {
+    id: 'w_gymnastics_ring_strength',
+    name: 'Ring Strength Builder',
+    description: 'Develop upper body strength and stability using gymnastics rings.',
+    scheme: WorkoutScheme.FOR_TIME,
+    time_cap_seconds: 1800, // 30 mins
+    rest_type: 'manual',
+    is_featured: false,
+    category: 'Gymnastics',
+    components: [
+      { exercise_id: 'ring_support', target: '5 x 20s Ring Support Hold', order: 1 },
+      { exercise_id: 'ring_row', target: '15 Ring Rows', order: 2 },
+      { exercise_id: 'ring_dip', target: '10 Ring Dips', order: 3 },
+      { exercise_id: 'ring_support', target: '3 x 30s Ring Support Hold', order: 4 },
+      { exercise_id: 'muscle_up', target: '5 Ring Muscle-ups', order: 5 },
+      { exercise_id: 'l_sit', target: '3 x 15s L-Sit on Rings', order: 6 },
+    ],
+    scaling: {
+      [ScalingTier.RX]: 'All movements strict',
+      [ScalingTier.ADVANCED]: 'Kipping allowed for muscle-ups',
+      [ScalingTier.INTERMEDIATE]: 'Band-assisted, reduce reps',
+      [ScalingTier.BEGINNER]: 'Ring rows and support holds only',
+    }
+  },
+  {
+    id: 'w_gymnastics_balance_beam',
+    name: 'Balance Beam Skills',
+    description: 'Develop balance and coordination on the beam with walks and turns.',
+    scheme: WorkoutScheme.FOR_TIME,
+    time_cap_seconds: 1200, // 20 mins
+    rest_type: 'manual',
+    is_featured: false,
+    category: 'Gymnastics',
+    components: [
+      { exercise_id: 'beam_walk', target: '4 x Full Beam Walk', order: 1 },
+      { exercise_id: 'beam_turns', target: '10 Beam Turns (180°)', order: 2 },
+      { exercise_id: 'beam_walk', target: '2 x Backward Beam Walk', order: 3 },
+      { exercise_id: 'beam_turns', target: '5 Beam Turns (360°)', order: 4 },
+      { exercise_id: 'tuck_jump', target: '5 Tuck Jumps on Beam', order: 5 },
+    ],
+    scaling: {
+      [ScalingTier.RX]: 'High beam, no hands',
+      [ScalingTier.ADVANCED]: 'High beam, occasional balance',
+      [ScalingTier.INTERMEDIATE]: 'Low beam',
+      [ScalingTier.BEGINNER]: 'Floor line practice',
+    }
+  },
+  {
+    id: 'w_gymnastics_aerial_prep',
+    name: 'Aerial Preparation',
+    description: 'Progress towards the no-hand cartwheel (aerial) with drills and conditioning.',
+    scheme: WorkoutScheme.FOR_TIME,
+    time_cap_seconds: 1800, // 30 mins
+    rest_type: 'manual',
+    is_featured: false,
+    category: 'Gymnastics',
+    components: [
+      { exercise_id: 'cartwheel', target: '10 Perfect Cartwheels', order: 1 },
+      { exercise_id: 'roundoff', target: '10 Roundoffs', order: 2 },
+      { exercise_id: 'tuck_jump', target: '20 Tuck Jumps', order: 3 },
+      { exercise_id: 'cartwheel', target: '10 One-Hand Cartwheels', order: 4 },
+      { exercise_id: 'hip_opener', target: '2 min Hip Stretch', order: 5 },
+      { exercise_id: 'aerial', target: '5 Aerial Attempts', order: 6 },
+    ],
+    scaling: {
+      [ScalingTier.RX]: 'Full aerials',
+      [ScalingTier.ADVANCED]: 'One-hand cartwheels',
+      [ScalingTier.INTERMEDIATE]: 'Strong cartwheels',
+      [ScalingTier.BEGINNER]: 'Basic cartwheel practice',
     }
   }
 ];
