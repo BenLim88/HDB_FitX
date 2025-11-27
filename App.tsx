@@ -1017,7 +1017,8 @@ const App: React.FC = () => {
         // Refresh current user data from Firestore (in case admin status changed)
         const allUsers = await DataService.getAllUsers();
         const updatedUser = allUsers.find(u => u.id === currentUser.id);
-        if (updatedUser) {
+        // Only update if user is still logged in (check localStorage to avoid race condition on logout)
+        if (updatedUser && localStorage.getItem('hdb_fitx_user')) {
             setCurrentUser(updatedUser);
             localStorage.setItem('hdb_fitx_user', JSON.stringify(updatedUser));
         }
@@ -1038,7 +1039,8 @@ const App: React.FC = () => {
         const refreshCurrentUser = async () => {
             const allUsers = await DataService.getAllUsers();
             const updatedUser = allUsers.find(u => u.id === currentUser.id);
-            if (updatedUser) {
+            // Only update if user is still logged in (check localStorage to avoid race condition on logout)
+            if (updatedUser && localStorage.getItem('hdb_fitx_user')) {
                 setCurrentUser(updatedUser);
                 localStorage.setItem('hdb_fitx_user', JSON.stringify(updatedUser));
             }
