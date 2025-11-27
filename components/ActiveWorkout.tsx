@@ -752,10 +752,47 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
                       </span>
                     )}
                 </div>
+                {/* Scheme Info Panels */}
                 {isAMRAP && (
                   <div className="mt-3 bg-green-900/20 border border-green-500/30 rounded-lg p-3">
-                    <p className="text-green-400 text-xs font-bold uppercase mb-1">As Many Rounds As Possible</p>
-                    <p className="text-slate-300 text-xs">Complete as many rounds of the workout components as you can within the time limit. Track your rounds and any extra reps!</p>
+                    <p className="text-green-400 text-xs font-bold uppercase mb-1">⏱️ As Many Rounds As Possible</p>
+                    <p className="text-slate-300 text-xs">Complete as many rounds of the workout components as you can within the time limit. Your score is the total rounds (and extra reps) completed!</p>
+                  </div>
+                )}
+                {workout.scheme === WorkoutScheme.FOR_TIME && (
+                  <div className="mt-3 bg-orange-900/20 border border-orange-500/30 rounded-lg p-3">
+                    <p className="text-orange-400 text-xs font-bold uppercase mb-1">🏁 For Time</p>
+                    <p className="text-slate-300 text-xs">Complete all the workout components as fast as possible. Your score is the total time taken to finish. {workout.time_cap_seconds ? `Time cap: ${Math.floor(workout.time_cap_seconds / 60)} minutes.` : ''}</p>
+                  </div>
+                )}
+                {workout.scheme === WorkoutScheme.EMOM && (
+                  <div className="mt-3 bg-blue-900/20 border border-blue-500/30 rounded-lg p-3">
+                    <p className="text-blue-400 text-xs font-bold uppercase mb-1">⏰ Every Minute On the Minute</p>
+                    <p className="text-slate-300 text-xs">At the start of every minute, perform the prescribed work. Rest for the remainder of that minute. Repeat for the total duration. Pace yourself!</p>
+                  </div>
+                )}
+                {workout.scheme === WorkoutScheme.TABATA && (
+                  <div className="mt-3 bg-pink-900/20 border border-pink-500/30 rounded-lg p-3">
+                    <p className="text-pink-400 text-xs font-bold uppercase mb-1">🔥 Tabata (20/10)</p>
+                    <p className="text-slate-300 text-xs">High-intensity interval training: 20 seconds of max effort work, followed by 10 seconds of rest. Repeat for 8 rounds (4 minutes total per exercise). Give it your all!</p>
+                  </div>
+                )}
+                {workout.scheme === WorkoutScheme.MIXED && (
+                  <div className="mt-3 bg-purple-900/20 border border-purple-500/30 rounded-lg p-3">
+                    <p className="text-purple-400 text-xs font-bold uppercase mb-1">🎯 Mixed Format</p>
+                    <p className="text-slate-300 text-xs">This workout combines multiple training styles. Follow the component instructions carefully - some may be for time, others for reps. Adapt and conquer!</p>
+                  </div>
+                )}
+                {workout.scheme === WorkoutScheme.ONE_RM && (
+                  <div className="mt-3 bg-red-900/20 border border-red-500/30 rounded-lg p-3">
+                    <p className="text-red-400 text-xs font-bold uppercase mb-1">💪 1 Rep Max (1RM)</p>
+                    <p className="text-slate-300 text-xs">Find your maximum weight for a single rep. Warm up progressively, then attempt your heaviest lift. Your score is the maximum weight successfully lifted.</p>
+                  </div>
+                )}
+                {workout.scheme === WorkoutScheme.MAX_REPS && (
+                  <div className="mt-3 bg-violet-900/20 border border-violet-500/30 rounded-lg p-3">
+                    <p className="text-violet-400 text-xs font-bold uppercase mb-1">🔢 Max Reps</p>
+                    <p className="text-slate-300 text-xs">Perform as many repetitions as possible of the exercise(s). Your score is the total number of reps completed. Push to your limit!</p>
                   </div>
                 )}
                 <p className="text-slate-400 text-sm mt-4 leading-relaxed line-clamp-2">{workout.description}</p>
@@ -1270,15 +1307,17 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
          </div>
          
          {/* AMRAP: Finish Early Option */}
-         {isAMRAP && elapsedSeconds > 0 && (
+         {isAMRAP && (
            <button 
                onClick={() => {
-                 setAmrapRoundsInput(amrapRoundsCompleted.toString());
-                 finishWorkout();
+                 if (confirm('End AMRAP early? Your current rounds will be recorded.')) {
+                   setAmrapRoundsInput(amrapRoundsCompleted.toString());
+                   finishWorkout();
+                 }
                }}
-               className="mt-3 w-full py-2 bg-slate-800/50 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg text-xs font-bold uppercase tracking-wider border border-slate-700/50 flex items-center justify-center gap-2"
+               className="mt-3 w-full py-3 bg-red-900/30 hover:bg-red-900/50 text-red-400 hover:text-red-300 rounded-xl text-sm font-bold uppercase tracking-wider border border-red-500/30 flex items-center justify-center gap-2 transition-colors"
            >
-               <Square size={14} /> End AMRAP Early
+               <Square size={16} /> End AMRAP Early ({amrapRoundsCompleted} rounds)
            </button>
          )}
       </div>
