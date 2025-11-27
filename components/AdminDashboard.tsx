@@ -52,6 +52,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
   // Start with all categories collapsed - will be populated when workouts load
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set(['Hyrox', 'CrossFit', 'Calisthenics', 'Cardio', 'Street Lift', 'Kids Friendly', 'General', 'Obstacle', 'Tactical', 'Gymnastics']));
 
+  // Exercise Search & Filter State
+  const [exerciseSearchQuery, setExerciseSearchQuery] = useState('');
+  const [exerciseTypeFilter, setExerciseTypeFilter] = useState('');
+  const [exerciseCategoryFilterSelected, setExerciseCategoryFilterSelected] = useState('');
+  const [collapsedExerciseCategories, setCollapsedExerciseCategories] = useState<Set<string>>(new Set(['Cardio', 'Strength', 'Bodyweight', 'Hyrox', 'Obstacle', 'Tactical', 'Gymnastics', 'Plyometric', 'General']));
+
   // Pin WOD State
   const [pinningWorkoutId, setPinningWorkoutId] = useState<string | null>(null);
   const [intendedDate, setIntendedDate] = useState('');
@@ -556,7 +562,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       setComponentRound('1');
   };
 
-  // Toggle category collapse
+  // Toggle category collapse (Workouts)
   const toggleCategoryCollapse = (category: string) => {
       setCollapsedCategories(prev => {
           const newSet = new Set(prev);
@@ -567,6 +573,57 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
           }
           return newSet;
       });
+  };
+
+  // Toggle category collapse (Exercises)
+  const toggleExerciseCategoryCollapse = (category: string) => {
+      setCollapsedExerciseCategories(prev => {
+          const newSet = new Set(prev);
+          if (newSet.has(category)) {
+              newSet.delete(category);
+          } else {
+              newSet.add(category);
+          }
+          return newSet;
+      });
+  };
+
+  // Filter and group exercises
+  const getFilteredAndGroupedExercises = () => {
+      let filtered = exercises;
+
+      // Filter by search query (name)
+      if (exerciseSearchQuery.trim()) {
+          const query = exerciseSearchQuery.toLowerCase();
+          filtered = filtered.filter(ex => 
+              ex.name.toLowerCase().includes(query)
+          );
+      }
+
+      // Filter by type
+      if (exerciseTypeFilter) {
+          filtered = filtered.filter(ex => ex.type === exerciseTypeFilter);
+      }
+
+      // Filter by category
+      if (exerciseCategoryFilterSelected) {
+          filtered = filtered.filter(ex => ex.category === exerciseCategoryFilterSelected);
+      }
+
+      // Group by category
+      const grouped = new Map<string, typeof exercises>();
+      filtered.forEach(ex => {
+          const category = ex.category || 'General';
+          if (!grouped.has(category)) {
+              grouped.set(category, []);
+          }
+          grouped.get(category)!.push(ex);
+      });
+
+      // Sort categories alphabetically
+      const sortedCategories = Array.from(grouped.keys()).sort();
+
+      return { grouped, sortedCategories, totalFiltered: filtered.length };
   };
 
   // Filter and group workouts
@@ -962,7 +1019,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
         )}
 
         {activeTab === 'exercises' && (
-            <div className="p-4 space-y-6">
+            <div className="p-4 space-y-4">
                 {/* Sync Button */}
                 <div className="flex gap-2 items-center">
                     <button 
@@ -978,6 +1035,59 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                 <p className="text-xs text-slate-500 text-center">
                     Tap to sync new Obstacle, Tactical, and Gymnastics exercises
                 </p>
+
+                {/* Search and Filter */}
+                <div className="bg-slate-900 border border-slate-800 rounded-xl p-3 space-y-3">
+                    <div className="flex gap-2">
+                        <div className="flex-1 relative">
+                            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                            <input
+                                type="text"
+                                placeholder="Search exercises by name..."
+                                value={exerciseSearchQuery}
+                                onChange={e => setExerciseSearchQuery(e.target.value)}
+                                className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-3 py-2 text-sm text-white placeholder:text-slate-600 outline-none focus:border-orange-500"
+                            />
+                        </div>
+                        {(exerciseSearchQuery || exerciseTypeFilter || exerciseCategoryFilterSelected) && (
+                            <button
+                                onClick={() => { setExerciseSearchQuery(''); setExerciseTypeFilter(''); setExerciseCategoryFilterSelected(''); }}
+                                className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs font-bold rounded-lg"
+                            >
+                                Clear
+                            </button>
+                        )}
+                    </div>
+                    <div className="flex gap-2">
+                        <div className="flex-1">
+                            <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Category</label>
+                            <select
+                                value={exerciseCategoryFilterSelected}
+                                onChange={e => setExerciseCategoryFilterSelected(e.target.value)}
+                                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-orange-500"
+                            >
+                                <option value="">All Categories</option>
+                                {Array.from(new Set(exercises.map(e => e.category))).sort().map(cat => (
+                                    <option key={cat} value={cat}>{cat}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="flex-1">
+                            <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Type</label>
+                            <select
+                                value={exerciseTypeFilter}
+                                onChange={e => setExerciseTypeFilter(e.target.value)}
+                                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-orange-500"
+                            >
+                                <option value="">All Types</option>
+                                <option value="reps">Reps</option>
+                                <option value="time">Time</option>
+                                <option value="distance">Distance</option>
+                                <option value="load">Load</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
 
                 {/* Add New Form */}
                 <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl">
@@ -1027,51 +1137,94 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                     </button>
                 </div>
 
-                {/* List with Category Grouping */}
-                <div className="space-y-2">
-                    <p className="text-xs text-slate-500 mb-2">
-                        {exercises.length} exercises in database
-                    </p>
-                    {(() => {
-                        // Group exercises by category
-                        const grouped = new Map<string, typeof exercises>();
-                        exercises.forEach(ex => {
-                            const cat = ex.category || 'General';
-                            if (!grouped.has(cat)) grouped.set(cat, []);
-                            grouped.get(cat)!.push(ex);
-                        });
-                        const sortedCats = Array.from(grouped.keys()).sort();
-                        
-                        return sortedCats.map(cat => (
-                            <div key={cat} className="mb-3">
-                                <div className="text-[10px] uppercase font-bold text-slate-500 mb-1 px-1">
-                                    {cat} ({grouped.get(cat)!.length})
-                                </div>
-                                <div className="space-y-1">
-                                    {grouped.get(cat)!.map(ex => (
-                                        <div key={ex.id} className="flex items-center justify-between bg-slate-900/50 border border-slate-800 p-2 rounded-lg">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-6 h-6 rounded bg-slate-800 flex items-center justify-center text-slate-500">
-                                                    <Dumbbell size={12} />
-                                                </div>
-                                                <div>
-                                                    <p className="text-white font-bold text-xs">{ex.name}</p>
-                                                    <p className="text-[10px] text-slate-500 uppercase">{ex.type}</p>
-                                                </div>
-                                            </div>
-                                            <button 
-                                                onClick={() => handleDeleteExercise(ex.id)}
-                                                className="p-1.5 text-slate-600 hover:text-red-500 transition-colors"
-                                            >
-                                                <Trash2 size={14} />
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
+                {/* Categorized Exercise List with Collapsible Sections */}
+                {(() => {
+                    const { grouped, sortedCategories, totalFiltered } = getFilteredAndGroupedExercises();
+                    
+                    if (exercises.length === 0) {
+                        return (
+                            <div className="text-center py-8 text-slate-500 text-sm">
+                                No exercises yet. Click "Sync New Exercises" or add one manually.
                             </div>
-                        ));
-                    })()}
-                </div>
+                        );
+                    }
+
+                    if (totalFiltered === 0) {
+                        return (
+                            <div className="text-center py-8 text-slate-500 text-sm">
+                                No exercises match your search/filter.
+                            </div>
+                        );
+                    }
+
+                    // Category color mapping for exercises
+                    const exerciseCategoryColors: Record<string, string> = {
+                        'Cardio': 'border-green-500/50 bg-green-500/10',
+                        'Strength': 'border-red-500/50 bg-red-500/10',
+                        'Bodyweight': 'border-purple-500/50 bg-purple-500/10',
+                        'Hyrox': 'border-orange-500/50 bg-orange-500/10',
+                        'Obstacle': 'border-amber-500/50 bg-amber-500/10',
+                        'Tactical': 'border-emerald-500/50 bg-emerald-500/10',
+                        'Gymnastics': 'border-cyan-500/50 bg-cyan-500/10',
+                        'Plyometric': 'border-pink-500/50 bg-pink-500/10',
+                        'General': 'border-slate-600/50 bg-slate-600/10',
+                    };
+
+                    return (
+                        <div className="space-y-2">
+                            <p className="text-xs text-slate-500">
+                                Showing {totalFiltered} of {exercises.length} exercises
+                            </p>
+                            {sortedCategories.map(category => {
+                                const categoryExercises = grouped.get(category) || [];
+                                const isCollapsed = collapsedExerciseCategories.has(category);
+                                const categoryColor = exerciseCategoryColors[category] || exerciseCategoryColors['General'];
+                                
+                                return (
+                                    <div key={category} className="border border-slate-800 rounded-xl overflow-hidden">
+                                        {/* Category Header */}
+                                        <button
+                                            onClick={() => toggleExerciseCategoryCollapse(category)}
+                                            className={`w-full flex items-center justify-between p-3 ${categoryColor} hover:bg-opacity-20 transition-colors`}
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <Dumbbell size={16} className="text-slate-400" />
+                                                <span className="text-white font-bold text-sm">{category}</span>
+                                                <span className="text-slate-500 text-xs">({categoryExercises.length})</span>
+                                            </div>
+                                            {isCollapsed ? <ChevronRight size={18} className="text-slate-500" /> : <ChevronDown size={18} className="text-slate-500" />}
+                                        </button>
+                                        
+                                        {/* Category Exercises */}
+                                        {!isCollapsed && (
+                                            <div className="p-2 space-y-1 bg-slate-950/50 max-h-64 overflow-y-auto">
+                                                {categoryExercises.map(ex => (
+                                                    <div key={ex.id} className="flex items-center justify-between bg-slate-900 border border-slate-800 p-2 rounded-lg">
+                                                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                            <div className="w-6 h-6 rounded bg-slate-800 flex items-center justify-center text-slate-500 flex-shrink-0">
+                                                                <Dumbbell size={12} />
+                                                            </div>
+                                                            <div className="min-w-0">
+                                                                <p className="text-white font-bold text-xs truncate">{ex.name}</p>
+                                                                <p className="text-[10px] text-slate-500 uppercase">{ex.type}</p>
+                                                            </div>
+                                                        </div>
+                                                        <button 
+                                                            onClick={() => handleDeleteExercise(ex.id)}
+                                                            className="p-1.5 text-slate-600 hover:text-red-500 transition-colors flex-shrink-0"
+                                                        >
+                                                            <Trash2 size={14} />
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    );
+                })()}
             </div>
         )}
 
