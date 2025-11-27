@@ -50,7 +50,8 @@ export enum WorkoutScheme {
   EMOM = 'EMOM',
   TABATA = 'Tabata',
   MIXED = 'Mixed',
-  ONE_RM = '1RM'
+  ONE_RM = '1RM',
+  MAX_REPS = 'Max Reps'  // For recording maximum reps achieved (e.g., Max Muscle-ups)
 }
 
 export interface User {

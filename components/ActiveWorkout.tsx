@@ -53,6 +53,9 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
   // Street Lift (1RM) State
   const [weightInput, setWeightInput] = useState('');
   const [weightUnit, setWeightUnit] = useState('kg'); // kg or lbs
+  
+  // Max Reps State
+  const [maxRepsInput, setMaxRepsInput] = useState('');
 
   // Refs
   const intervalRef = useRef<number | null>(null);
@@ -249,8 +252,9 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
         }
     }
 
-    // Check if this is a Street Lift (1RM) workout
-    const isStreetLift = workout.category === 'Street Lift';
+    // Check if this is a Street Lift (1RM) workout or Max Reps workout
+    const isStreetLift = workout.category === 'Street Lift' || workout.scheme === WorkoutScheme.ONE_RM;
+    const isMaxReps = workout.scheme === WorkoutScheme.MAX_REPS;
     
     let finalTimeSeconds: number;
     let scoreDisplay: string;
@@ -266,6 +270,17 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
       // Use a placeholder time (0 or 1 second) since it's weight-based
       finalTimeSeconds = 1;
       scoreDisplay = `${finalWeight}${weightUnit}`;
+    } else if (isMaxReps) {
+      // For Max Reps, use reps count instead of time
+      const finalReps = manualWeight || maxRepsInput; // reusing manualWeight param for reps
+      if (!finalReps) {
+        alert("Please enter your max reps.");
+        setIsSubmitting(false);
+        return;
+      }
+      // Use a placeholder time since it's reps-based
+      finalTimeSeconds = 1;
+      scoreDisplay = `${finalReps} reps`;
     } else {
       // Use manual time if provided, otherwise use elapsed time
       finalTimeSeconds = manualTime !== undefined ? manualTime : elapsedSeconds;
@@ -314,7 +329,8 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
   };
 
   const handleSubmitManualLog = () => {
-    const isStreetLift = workout.category === 'Street Lift';
+    const isStreetLift = workout.category === 'Street Lift' || workout.scheme === WorkoutScheme.ONE_RM;
+    const isMaxReps = workout.scheme === WorkoutScheme.MAX_REPS;
     
     if (isStreetLift) {
       // For Street Lift, use weight input
@@ -323,6 +339,13 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
         return;
       }
       handleSubmit(undefined, weightInput);
+    } else if (isMaxReps) {
+      // For Max Reps, use reps input
+      if (!maxRepsInput) {
+        alert("Please enter your max reps.");
+        return;
+      }
+      handleSubmit(undefined, maxRepsInput);
     } else {
       // Parse manual time input
       const minutes = parseInt(manualTimeMinutes) || 0;
@@ -376,7 +399,8 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
   if (showLogWithoutTimer && !isStarted && !showFinishScreen) {
     const selectedVenue = venues.find(v => v.id === selectedVenueId);
     const showCustomInput = selectedVenue && (selectedVenue.type === 'Commercial' || selectedVenue.type === 'Other' || selectedVenue.type === 'Home');
-    const isStreetLift = workout.category === 'Street Lift';
+    const isStreetLift = workout.category === 'Street Lift' || workout.scheme === WorkoutScheme.ONE_RM;
+    const isMaxReps = workout.scheme === WorkoutScheme.MAX_REPS;
 
     return (
       <div className="h-full flex flex-col bg-slate-950 text-white p-5 relative pb-24">
@@ -388,6 +412,8 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
         <p className="text-slate-400 text-sm mb-6">
           {isStreetLift 
             ? 'Log your 1 Rep Max weight result. Perfect for workouts completed on a separate device.'
+            : isMaxReps
+            ? 'Log your maximum reps achieved. Perfect for workouts completed on a separate device.'
             : 'Log your workout result without using the timer. Perfect for workouts completed on a separate device.'}
         </p>
 
@@ -418,6 +444,30 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
               {weightInput && (
                 <p className="text-sm text-orange-500 font-bold mt-2 text-center">
                   Recorded: {weightInput}{weightUnit}
+                </p>
+              )}
+            </div>
+          ) : isMaxReps ? (
+            /* Reps Input for Max Reps Workouts */
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Maximum Reps Achieved</label>
+              <div className="flex gap-2 items-center w-full">
+                <input
+                  type="number"
+                  step="1"
+                  min="0"
+                  placeholder="0"
+                  value={maxRepsInput}
+                  onChange={(e) => setMaxRepsInput(e.target.value)}
+                  className="flex-1 min-w-0 bg-slate-950 border border-slate-800 rounded p-3 text-white text-2xl font-mono font-bold text-center outline-none"
+                />
+                <span className="bg-slate-950 border border-slate-800 rounded p-3 text-white text-lg font-bold shrink-0">
+                  reps
+                </span>
+              </div>
+              {maxRepsInput && (
+                <p className="text-sm text-purple-500 font-bold mt-2 text-center">
+                  Recorded: {maxRepsInput} reps
                 </p>
               )}
             </div>
@@ -703,7 +753,8 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
 
   // --- SCREEN 2: MISSION DEBRIEF (FINISH) ---
   if (showFinishScreen) {
-    const isStreetLift = workout.category === 'Street Lift';
+    const isStreetLift = workout.category === 'Street Lift' || workout.scheme === WorkoutScheme.ONE_RM;
+    const isMaxReps = workout.scheme === WorkoutScheme.MAX_REPS;
     
     return (
       <div className="h-full flex flex-col p-6 pb-24 relative">
@@ -752,6 +803,30 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
              {weightInput && (
                <p className="text-sm text-orange-500 font-bold mt-3 text-center">
                  Recorded: {weightInput}{weightUnit}
+               </p>
+             )}
+           </div>
+         ) : isMaxReps ? (
+           // Max Reps - Show Reps Input
+           <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 mb-6">
+             <label className="block text-slate-400 text-sm font-bold uppercase mb-3">Maximum Reps Achieved</label>
+             <div className="flex gap-2 items-center w-full">
+               <input
+                 type="number"
+                 step="1"
+                 min="0"
+                 placeholder="0"
+                 value={maxRepsInput}
+                 onChange={(e) => setMaxRepsInput(e.target.value)}
+                 className="flex-1 min-w-0 bg-slate-950 border border-slate-800 rounded p-4 text-white text-3xl font-mono font-bold text-center outline-none focus:border-purple-500"
+               />
+               <span className="bg-slate-950 border border-slate-800 rounded p-4 text-white text-lg font-bold shrink-0">
+                 reps
+               </span>
+             </div>
+             {maxRepsInput && (
+               <p className="text-sm text-purple-500 font-bold mt-3 text-center">
+                 Recorded: {maxRepsInput} reps
                </p>
              )}
            </div>
