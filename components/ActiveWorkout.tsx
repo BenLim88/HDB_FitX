@@ -56,10 +56,20 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
   
   // Max Reps State
   const [maxRepsInput, setMaxRepsInput] = useState('');
+  
+  // AMRAP State
+  const [amrapRoundsCompleted, setAmrapRoundsCompleted] = useState(0);
+  const [amrapRoundsInput, setAmrapRoundsInput] = useState('');
+  const [amrapPartialReps, setAmrapPartialReps] = useState(''); // Optional: for partial round reps
+  const [amrapTimerFinished, setAmrapTimerFinished] = useState(false);
 
   // Refs
   const intervalRef = useRef<number | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
+  
+  // Check if this is an AMRAP workout
+  const isAMRAP = workout.scheme === WorkoutScheme.AMRAP;
+  const amrapTimeCapSeconds = workout.time_cap_seconds || 600; // Default 10 min if not set
 
   // Expand components based on workout.rounds
   // Each round repeats all the workout components
@@ -139,7 +149,38 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
   useEffect(() => {
     if (isPlaying && !isResting) {
       intervalRef.current = window.setInterval(() => {
-        setElapsedSeconds(s => s + 1);
+        if (isAMRAP) {
+          // AMRAP: Countdown timer
+          setElapsedSeconds(s => {
+            const newTime = s + 1;
+            const timeRemaining = amrapTimeCapSeconds - newTime;
+            
+            // Audio cues for final countdown
+            if (timeRemaining <= 10 && timeRemaining > 0) {
+              playBeep(600, 0.1); // Countdown beeps
+            }
+            if (timeRemaining === 3) {
+              playBeep(800, 0.15);
+            }
+            
+            // Check if time cap reached
+            if (newTime >= amrapTimeCapSeconds) {
+              setIsPlaying(false);
+              setAmrapTimerFinished(true);
+              setShowFinishScreen(true);
+              // Pre-fill the rounds input with tracked rounds
+              setAmrapRoundsInput(amrapRoundsCompleted.toString());
+              // Victory sound
+              playBeep(523.25, 0.1); // C5
+              setTimeout(() => playBeep(659.25, 0.1), 150); // E5
+              setTimeout(() => playBeep(783.99, 0.4), 300); // G5
+            }
+            return newTime;
+          });
+        } else {
+          // Regular: Count up
+          setElapsedSeconds(s => s + 1);
+        }
       }, 1000);
     } else {
       if (intervalRef.current) clearInterval(intervalRef.current);
@@ -147,7 +188,7 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [isPlaying, isResting]);
+  }, [isPlaying, isResting, isAMRAP, amrapTimeCapSeconds, amrapRoundsCompleted]);
 
   // --- REST TIMER LOGIC ---
 
@@ -204,9 +245,28 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
     playBeep(1000, 0.1);
   };
 
+  // AMRAP: Handle completing a round
+  const handleAmrapNextRound = () => {
+    playBeep(800, 0.15, 'sine'); // Success beep
+    setAmrapRoundsCompleted(prev => prev + 1);
+    // Reset to first component of the round
+    setActiveComponentIndex(0);
+  };
+
   const handleNext = () => {
     // Transition Sound
     playBeep(600, 0.1);
+
+    if (isAMRAP) {
+      // For AMRAP: cycle through components, increment round when reaching the end
+      if (activeComponentIndex < workout.components.length - 1) {
+        setActiveComponentIndex(prev => prev + 1);
+      } else {
+        // Completed all components in this round
+        handleAmrapNextRound();
+      }
+      return; // Don't use rest or finish logic for AMRAP
+    }
 
     if (activeComponentIndex < expandedComponents.length - 1) {
       const restType = workout.rest_type || 'fixed';
@@ -252,15 +312,32 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
         }
     }
 
-    // Check if this is a Max Reps workout or Street Lift (1RM) workout
-    // IMPORTANT: Check MAX_REPS first since scheme takes precedence over category
+    // Check workout type to determine scoring
+    // IMPORTANT: Check specific schemes first since they take precedence
     const isMaxReps = workout.scheme === WorkoutScheme.MAX_REPS;
     const isStreetLift = !isMaxReps && (workout.category === 'Street Lift' || workout.scheme === WorkoutScheme.ONE_RM);
+    const isAmrapWorkout = workout.scheme === WorkoutScheme.AMRAP;
     
     let finalTimeSeconds: number;
     let scoreDisplay: string;
     
-    if (isMaxReps) {
+    if (isAmrapWorkout) {
+      // For AMRAP, use rounds completed instead of time
+      const finalRounds = amrapRoundsInput || amrapRoundsCompleted.toString();
+      if (!finalRounds || finalRounds === '0') {
+        alert("Please enter the number of rounds completed.");
+        setIsSubmitting(false);
+        return;
+      }
+      // Store the time cap as the time taken (since AMRAP runs for fixed duration)
+      finalTimeSeconds = amrapTimeCapSeconds;
+      // Build score display: "X rounds" or "X rounds + Y reps"
+      if (amrapPartialReps && parseInt(amrapPartialReps) > 0) {
+        scoreDisplay = `${finalRounds} rounds + ${amrapPartialReps} reps`;
+      } else {
+        scoreDisplay = `${finalRounds} rounds`;
+      }
+    } else if (isMaxReps) {
       // For Max Reps, use reps count instead of time
       const finalReps = manualWeight || maxRepsInput; // reusing manualWeight param for reps
       if (!finalReps) {
@@ -330,11 +407,19 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
   };
 
   const handleSubmitManualLog = () => {
-    // IMPORTANT: Check MAX_REPS first since scheme takes precedence over category
+    // IMPORTANT: Check specific schemes first since they take precedence
+    const isAmrapWorkout = workout.scheme === WorkoutScheme.AMRAP;
     const isMaxReps = workout.scheme === WorkoutScheme.MAX_REPS;
-    const isStreetLift = !isMaxReps && (workout.category === 'Street Lift' || workout.scheme === WorkoutScheme.ONE_RM);
+    const isStreetLift = !isMaxReps && !isAmrapWorkout && (workout.category === 'Street Lift' || workout.scheme === WorkoutScheme.ONE_RM);
     
-    if (isMaxReps) {
+    if (isAmrapWorkout) {
+      // For AMRAP, use rounds input
+      if (!amrapRoundsInput || amrapRoundsInput === '0') {
+        alert("Please enter the number of rounds completed.");
+        return;
+      }
+      handleSubmit();
+    } else if (isMaxReps) {
       // For Max Reps, use reps input
       if (!maxRepsInput) {
         alert("Please enter your max reps.");
@@ -394,16 +479,20 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
       }
   };
 
-  const currentComponent = expandedComponents[activeComponentIndex];
+  // For AMRAP, use workout.components directly; for others, use expandedComponents
+  const currentComponent = isAMRAP 
+    ? workout.components[activeComponentIndex] 
+    : expandedComponents[activeComponentIndex];
   const exerciseDetail = currentComponent ? findExercise(currentComponent.exercise_id) : null;
 
   // --- SCREEN 1A: MANUAL LOG FORM ---
   if (showLogWithoutTimer && !isStarted && !showFinishScreen) {
     const selectedVenue = venues.find(v => v.id === selectedVenueId);
     const showCustomInput = selectedVenue && (selectedVenue.type === 'Commercial' || selectedVenue.type === 'Other' || selectedVenue.type === 'Home');
-    // IMPORTANT: Check MAX_REPS first since scheme takes precedence over category
+    // IMPORTANT: Check specific schemes first since they take precedence
+    const isAmrapWorkout = workout.scheme === WorkoutScheme.AMRAP;
     const isMaxReps = workout.scheme === WorkoutScheme.MAX_REPS;
-    const isStreetLift = !isMaxReps && (workout.category === 'Street Lift' || workout.scheme === WorkoutScheme.ONE_RM);
+    const isStreetLift = !isMaxReps && !isAmrapWorkout && (workout.category === 'Street Lift' || workout.scheme === WorkoutScheme.ONE_RM);
 
     return (
       <div className="h-full flex flex-col bg-slate-950 text-white p-5 relative pb-24">
@@ -413,7 +502,9 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
         
         <h2 className="text-2xl font-black uppercase italic mb-6">Log Workout</h2>
         <p className="text-slate-400 text-sm mb-6">
-          {isMaxReps
+          {isAmrapWorkout
+            ? 'Log your AMRAP result - how many rounds did you complete?'
+            : isMaxReps
             ? 'Log your maximum reps achieved. Perfect for workouts completed on a separate device.'
             : isStreetLift 
             ? 'Log your 1 Rep Max weight result. Perfect for workouts completed on a separate device.'
@@ -421,7 +512,51 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
         </p>
 
         <div className="space-y-4 flex-1 overflow-y-auto">
-          {isMaxReps ? (
+          {isAmrapWorkout ? (
+            /* Rounds Input for AMRAP Workouts */
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Rounds Completed</label>
+                <div className="flex gap-2 items-center w-full">
+                  <input
+                    type="number"
+                    step="1"
+                    min="0"
+                    placeholder="0"
+                    value={amrapRoundsInput}
+                    onChange={(e) => setAmrapRoundsInput(e.target.value)}
+                    className="flex-1 min-w-0 bg-slate-950 border border-slate-800 rounded p-3 text-white text-2xl font-mono font-bold text-center outline-none focus:border-green-500"
+                  />
+                  <span className="bg-slate-950 border border-slate-800 rounded p-3 text-white text-lg font-bold shrink-0">
+                    rounds
+                  </span>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Extra Reps (Optional)</label>
+                <div className="flex gap-2 items-center w-full">
+                  <input
+                    type="number"
+                    step="1"
+                    min="0"
+                    placeholder="0"
+                    value={amrapPartialReps}
+                    onChange={(e) => setAmrapPartialReps(e.target.value)}
+                    className="flex-1 min-w-0 bg-slate-950 border border-slate-800 rounded p-3 text-white text-lg font-mono font-bold text-center outline-none"
+                  />
+                  <span className="bg-slate-950 border border-slate-800 rounded p-3 text-slate-400 text-sm font-bold shrink-0">
+                    + reps
+                  </span>
+                </div>
+                <p className="text-[10px] text-slate-500 mt-1">If you completed partial round, enter extra reps here</p>
+              </div>
+              {(amrapRoundsInput || amrapPartialReps) && (
+                <p className="text-sm text-green-500 font-bold mt-2 text-center">
+                  Score: {amrapRoundsInput || 0} rounds{amrapPartialReps ? ` + ${amrapPartialReps} reps` : ''}
+                </p>
+              )}
+            </div>
+          ) : isMaxReps ? (
             /* Reps Input for Max Reps Workouts */
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Maximum Reps Achieved</label>
@@ -581,7 +716,7 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
 
         <button 
           onClick={handleSubmitManualLog}
-          disabled={isSubmitting || !selectedVenueId || (isStreetLift ? !weightInput : isMaxReps ? !maxRepsInput : (!manualTimeMinutes && !manualTimeSeconds))}
+          disabled={isSubmitting || !selectedVenueId || (isAmrapWorkout ? !amrapRoundsInput : isStreetLift ? !weightInput : isMaxReps ? !maxRepsInput : (!manualTimeMinutes && !manualTimeSeconds))}
           className="mt-4 w-full py-4 bg-green-600 hover:bg-green-500 text-white font-black uppercase italic tracking-wider rounded-lg shadow-lg shadow-green-900/20 disabled:opacity-50 flex items-center justify-center gap-2"
         >
           <Save size={20} /> {isSubmitting ? 'Saving...' : 'Log Result'}
@@ -605,16 +740,24 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
                 <p className="text-orange-500 font-bold uppercase tracking-widest text-xs mb-1">Mission Briefing</p>
                 <h1 className="text-3xl font-black uppercase italic leading-tight">{workout.name}</h1>
                 <div className="flex flex-wrap gap-2 mt-3">
-                    <span className="bg-slate-900 text-white text-[10px] font-bold px-2 py-1 rounded border border-slate-800">{workout.scheme}</span>
+                    <span className={`text-[10px] font-bold px-2 py-1 rounded border ${isAMRAP ? 'bg-green-900/50 text-green-400 border-green-500/30' : 'bg-slate-900 text-white border-slate-800'}`}>{workout.scheme}</span>
                     {workout.time_cap_seconds && (
-                         <span className="bg-slate-900 text-slate-300 text-[10px] font-bold px-2 py-1 rounded border border-slate-800 flex items-center gap-1">
-                            <Timer size={10} /> {workout.time_cap_seconds / 60} MIN CAP
+                         <span className={`text-[10px] font-bold px-2 py-1 rounded border flex items-center gap-1 ${isAMRAP ? 'bg-green-900/30 text-green-400 border-green-500/30' : 'bg-slate-900 text-slate-300 border-slate-800'}`}>
+                            <Timer size={10} /> {Math.floor(workout.time_cap_seconds / 60)} MIN {isAMRAP ? 'AMRAP' : 'CAP'}
                          </span>
                     )}
-                     <span className="bg-slate-900 text-slate-300 text-[10px] font-bold px-2 py-1 rounded border border-slate-800">
-                         Rest: {workout.rest_type === 'none' ? 'None' : workout.rest_type === 'manual' ? 'Manual' : `${workout.rest_seconds}s`}
-                     </span>
+                    {!isAMRAP && (
+                      <span className="bg-slate-900 text-slate-300 text-[10px] font-bold px-2 py-1 rounded border border-slate-800">
+                          Rest: {workout.rest_type === 'none' ? 'None' : workout.rest_type === 'manual' ? 'Manual' : `${workout.rest_seconds}s`}
+                      </span>
+                    )}
                 </div>
+                {isAMRAP && (
+                  <div className="mt-3 bg-green-900/20 border border-green-500/30 rounded-lg p-3">
+                    <p className="text-green-400 text-xs font-bold uppercase mb-1">As Many Rounds As Possible</p>
+                    <p className="text-slate-300 text-xs">Complete as many rounds of the workout components as you can within the time limit. Track your rounds and any extra reps!</p>
+                  </div>
+                )}
                 <p className="text-slate-400 text-sm mt-4 leading-relaxed line-clamp-2">{workout.description}</p>
             </div>
 
@@ -756,9 +899,10 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
 
   // --- SCREEN 2: MISSION DEBRIEF (FINISH) ---
   if (showFinishScreen) {
-    // IMPORTANT: Check MAX_REPS first since scheme takes precedence over category
+    // IMPORTANT: Check specific schemes first since they take precedence
+    const isAmrapWorkout = workout.scheme === WorkoutScheme.AMRAP;
     const isMaxReps = workout.scheme === WorkoutScheme.MAX_REPS;
-    const isStreetLift = !isMaxReps && (workout.category === 'Street Lift' || workout.scheme === WorkoutScheme.ONE_RM);
+    const isStreetLift = !isMaxReps && !isAmrapWorkout && (workout.category === 'Street Lift' || workout.scheme === WorkoutScheme.ONE_RM);
     
     return (
       <div className="h-full flex flex-col p-6 pb-24 relative">
@@ -779,9 +923,60 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
            </div>
          )}
          
-         <h2 className="text-3xl font-black text-white italic uppercase mb-6 text-center">Mission Complete</h2>
+         <h2 className="text-3xl font-black text-white italic uppercase mb-6 text-center">
+           {isAmrapWorkout && amrapTimerFinished ? "Time's Up!" : "Mission Complete"}
+         </h2>
          
-         {isMaxReps ? (
+         {isAmrapWorkout ? (
+           // AMRAP - Show Rounds Input
+           <div className="bg-slate-900 p-6 rounded-xl border border-green-500/30 mb-6">
+             <div className="text-center mb-4">
+               <p className="text-slate-400 text-sm font-bold uppercase">Time Cap</p>
+               <p className="text-2xl font-mono text-green-500 font-bold">{formatTime(amrapTimeCapSeconds)}</p>
+             </div>
+             <div className="space-y-4">
+               <div>
+                 <label className="block text-slate-400 text-sm font-bold uppercase mb-3">Rounds Completed</label>
+                 <div className="flex gap-2 items-center w-full">
+                   <input
+                     type="number"
+                     step="1"
+                     min="0"
+                     placeholder="0"
+                     value={amrapRoundsInput}
+                     onChange={(e) => setAmrapRoundsInput(e.target.value)}
+                     className="flex-1 min-w-0 bg-slate-950 border border-slate-800 rounded p-4 text-white text-3xl font-mono font-bold text-center outline-none focus:border-green-500"
+                   />
+                   <span className="bg-slate-950 border border-slate-800 rounded p-4 text-white text-lg font-bold shrink-0">
+                     rounds
+                   </span>
+                 </div>
+               </div>
+               <div>
+                 <label className="block text-slate-400 text-xs font-bold uppercase mb-2">Extra Reps (Optional)</label>
+                 <div className="flex gap-2 items-center w-full">
+                   <input
+                     type="number"
+                     step="1"
+                     min="0"
+                     placeholder="0"
+                     value={amrapPartialReps}
+                     onChange={(e) => setAmrapPartialReps(e.target.value)}
+                     className="flex-1 min-w-0 bg-slate-950 border border-slate-800 rounded p-3 text-white text-lg font-mono font-bold text-center outline-none"
+                   />
+                   <span className="bg-slate-950 border border-slate-800 rounded p-3 text-slate-400 text-sm font-bold shrink-0">
+                     + reps
+                   </span>
+                 </div>
+               </div>
+             </div>
+             {(amrapRoundsInput || amrapPartialReps) && (
+               <p className="text-sm text-green-500 font-bold mt-4 text-center">
+                 Score: {amrapRoundsInput || 0} rounds{amrapPartialReps ? ` + ${amrapPartialReps} reps` : ''}
+               </p>
+             )}
+           </div>
+         ) : isMaxReps ? (
            // Max Reps - Show Reps Input
            <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 mb-6">
              <label className="block text-slate-400 text-sm font-bold uppercase mb-3">Maximum Reps Achieved</label>
@@ -887,7 +1082,7 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
            </button>
            <button 
              onClick={() => handleSubmit(undefined, isStreetLift ? weightInput : isMaxReps ? maxRepsInput : undefined)}
-             disabled={isSubmitting || (isStreetLift && !weightInput) || (isMaxReps && !maxRepsInput)}
+             disabled={isSubmitting || (isAmrapWorkout && !amrapRoundsInput) || (isStreetLift && !weightInput) || (isMaxReps && !maxRepsInput)}
              className="flex-1 py-4 bg-green-600 hover:bg-green-500 text-white font-black uppercase italic tracking-wider rounded-lg shadow-lg shadow-green-900/20 disabled:opacity-50 flex items-center justify-center gap-2"
            >
              <Save size={20} /> {isSubmitting ? 'Saving...' : 'Log Result'}
@@ -968,13 +1163,28 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
              </div>
          )}
 
+         {/* AMRAP Rounds Counter */}
+         {isAMRAP && (
+            <div className="mb-4 bg-green-900/30 border border-green-500/30 rounded-xl px-6 py-3 flex items-center gap-4">
+               <div className="text-center">
+                  <p className="text-green-400 text-[10px] font-bold uppercase tracking-wider">Rounds</p>
+                  <p className="text-4xl font-black text-green-500 font-mono">{amrapRoundsCompleted}</p>
+               </div>
+               <div className="h-10 w-px bg-green-500/30"></div>
+               <div className="text-center flex-1">
+                  <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Movement</p>
+                  <p className="text-slate-300 text-sm font-bold">{activeComponentIndex + 1} / {workout.components.length}</p>
+               </div>
+            </div>
+         )}
+
          <div className="mb-8 w-full flex flex-col items-center">
             <p className="text-slate-500 font-bold uppercase text-sm tracking-wider mb-2">Current Movement</p>
             <h1 className="text-4xl font-black text-white uppercase italic leading-tight mb-2">
-                {activeComponentIndex + 1}. {exerciseDetail?.name || 'Exercise'}
+                {isAMRAP ? (activeComponentIndex + 1) : (activeComponentIndex + 1)}. {exerciseDetail?.name || 'Exercise'}
             </h1>
-            <p className="text-2xl text-orange-500 font-bold">{currentComponent.target}</p>
-            {currentComponent.weight && (
+            <p className="text-2xl text-orange-500 font-bold">{currentComponent?.target}</p>
+            {currentComponent?.weight && (
                 <p className="text-lg text-orange-400 font-bold mt-1 bg-orange-900/20 inline-block px-3 py-1 rounded border border-orange-500/30">
                     @ {currentComponent.weight}
                 </p>
@@ -993,11 +1203,18 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
             )}
          </div>
 
-         <div className="bg-slate-900/50 border border-slate-800 rounded-full w-64 h-64 flex items-center justify-center mb-8 relative">
-             {isPlaying && <div className="absolute inset-0 rounded-full border-4 border-orange-500/20 animate-ping"></div>}
-             <div className="text-6xl font-mono font-bold text-white tabular-nums">
-                {formatTime(elapsedSeconds)}
+         {/* Timer Display */}
+         <div className={`bg-slate-900/50 border rounded-full w-64 h-64 flex flex-col items-center justify-center mb-8 relative ${isAMRAP ? 'border-green-500/30' : 'border-slate-800'}`}>
+             {isPlaying && <div className={`absolute inset-0 rounded-full border-4 animate-ping ${isAMRAP ? 'border-green-500/20' : 'border-orange-500/20'}`}></div>}
+             {isAMRAP && (
+               <p className="text-green-400 text-xs font-bold uppercase tracking-wider mb-1">Time Remaining</p>
+             )}
+             <div className={`text-6xl font-mono font-bold tabular-nums ${isAMRAP ? 'text-green-500' : 'text-white'}`}>
+                {isAMRAP ? formatTime(Math.max(0, amrapTimeCapSeconds - elapsedSeconds)) : formatTime(elapsedSeconds)}
              </div>
+             {isAMRAP && elapsedSeconds >= amrapTimeCapSeconds - 10 && elapsedSeconds < amrapTimeCapSeconds && (
+               <p className="text-red-500 text-xs font-bold uppercase mt-2 animate-pulse">Final countdown!</p>
+             )}
          </div>
       </div>
 
@@ -1011,18 +1228,59 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
                 {isPlaying ? <><Pause size={24} /> Pause</> : <><Play size={24} /> Start</>}
             </button>
             
-            <button 
-                onClick={handleNext}
-                className="flex-1 py-4 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-black uppercase italic tracking-wider flex items-center justify-center gap-2"
-            >
-                {activeComponentIndex === expandedComponents.length - 1 ? 'Finish' : 'Next Set'} <ChevronRightIcon size={24} />
-            </button>
+            {isAMRAP ? (
+              // AMRAP: Show different button depending on position in round
+              <button 
+                  onClick={handleNext}
+                  className={`flex-1 py-4 rounded-xl font-black uppercase italic tracking-wider flex items-center justify-center gap-2 ${
+                    activeComponentIndex === workout.components.length - 1 
+                      ? 'bg-green-600 hover:bg-green-500 text-white' 
+                      : 'bg-slate-800 hover:bg-slate-700 text-white'
+                  }`}
+              >
+                  {activeComponentIndex === workout.components.length - 1 ? (
+                    <>Round Done! <CheckCircle size={20} /></>
+                  ) : (
+                    <>Next <ChevronRightIcon size={24} /></>
+                  )}
+              </button>
+            ) : (
+              // Regular: Normal Next Set / Finish button
+              <button 
+                  onClick={handleNext}
+                  className="flex-1 py-4 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-black uppercase italic tracking-wider flex items-center justify-center gap-2"
+              >
+                  {activeComponentIndex === expandedComponents.length - 1 ? 'Finish' : 'Next Set'} <ChevronRightIcon size={24} />
+              </button>
+            )}
          </div>
          
          <div className="mt-4 flex justify-between text-xs text-slate-500 font-bold uppercase">
-            <span>Progress: {activeComponentIndex + 1} / {expandedComponents.length}{totalRounds > 1 ? ` (Round ${currentRound}/${totalRounds})` : ''}</span>
-            <span>Next: {expandedComponents[activeComponentIndex + 1] ? findExercise(expandedComponents[activeComponentIndex + 1].exercise_id)?.name : 'Finish'}</span>
+            {isAMRAP ? (
+              <>
+                <span>Movement: {activeComponentIndex + 1} / {workout.components.length}</span>
+                <span>Next: {workout.components[activeComponentIndex + 1] ? findExercise(workout.components[activeComponentIndex + 1].exercise_id)?.name : 'Complete Round'}</span>
+              </>
+            ) : (
+              <>
+                <span>Progress: {activeComponentIndex + 1} / {expandedComponents.length}{totalRounds > 1 ? ` (Round ${currentRound}/${totalRounds})` : ''}</span>
+                <span>Next: {expandedComponents[activeComponentIndex + 1] ? findExercise(expandedComponents[activeComponentIndex + 1].exercise_id)?.name : 'Finish'}</span>
+              </>
+            )}
          </div>
+         
+         {/* AMRAP: Finish Early Option */}
+         {isAMRAP && elapsedSeconds > 0 && (
+           <button 
+               onClick={() => {
+                 setAmrapRoundsInput(amrapRoundsCompleted.toString());
+                 finishWorkout();
+               }}
+               className="mt-3 w-full py-2 bg-slate-800/50 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg text-xs font-bold uppercase tracking-wider border border-slate-700/50 flex items-center justify-center gap-2"
+           >
+               <Square size={14} /> End AMRAP Early
+           </button>
+         )}
       </div>
     </div>
   );
