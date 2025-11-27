@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Exercise, Workout, User, GroupType, AthleteType, WorkoutComponent, ScalingTier, WorkoutScheme, Venue, UserCategory, CollaborativeWorkout, CollaborationStatus } from '../types';
 import { DataService } from '../services/dataService';
 import { MOCK_EXERCISES } from '../constants';
-import { Plus, Trash2, Dumbbell, LayoutList, Users, Edit, Shield, Save, X, Lock, ChevronRight, ArrowLeft, Timer, Settings, MapPin, Star, Calendar, Pin, Baby, UsersRound, Loader2, Search, MessageSquare } from 'lucide-react';
+import { Plus, Trash2, Dumbbell, LayoutList, Users, Edit, Shield, Save, X, Lock, ChevronRight, ArrowLeft, Timer, Settings, MapPin, Star, Calendar, Pin, Baby, UsersRound, Loader2, Search, MessageSquare, RefreshCcw } from 'lucide-react';
 import CollaborativeWorkoutBuilder from './CollaborativeWorkoutBuilder';
 
 interface AdminDashboardProps {
@@ -39,6 +39,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
   const [collabInviteSearch, setCollabInviteSearch] = useState('');
   const [collabSelectedUsers, setCollabSelectedUsers] = useState<Set<string>>(new Set());
   const [isLoadingCollabs, setIsLoadingCollabs] = useState(false);
+
+  // Sync Workouts State
+  const [isSyncingWorkouts, setIsSyncingWorkouts] = useState(false);
 
   // Pin WOD State
   const [pinningWorkoutId, setPinningWorkoutId] = useState<string | null>(null);
@@ -187,6 +190,24 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
           setWorkouts(allWorkouts);
       } catch (error) {
           console.error('Error loading workouts:', error);
+      }
+  };
+
+  const handleSyncWorkouts = async () => {
+      setIsSyncingWorkouts(true);
+      try {
+          const result = await DataService.syncNewWorkouts();
+          if (result.added > 0) {
+              alert(`✅ Synced ${result.added} new workout(s) to the library!`);
+              await loadWorkouts(); // Reload workouts to show the new ones
+          } else {
+              alert(`All ${result.existing} workouts are already synced.`);
+          }
+      } catch (error) {
+          console.error('Error syncing workouts:', error);
+          alert('Failed to sync workouts. Check console for details.');
+      } finally {
+          setIsSyncingWorkouts(false);
       }
   };
 
@@ -908,12 +929,25 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
             <div className="p-4">
                 {!isCreatingWorkout ? (
                     <div className="space-y-4">
-                        <button 
-                            onClick={() => { setIsCreatingWorkout(true); setEditingWorkoutId(null); }}
-                            className="w-full py-3 bg-orange-600 hover:bg-orange-500 text-white font-black uppercase italic tracking-wider rounded-lg shadow-lg shadow-orange-900/20 flex items-center justify-center gap-2"
-                        >
-                            <Plus size={20} /> Build New Workout
-                        </button>
+                        <div className="flex gap-2">
+                            <button 
+                                onClick={() => { setIsCreatingWorkout(true); setEditingWorkoutId(null); }}
+                                className="flex-1 py-3 bg-orange-600 hover:bg-orange-500 text-white font-black uppercase italic tracking-wider rounded-lg shadow-lg shadow-orange-900/20 flex items-center justify-center gap-2"
+                            >
+                                <Plus size={20} /> Build New Workout
+                            </button>
+                            <button 
+                                onClick={handleSyncWorkouts}
+                                disabled={isSyncingWorkouts}
+                                className="py-3 px-4 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-bold rounded-lg flex items-center justify-center gap-2"
+                                title="Sync new workouts from library"
+                            >
+                                {isSyncingWorkouts ? <Loader2 size={20} className="animate-spin" /> : <RefreshCcw size={20} />}
+                            </button>
+                        </div>
+                        <p className="text-xs text-slate-500 text-center">
+                            Tap <RefreshCcw size={12} className="inline" /> to sync new Hyrox/Deadly Dozen workouts
+                        </p>
 
                         <div className="space-y-3">
                             {workouts.length === 0 ? (

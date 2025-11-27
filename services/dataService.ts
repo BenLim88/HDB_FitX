@@ -576,6 +576,35 @@ export const DataService = {
       return workoutsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Workout));
   },
 
+  // Sync new workouts from MOCK_WORKOUTS that don't exist in Firestore
+  syncNewWorkouts: async (): Promise<{ added: number; existing: number }> => {
+      try {
+          const workoutsSnapshot = await getDocs(collection(db, COLLECTIONS.WORKOUTS));
+          const existingIds = new Set(workoutsSnapshot.docs.map(doc => doc.id));
+          
+          const batch = writeBatch(db);
+          let addedCount = 0;
+          
+          for (const workout of MOCK_WORKOUTS) {
+              if (!existingIds.has(workout.id)) {
+                  const workoutRef = doc(db, COLLECTIONS.WORKOUTS, workout.id);
+                  batch.set(workoutRef, { ...workout, is_kids_friendly: workout.is_kids_friendly || false });
+                  addedCount++;
+              }
+          }
+          
+          if (addedCount > 0) {
+              await batch.commit();
+          }
+          
+          console.log(`Synced workouts: ${addedCount} added, ${existingIds.size} already existed`);
+          return { added: addedCount, existing: existingIds.size };
+      } catch (error) {
+          console.error('Error syncing workouts:', error);
+          throw error;
+      }
+  },
+
   getLogs: async (): Promise<Log[]> => {
       const logsSnapshot = await getDocs(
           query(collection(db, COLLECTIONS.LOGS), orderBy('timestamp', 'desc'))
