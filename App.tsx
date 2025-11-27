@@ -33,16 +33,19 @@ const HomeTab: React.FC<{
   onAssignWorkout: (targetUserId: string, workoutId: string, workoutName: string) => Promise<void>,
   allUsers: User[],
   collabWorkouts?: CollaborativeWorkout[],
-  onOpenCollab?: (collab: CollaborativeWorkout) => void
-}> = ({ user, workouts, logs, pinnedWods, onStartWorkout, onStartDIY, onJoinPinned, onUnjoinPinned, onUnpinWOD, onAssignWorkout, allUsers, collabWorkouts = [], onOpenCollab }) => {
-    const [aiTip, setAiTip] = useState<string>('');
-    const [loadingTip, setLoadingTip] = useState(false);
+  onOpenCollab?: (collab: CollaborativeWorkout) => void,
+  // AI State (lifted to parent to persist across tab navigation)
+  aiTip: string,
+  setAiTip: (tip: string) => void,
+  loadingTip: boolean,
+  setLoadingTip: (loading: boolean) => void,
+  suggestedWorkout: { id: string; name: string; target: string; weight?: string; sets: number }[] | null,
+  setSuggestedWorkout: (workout: { id: string; name: string; target: string; weight?: string; sets: number }[] | null) => void,
+  isGeneratingWorkout: boolean,
+  setIsGeneratingWorkout: (generating: boolean) => void
+}> = ({ user, workouts, logs, pinnedWods, onStartWorkout, onStartDIY, onJoinPinned, onUnjoinPinned, onUnpinWOD, onAssignWorkout, allUsers, collabWorkouts = [], onOpenCollab, aiTip, setAiTip, loadingTip, setLoadingTip, suggestedWorkout, setSuggestedWorkout, isGeneratingWorkout, setIsGeneratingWorkout }) => {
     const [showParticipants, setShowParticipants] = useState<string | null>(null); // ID of WOD to show list for
     const [workoutCategoryFilter, setWorkoutCategoryFilter] = useState<string>('All');
-    
-    // AI Suggested Workout State
-    const [suggestedWorkout, setSuggestedWorkout] = useState<{ id: string; name: string; target: string; weight?: string; sets: number }[] | null>(null);
-    const [isGeneratingWorkout, setIsGeneratingWorkout] = useState(false);
     
     // Assign Modal State
     const [assigningWorkoutId, setAssigningWorkoutId] = useState<string | null>(null);
@@ -1314,6 +1317,12 @@ const App: React.FC = () => {
   const [pinnedWods, setPinnedWods] = useState<PinnedWOD[]>([]); // New Pinned WOD State
   const [pendingCollabId, setPendingCollabId] = useState<string | null>(null); // For navigating to specific collab
   const [customExercises, setCustomExercises] = useState<Exercise[]>([]); // Custom exercises from Firestore
+  
+  // AI Coach State (lifted from HomeTab to persist across tab navigation)
+  const [aiTip, setAiTip] = useState<string>('');
+  const [loadingTip, setLoadingTip] = useState(false);
+  const [suggestedWorkout, setSuggestedWorkout] = useState<{ id: string; name: string; target: string; weight?: string; sets: number }[] | null>(null);
+  const [isGeneratingWorkout, setIsGeneratingWorkout] = useState(false);
   const [userCollabs, setUserCollabs] = useState<CollaborativeWorkout[]>([]); // User's collaborations
   const [activeCollab, setActiveCollab] = useState<CollaborativeWorkout | null>(null); // For viewing collaboration directly
 
@@ -1805,6 +1814,15 @@ const App: React.FC = () => {
                         setActiveCollab(collab);
                         setActiveTab('collab');
                     }}
+                    // AI State (persisted across tab navigation)
+                    aiTip={aiTip}
+                    setAiTip={setAiTip}
+                    loadingTip={loadingTip}
+                    setLoadingTip={setLoadingTip}
+                    suggestedWorkout={suggestedWorkout}
+                    setSuggestedWorkout={setSuggestedWorkout}
+                    isGeneratingWorkout={isGeneratingWorkout}
+                    setIsGeneratingWorkout={setIsGeneratingWorkout}
                 />
             )}
             
