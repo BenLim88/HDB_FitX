@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Exercise, Workout, User, GroupType, AthleteType, WorkoutComponent, ScalingTier, WorkoutScheme, Venue, UserCategory, CollaborativeWorkout, CollaborationStatus } from '../types';
+import { Exercise, Workout, User, GroupType, AthleteType, WorkoutComponent, ScalingTier, WorkoutScheme, Venue, UserCategory, CollaborativeWorkout, CollaborationStatus, PinnedWOD } from '../types';
 import { DataService } from '../services/dataService';
 import { MOCK_EXERCISES } from '../constants';
 import { Plus, Trash2, Dumbbell, LayoutList, Users, Edit, Shield, Save, X, Lock, ChevronRight, ChevronUp, ChevronDown, ArrowLeft, Timer, Settings, MapPin, Star, Calendar, Pin, Baby, UsersRound, Loader2, Search, MessageSquare, RefreshCcw, GripVertical } from 'lucide-react';
@@ -66,6 +66,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
   const [deadlineTime, setDeadlineTime] = useState('');
   const [inviteFilter, setInviteFilter] = useState<'all' | 'adults' | 'kids' | string>('all'); // 'all', 'adults', 'kids', or athlete_type
   const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
+  const [pinnedWods, setPinnedWods] = useState<PinnedWOD[]>([]);
 
   // Exercise Form State
   const [newExerciseName, setNewExerciseName] = useState('');
@@ -141,22 +142,33 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       }
   }, [activeTab, currentUser?.id]); // Only depend on currentUser.id, not the whole object
 
-  // Load exercises on component mount
+  // Load exercises and pinned WODs on component mount
   useEffect(() => {
       loadExercises();
+      loadPinnedWods();
   }, []);
 
-  // Poll workouts for real-time sync of Featured/Pinned status across admins
+  // Poll workouts and pinnedWods for real-time sync of Featured/Pinned status across admins
   useEffect(() => {
       if (activeTab !== 'workouts') return;
       
-      // Refresh workouts every 10 seconds to sync Featured/Pinned changes from other admins
+      // Refresh workouts and pinnedWods every 10 seconds to sync Featured/Pinned changes from other admins
       const interval = setInterval(() => {
           loadWorkouts();
+          loadPinnedWods();
       }, 10000);
 
       return () => clearInterval(interval);
   }, [activeTab]);
+  
+  const loadPinnedWods = async () => {
+      try {
+          const pws = await DataService.getPinnedWODs();
+          setPinnedWods(pws);
+      } catch (error) {
+          console.error('Error loading pinned WODs:', error);
+      }
+  };
 
   // Handle pending collaboration navigation from inbox
   useEffect(() => {
@@ -691,6 +703,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
 
   // --- PIN WOD HANDLERS ---
   const handleStartPinning = async (workoutId: string) => {
+      // Check if this workout is already pinned (and not expired)
+      const existingPin = pinnedWods.find(pw => 
+          pw.workout_id === workoutId && new Date(pw.deadline) > new Date()
+      );
+      if (existingPin) {
+          alert('This workout is already pinned. Please unpin it first or wait for the deadline to pass.');
+          return;
+      }
+      
       setPinningWorkoutId(workoutId);
       // Set default dates (today and tomorrow)
       const now = new Date();
@@ -789,6 +810,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
           setPinningWorkoutId(null);
           setSelectedUserIds(new Set());
           setInviteFilter('all');
+          // Refresh pinned WODs to sync across all admins
+          await loadPinnedWods();
       } catch (error) {
           console.error('Error pinning workout:', error);
           alert(`Failed to pin workout: ${error instanceof Error ? error.message : 'Unknown error'}. Check browser console for details.`);
@@ -1352,10 +1375,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                                                 {!isCollapsed && (
                                                     <div className="p-2 space-y-2 bg-slate-950/50">
                                                         {categoryWorkouts.map(w => (
-                                                            <div key={w.id} className={`bg-slate-900 border p-3 rounded-lg relative transition-colors ${w.is_featured ? 'border-yellow-500/40 shadow-lg shadow-yellow-500/5' : 'border-slate-800'}`}>
+                                                            <div key={w.id} className={`bg-slate-900 border p-3 rounded-lg relative transition-colors ${w.is_featured ? 'border-yellow-500/40 shadow-lg shadow-yellow-500/5' : pinnedWods.some(pw => pw.workout_id === w.id && new Date(pw.deadline) > new Date()) ? 'border-blue-500/40 shadow-lg shadow-blue-500/5' : 'border-slate-800'}`}>
                                                                 {w.is_featured && (
                                                                     <div className="absolute -top-2 -left-2 bg-yellow-500 text-black text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
                                                                         <Star size={10} fill="black" /> Featured
+                                                                    </div>
+                                                                )}
+                                                                {pinnedWods.some(pw => pw.workout_id === w.id && new Date(pw.deadline) > new Date()) && !w.is_featured && (
+                                                                    <div className="absolute -top-2 -left-2 bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
+                                                                        <Pin size={10} fill="white" /> Pinned
+                                                                    </div>
+                                                                )}
+                                                                {w.is_featured && pinnedWods.some(pw => pw.workout_id === w.id && new Date(pw.deadline) > new Date()) && (
+                                                                    <div className="absolute -top-2 right-2 bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
+                                                                        <Pin size={10} fill="white" /> Pinned
                                                                     </div>
                                                                 )}
                                                                 <div className="flex justify-between items-start">
@@ -1379,13 +1412,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                                                                         >
                                                                             <Star size={16} fill={w.is_featured ? 'currentColor' : 'none'} />
                                                                         </button>
-                                                                        <button 
-                                                                            onClick={() => handleStartPinning(w.id)}
-                                                                            className="p-1.5 text-slate-600 hover:text-blue-400 hover:bg-slate-800 rounded transition-colors"
-                                                                            title="Pin WOD"
-                                                                        >
-                                                                            <Pin size={16} />
-                                                                        </button>
+                                                                        {(() => {
+                                                                            const isPinned = pinnedWods.some(pw => pw.workout_id === w.id && new Date(pw.deadline) > new Date());
+                                                                            return (
+                                                                                <button 
+                                                                                    onClick={() => handleStartPinning(w.id)}
+                                                                                    className={`p-1.5 hover:bg-slate-800 rounded transition-colors ${isPinned ? 'text-blue-500' : 'text-slate-600 hover:text-blue-400'}`}
+                                                                                    title={isPinned ? "Already Pinned" : "Pin WOD"}
+                                                                                >
+                                                                                    <Pin size={16} fill={isPinned ? 'currentColor' : 'none'} />
+                                                                                </button>
+                                                                            );
+                                                                        })()}
                                                                         <button 
                                                                             onClick={() => startEditingWorkout(w)}
                                                                             className="p-1.5 text-slate-600 hover:text-orange-500 hover:bg-slate-800 rounded transition-colors"
