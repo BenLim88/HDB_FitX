@@ -67,7 +67,8 @@ const CollaborativeWorkoutBuilder: React.FC<CollaborativeWorkoutBuilderProps> = 
   const [showSuggestionForm, setShowSuggestionForm] = useState(false);
   const [suggestionType, setSuggestionType] = useState<SuggestionType>(SuggestionType.ADD_EXERCISE);
   const [selectedExerciseId, setSelectedExerciseId] = useState('');
-  const [exerciseTarget, setExerciseTarget] = useState('');
+  const [exerciseTargetValue, setExerciseTargetValue] = useState('');
+  const [exerciseTargetUnit, setExerciseTargetUnit] = useState('reps');
   const [exerciseWeight, setExerciseWeight] = useState('');
   const [exerciseSets, setExerciseSets] = useState('1');
   const [suggestionReason, setSuggestionReason] = useState('');
@@ -86,6 +87,9 @@ const CollaborativeWorkoutBuilder: React.FC<CollaborativeWorkoutBuilderProps> = 
   // Drag Reorder State (for initiator only)
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+  
+  // Rounds Editor (for initiator)
+  const [localRounds, setLocalRounds] = useState(collabWorkout.rounds || 1);
   
   // Refs
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -110,6 +114,11 @@ const CollaborativeWorkoutBuilder: React.FC<CollaborativeWorkoutBuilderProps> = 
       chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages, activeTab]);
+
+  // Sync localRounds with collabWorkout.rounds
+  useEffect(() => {
+    setLocalRounds(collabWorkout.rounds || 1);
+  }, [collabWorkout.rounds]);
 
   const loadData = async () => {
     try {
@@ -165,7 +174,7 @@ const CollaborativeWorkoutBuilder: React.FC<CollaborativeWorkoutBuilderProps> = 
         suggestion.proposed_component = {
           exercise_id: isNewExercise ? '' : selectedExerciseId,
           exercise_name: isNewExercise ? newExerciseName : (exercises.find(e => e.id === selectedExerciseId)?.name || ''),
-          target: exerciseTarget,
+          target: `${exerciseTargetValue} ${exerciseTargetUnit}`,
           weight: exerciseWeight || undefined,
           sets: exerciseSets ? parseInt(exerciseSets) : undefined
         };
@@ -184,7 +193,7 @@ const CollaborativeWorkoutBuilder: React.FC<CollaborativeWorkoutBuilderProps> = 
         suggestion.proposed_component = {
           exercise_id: selectedExerciseId,
           exercise_name: exercises.find(e => e.id === selectedExerciseId)?.name || '',
-          target: exerciseTarget,
+          target: `${exerciseTargetValue} ${exerciseTargetUnit}`,
           weight: exerciseWeight || undefined,
           sets: exerciseSets ? parseInt(exerciseSets) : undefined
         };
@@ -290,11 +299,27 @@ const CollaborativeWorkoutBuilder: React.FC<CollaborativeWorkoutBuilderProps> = 
     }
   };
 
+  // Handle rounds update
+  const handleRoundsChange = async (newRounds: number) => {
+    if (!isInitiator || !isActive) return;
+    const clampedRounds = Math.max(1, Math.min(99, newRounds));
+    setLocalRounds(clampedRounds);
+    
+    try {
+      await DataService.updateCollaborativeWorkout(collabWorkout.id, {
+        rounds: clampedRounds
+      });
+    } catch (error) {
+      console.error('Error updating rounds:', error);
+    }
+  };
+
   const resetSuggestionForm = () => {
     setShowSuggestionForm(false);
     setSuggestionType(SuggestionType.ADD_EXERCISE);
     setSelectedExerciseId('');
-    setExerciseTarget('');
+    setExerciseTargetValue('');
+    setExerciseTargetUnit('reps');
     setExerciseWeight('');
     setExerciseSets('1');
     setSuggestionReason('');
@@ -480,11 +505,36 @@ const CollaborativeWorkoutBuilder: React.FC<CollaborativeWorkoutBuilderProps> = 
             {/* Workout Info */}
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 mb-4">
               <p className="text-slate-400 text-sm mb-2">{collabWorkout.description || 'No description'}</p>
-              <div className="flex flex-wrap gap-2 text-[10px] font-bold uppercase">
+              <div className="flex flex-wrap gap-2 text-[10px] font-bold uppercase items-center">
                 <span className="bg-slate-800 text-slate-300 px-2 py-1 rounded">{collabWorkout.scheme}</span>
-                <span className="bg-slate-800 text-slate-300 px-2 py-1 rounded">{collabWorkout.rounds || 1} Round(s)</span>
                 <span className="bg-slate-800 text-slate-300 px-2 py-1 rounded">{collabWorkout.category}</span>
+                
+                {/* Rounds Editor */}
+                {isInitiator && isActive ? (
+                  <div className="flex items-center gap-1 bg-orange-500/20 border border-orange-500/40 text-orange-400 px-2 py-1 rounded">
+                    <button 
+                      onClick={() => handleRoundsChange(localRounds - 1)}
+                      className="w-5 h-5 flex items-center justify-center bg-orange-500/30 hover:bg-orange-500/50 rounded text-xs font-bold"
+                      disabled={localRounds <= 1}
+                    >
+                      −
+                    </button>
+                    <span className="min-w-[40px] text-center">{localRounds} Round{localRounds !== 1 ? 's' : ''}</span>
+                    <button 
+                      onClick={() => handleRoundsChange(localRounds + 1)}
+                      className="w-5 h-5 flex items-center justify-center bg-orange-500/30 hover:bg-orange-500/50 rounded text-xs font-bold"
+                      disabled={localRounds >= 99}
+                    >
+                      +
+                    </button>
+                  </div>
+                ) : (
+                  <span className="bg-slate-800 text-slate-300 px-2 py-1 rounded">{collabWorkout.rounds || 1} Round(s)</span>
+                )}
               </div>
+              {isInitiator && isActive && (
+                <p className="text-[10px] text-slate-500 mt-2">💡 Adjust rounds to repeat all exercises X times</p>
+              )}
             </div>
 
             {/* Current Components */}
@@ -876,13 +926,28 @@ const CollaborativeWorkoutBuilder: React.FC<CollaborativeWorkoutBuilderProps> = 
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Target</label>
-                    <input
-                      type="text"
-                      value={exerciseTarget}
-                      onChange={(e) => setExerciseTarget(e.target.value)}
-                      placeholder="e.g., 20 reps, 400m, 1 min"
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-white text-sm outline-none"
-                    />
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        value={exerciseTargetValue}
+                        onChange={(e) => setExerciseTargetValue(e.target.value)}
+                        placeholder="e.g., 20"
+                        min="0"
+                        className="flex-1 bg-slate-950 border border-slate-800 rounded-lg p-3 text-white text-sm outline-none"
+                      />
+                      <select
+                        value={exerciseTargetUnit}
+                        onChange={(e) => setExerciseTargetUnit(e.target.value)}
+                        className="bg-slate-950 border border-slate-800 rounded-lg p-3 text-white text-sm outline-none min-w-[100px]"
+                      >
+                        <option value="reps">reps</option>
+                        <option value="mins">mins</option>
+                        <option value="secs">secs</option>
+                        <option value="m">meters</option>
+                        <option value="km">km</option>
+                        <option value="cals">cals</option>
+                      </select>
+                    </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
@@ -953,13 +1018,28 @@ const CollaborativeWorkoutBuilder: React.FC<CollaborativeWorkoutBuilderProps> = 
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Target</label>
-                    <input
-                      type="text"
-                      value={exerciseTarget}
-                      onChange={(e) => setExerciseTarget(e.target.value)}
-                      placeholder="e.g., 10 reps"
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-white text-sm outline-none"
-                    />
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        value={exerciseTargetValue}
+                        onChange={(e) => setExerciseTargetValue(e.target.value)}
+                        placeholder="e.g., 10"
+                        min="0"
+                        className="flex-1 bg-slate-950 border border-slate-800 rounded-lg p-3 text-white text-sm outline-none"
+                      />
+                      <select
+                        value={exerciseTargetUnit}
+                        onChange={(e) => setExerciseTargetUnit(e.target.value)}
+                        className="bg-slate-950 border border-slate-800 rounded-lg p-3 text-white text-sm outline-none min-w-[100px]"
+                      >
+                        <option value="reps">reps</option>
+                        <option value="mins">mins</option>
+                        <option value="secs">secs</option>
+                        <option value="m">meters</option>
+                        <option value="km">km</option>
+                        <option value="cals">cals</option>
+                      </select>
+                    </div>
                   </div>
                 </>
               )}
@@ -982,9 +1062,9 @@ const CollaborativeWorkoutBuilder: React.FC<CollaborativeWorkoutBuilderProps> = 
               <button
                 onClick={handleSubmitSuggestion}
                 disabled={
-                  (suggestionType === SuggestionType.ADD_EXERCISE && (!selectedExerciseId || !exerciseTarget)) ||
+                  (suggestionType === SuggestionType.ADD_EXERCISE && (!selectedExerciseId || !exerciseTargetValue)) ||
                   (suggestionType === SuggestionType.REMOVE_EXERCISE && !targetComponentOrder) ||
-                  (isNewExercise && (!newExerciseName || !exerciseTarget))
+                  (isNewExercise && (!newExerciseName || !exerciseTargetValue))
                 }
                 className="w-full py-3 bg-orange-600 hover:bg-orange-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold uppercase rounded-xl"
               >
