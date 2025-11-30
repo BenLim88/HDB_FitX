@@ -413,7 +413,7 @@ Maintain a professional tone throughout. Avoid slang or casual language. Be anal
 
                         <div className="flex-1 overflow-y-auto space-y-2 pr-2 mb-4">
                             {allUsers
-                                .filter(u => u.id !== user.id && u.name.toLowerCase().includes(assignSearchTerm.toLowerCase()))
+                                .filter(u => u.id !== user.id && !u.is_master_admin && u.name.toLowerCase().includes(assignSearchTerm.toLowerCase()))
                                 .map(u => {
                                     const isSelected = selectedAthleteIds.has(u.id);
                                     return (
@@ -453,7 +453,7 @@ Maintain a professional tone throughout. Avoid slang or casual language. Be anal
                                         </button>
                                     );
                                 })}
-                            {allUsers.filter(u => u.id !== user.id && u.name.toLowerCase().includes(assignSearchTerm.toLowerCase())).length === 0 && (
+                            {allUsers.filter(u => u.id !== user.id && !u.is_master_admin && u.name.toLowerCase().includes(assignSearchTerm.toLowerCase())).length === 0 && (
                                 <div className="text-center py-8 text-slate-500 italic text-sm">
                                     No athletes found.
                                 </div>
