@@ -1907,6 +1907,7 @@ const App: React.FC = () => {
                     currentUser={currentUser}
                     pendingCollabId={pendingCollabId}
                     onClearPendingCollab={() => setPendingCollabId(null)}
+                    allUsers={allUsers}
                 />
             )}
 

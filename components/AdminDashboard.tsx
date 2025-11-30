@@ -14,9 +14,10 @@ interface AdminDashboardProps {
   currentUser: User;
   pendingCollabId?: string | null; // For navigating directly to a collaboration
   onClearPendingCollab?: () => void;
+  allUsers?: User[]; // All users from App.tsx for consistent user lists
 }
 
-const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpdateWorkouts, initialVenues, onUpdateVenues, currentUser, pendingCollabId, onClearPendingCollab }) => {
+const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpdateWorkouts, initialVenues, onUpdateVenues, currentUser, pendingCollabId, onClearPendingCollab, allUsers: propAllUsers }) => {
   // Data States
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [workouts, setWorkouts] = useState<Workout[]>(initialWorkouts);
@@ -702,6 +703,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
   };
 
   // --- PIN WOD HANDLERS ---
+  // Get users for pin modal - prefer propAllUsers from App.tsx, fallback to local users state
+  const usersForPinModal = propAllUsers && propAllUsers.length > 0 ? propAllUsers : users;
+
   const handleStartPinning = async (workoutId: string) => {
       // Check if this workout is already pinned (and not expired)
       const existingPin = pinnedWods.find(pw => 
@@ -712,8 +716,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
           return;
       }
       
-      // Always reload users first to get the latest list before opening modal
-      await loadUsers();
+      // Load local users as fallback if propAllUsers not available
+      if (!propAllUsers || propAllUsers.length === 0) {
+          await loadUsers();
+      }
       
       // Set default dates (today and tomorrow)
       const now = new Date();
@@ -729,7 +735,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       setInviteFilter('all');
       setSelectedUserIds(new Set());
       
-      // Open the modal after users are loaded
+      // Open the modal
       setPinningWorkoutId(workoutId);
   };
 
@@ -765,23 +771,23 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
               invited_user_ids: Array.from(selectedUserIds)
           });
 
-      // Determine which users to invite
+      // Determine which users to invite - use usersForPinModal for consistent list
       let usersToInvite: User[] = [];
       
       if (inviteFilter === 'all') {
-          usersToInvite = users.filter(u => !u.is_admin); // Exclude admins
+          usersToInvite = usersForPinModal.filter(u => !u.is_admin); // Exclude admins
       } else if (inviteFilter === 'adults') {
-          usersToInvite = users.filter(u => !u.is_admin && u.category === UserCategory.ADULT);
+          usersToInvite = usersForPinModal.filter(u => !u.is_admin && u.category === UserCategory.ADULT);
       } else if (inviteFilter === 'kids') {
-          usersToInvite = users.filter(u => !u.is_admin && u.category === UserCategory.KID);
+          usersToInvite = usersForPinModal.filter(u => !u.is_admin && u.category === UserCategory.KID);
       } else {
           // Filter by athlete type
-          usersToInvite = users.filter(u => !u.is_admin && u.athlete_type === inviteFilter);
+          usersToInvite = usersForPinModal.filter(u => !u.is_admin && u.athlete_type === inviteFilter);
       }
 
       // If specific users are selected, use those instead
       if (selectedUserIds.size > 0) {
-          usersToInvite = users.filter(u => selectedUserIds.has(u.id));
+          usersToInvite = usersForPinModal.filter(u => selectedUserIds.has(u.id));
       }
 
           // Send notifications to selected users
@@ -1453,8 +1459,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
 
                         {/* PIN WOD MODAL */}
                         {pinningWorkoutId && (() => {
-                            // Filter users based on inviteFilter
-                            let filteredUsers = users.filter(u => !u.is_admin);
+                            // Filter users based on inviteFilter - use usersForPinModal for consistent list
+                            let filteredUsers = usersForPinModal.filter(u => !u.is_admin);
                             
                             if (inviteFilter === 'adults') {
                                 filteredUsers = filteredUsers.filter(u => u.category === UserCategory.ADULT);
@@ -1504,7 +1510,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                                                     <option value="all">All Users</option>
                                                     <option value="adults">Adults Only</option>
                                                     <option value="kids">Kids Only</option>
-                                                    {Array.from(new Set(users.filter(u => !u.is_admin).map(u => u.athlete_type))).map(type => (
+                                                    {Array.from(new Set(usersForPinModal.filter(u => !u.is_admin).map(u => u.athlete_type))).map(type => (
                                                         <option key={type} value={type}>{type}</option>
                                                     ))}
                                                 </select>
