@@ -1561,8 +1561,11 @@ const App: React.FC = () => {
       setAvatarPrompt(''); 
       setUploadedAvatarFile(null);
       setUploadedAvatarPreview(null);
-      // Initialize group memberships from user or empty
-      setEditGroupMemberships(currentUser.group_memberships || []);
+      // Initialize group memberships from user, filtering out any deleted groups
+      const validMemberships = (currentUser.group_memberships || []).filter(m => 
+          groups.some(g => g.id === m.group_id)
+      );
+      setEditGroupMemberships(validMemberships);
       
       // Attempt to parse style from current avatar URL to pre-select the dropdown
       const url = currentUser.avatar_url || '';
@@ -1668,8 +1671,10 @@ const App: React.FC = () => {
               updatedUser.avatar_url = editProfileForm.avatar_url || currentUser.avatar_url;
           }
 
-          // Add group memberships
-          updatedUser.group_memberships = editGroupMemberships;
+          // Add group memberships (filter out any deleted groups)
+          updatedUser.group_memberships = editGroupMemberships.filter(m => 
+              groups.some(g => g.id === m.group_id)
+          );
           
           await DataService.updateUser(updatedUser as User);
           setCurrentUser(updatedUser as User);
@@ -2055,13 +2060,15 @@ const App: React.FC = () => {
                             
                             <div className="flex flex-wrap justify-center gap-2 mt-3">
                                 <span className={`px-3 py-1 ${isKid ? 'bg-blue-100 text-blue-800 border-blue-300' : 'bg-slate-800 text-slate-300 border-slate-700'} rounded text-xs font-bold border`}>{currentUser.category}</span>
-                                {/* Show new group memberships if available, otherwise fallback to legacy */}
+                                {/* Show new group memberships if available (filter out deleted groups), otherwise fallback to legacy */}
                                 {currentUser.group_memberships && currentUser.group_memberships.length > 0 ? (
-                                    currentUser.group_memberships.map((m, idx) => (
-                                        <span key={idx} className={`px-3 py-1 ${isKid ? 'bg-blue-100 text-blue-800 border-blue-300' : 'bg-slate-800 text-slate-300 border-slate-700'} rounded text-xs font-bold border`}>
-                                            {m.group_name}{m.sub_group_names.length > 0 ? ` (${m.sub_group_names.join(', ')})` : ''}
-                                        </span>
-                                    ))
+                                    currentUser.group_memberships
+                                        .filter(m => groups.some(g => g.id === m.group_id)) // Only show groups that still exist
+                                        .map((m, idx) => (
+                                            <span key={idx} className={`px-3 py-1 ${isKid ? 'bg-blue-100 text-blue-800 border-blue-300' : 'bg-slate-800 text-slate-300 border-slate-700'} rounded text-xs font-bold border`}>
+                                                {m.group_name}{m.sub_group_names.length > 0 ? ` (${m.sub_group_names.join(', ')})` : ''}
+                                            </span>
+                                        ))
                                 ) : currentUser.group_id && currentUser.group_id !== 'NONE' ? (
                                     <span className={`px-3 py-1 ${isKid ? 'bg-blue-100 text-blue-800 border-blue-300' : 'bg-slate-800 text-slate-300 border-slate-700'} rounded text-xs font-bold border`}>{currentUser.group_id}</span>
                                 ) : null}
@@ -2415,10 +2422,12 @@ const App: React.FC = () => {
                                 <div>
                                     <label className={`text-[10px] font-bold ${isKid ? 'text-blue-600' : 'text-slate-500'} uppercase block mb-1`}>Group Memberships</label>
                                     
-                                    {/* Current Memberships */}
-                                    {editGroupMemberships.length > 0 && (
+                                    {/* Current Memberships - only show groups that still exist */}
+                                    {editGroupMemberships.filter(m => groups.some(g => g.id === m.group_id)).length > 0 && (
                                         <div className="space-y-2 mb-3">
-                                            {editGroupMemberships.map((membership, idx) => (
+                                            {editGroupMemberships
+                                                .filter(m => groups.some(g => g.id === m.group_id))
+                                                .map((membership, idx) => (
                                                 <div key={idx} className={`flex items-center gap-2 p-2 rounded border ${isKid ? 'bg-blue-50 border-blue-200' : 'bg-slate-900 border-slate-700'}`}>
                                                     <div className="flex-1">
                                                         <span className={`text-xs font-bold ${isKid ? 'text-blue-800' : 'text-orange-400'}`}>{membership.group_name}</span>
@@ -2429,7 +2438,7 @@ const App: React.FC = () => {
                                                     <button
                                                         type="button"
                                                         onClick={() => {
-                                                            setEditGroupMemberships(editGroupMemberships.filter((_, i) => i !== idx));
+                                                            setEditGroupMemberships(editGroupMemberships.filter(m => m.group_id !== membership.group_id));
                                                         }}
                                                         className="text-red-500 hover:text-red-400"
                                                     >
@@ -2511,7 +2520,7 @@ const App: React.FC = () => {
                                         })}
                                     </div>
                                     
-                                    {editGroupMemberships.length === 0 && (
+                                    {editGroupMemberships.filter(m => groups.some(g => g.id === m.group_id)).length === 0 && (
                                         <p className={`text-[10px] ${isKid ? 'text-blue-400' : 'text-slate-500'} mt-1`}>No groups selected</p>
                                     )}
                                 </div>
@@ -2668,6 +2677,8 @@ const App: React.FC = () => {
                                                             try {
                                                                 await DataService.deleteGroup(grp.id);
                                                                 setGroups(groups.filter(g => g.id !== grp.id));
+                                                                // Also remove from editGroupMemberships if currently editing
+                                                                setEditGroupMemberships(prev => prev.filter(m => m.group_id !== grp.id));
                                                             } catch (e) {
                                                                 alert('Failed to delete group');
                                                             }
