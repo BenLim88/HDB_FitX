@@ -703,8 +703,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
   };
 
   // --- PIN WOD HANDLERS ---
-  // Get users for pin modal - prefer propAllUsers from App.tsx, fallback to local users state
-  const usersForPinModal = propAllUsers && propAllUsers.length > 0 ? propAllUsers : users;
+  // State to store users for pin modal
+  const [pinModalUsers, setPinModalUsers] = useState<User[]>([]);
 
   const handleStartPinning = async (workoutId: string) => {
       // Check if this workout is already pinned (and not expired)
@@ -716,10 +716,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
           return;
       }
       
-      // Load local users as fallback if propAllUsers not available
-      if (!propAllUsers || propAllUsers.length === 0) {
-          await loadUsers();
-      }
+      // Always fetch fresh user list from Firestore
+      const freshUsers = await DataService.getAllUsers();
+      setPinModalUsers(freshUsers);
       
       // Set default dates (today and tomorrow)
       const now = new Date();
@@ -771,23 +770,23 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
               invited_user_ids: Array.from(selectedUserIds)
           });
 
-      // Determine which users to invite - use usersForPinModal for consistent list
+      // Determine which users to invite - use pinModalUsers for consistent list
       let usersToInvite: User[] = [];
       
       if (inviteFilter === 'all') {
-          usersToInvite = usersForPinModal.filter(u => !u.is_admin); // Exclude admins
+          usersToInvite = pinModalUsers.filter(u => !u.is_admin); // Exclude admins
       } else if (inviteFilter === 'adults') {
-          usersToInvite = usersForPinModal.filter(u => !u.is_admin && u.category === UserCategory.ADULT);
+          usersToInvite = pinModalUsers.filter(u => !u.is_admin && u.category === UserCategory.ADULT);
       } else if (inviteFilter === 'kids') {
-          usersToInvite = usersForPinModal.filter(u => !u.is_admin && u.category === UserCategory.KID);
+          usersToInvite = pinModalUsers.filter(u => !u.is_admin && u.category === UserCategory.KID);
       } else {
           // Filter by athlete type
-          usersToInvite = usersForPinModal.filter(u => !u.is_admin && u.athlete_type === inviteFilter);
+          usersToInvite = pinModalUsers.filter(u => !u.is_admin && u.athlete_type === inviteFilter);
       }
 
       // If specific users are selected, use those instead
       if (selectedUserIds.size > 0) {
-          usersToInvite = usersForPinModal.filter(u => selectedUserIds.has(u.id));
+          usersToInvite = pinModalUsers.filter(u => selectedUserIds.has(u.id));
       }
 
           // Send notifications to selected users
@@ -1200,7 +1199,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                     };
 
                     return (
-                        <div className="space-y-2">
+                <div className="space-y-2">
                             <p className="text-xs text-slate-500">
                                 Showing {totalFiltered} of {exercises.length} exercises
                             </p>
@@ -1220,7 +1219,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                                                 <Dumbbell size={16} className="text-slate-400" />
                                                 <span className="text-white font-bold text-sm">{category}</span>
                                                 <span className="text-slate-500 text-xs">({categoryExercises.length})</span>
-                                            </div>
+                                </div>
                                             {isCollapsed ? <ChevronRight size={18} className="text-slate-500" /> : <ChevronDown size={18} className="text-slate-500" />}
                                         </button>
                                         
@@ -1236,17 +1235,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                                                             <div className="min-w-0">
                                                                 <p className="text-white font-bold text-xs truncate">{ex.name}</p>
                                                                 <p className="text-[10px] text-slate-500 uppercase">{ex.type}</p>
-                                                            </div>
-                                                        </div>
-                                                        <button 
-                                                            onClick={() => handleDeleteExercise(ex.id)}
+                                </div>
+                            </div>
+                            <button 
+                                onClick={() => handleDeleteExercise(ex.id)}
                                                             className="p-1.5 text-slate-600 hover:text-red-500 transition-colors flex-shrink-0"
-                                                        >
+                            >
                                                             <Trash2 size={14} />
-                                                        </button>
-                                                    </div>
-                                                ))}
-                                            </div>
+                            </button>
+                        </div>
+                    ))}
+                </div>
                                         )}
                                     </div>
                                 );
@@ -1262,12 +1261,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                 {!isCreatingWorkout ? (
                     <div className="space-y-4">
                         <div className="flex gap-2">
-                            <button 
-                                onClick={() => { setIsCreatingWorkout(true); setEditingWorkoutId(null); }}
+                        <button 
+                            onClick={() => { setIsCreatingWorkout(true); setEditingWorkoutId(null); }}
                                 className="flex-1 py-3 bg-orange-600 hover:bg-orange-500 text-white font-black uppercase italic tracking-wider rounded-lg shadow-lg shadow-orange-900/20 flex items-center justify-center gap-2"
-                            >
-                                <Plus size={20} /> Build New Workout
-                            </button>
+                        >
+                            <Plus size={20} /> Build New Workout
+                        </button>
                             <button 
                                 onClick={handleSyncWorkouts}
                                 disabled={isSyncingWorkouts}
@@ -1324,9 +1323,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                             
                             if (workouts.length === 0) {
                                 return (
-                                    <div className="text-center py-8 text-slate-500 text-sm">
-                                        No workouts yet. Click "Build New Workout" to create one.
-                                    </div>
+                                <div className="text-center py-8 text-slate-500 text-sm">
+                                    No workouts yet. Click "Build New Workout" to create one.
+                                </div>
                                 );
                             }
 
@@ -1382,11 +1381,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                                                     <div className="p-2 space-y-2 bg-slate-950/50">
                                                         {categoryWorkouts.map(w => (
                                                             <div key={w.id} className={`bg-slate-900 border p-3 rounded-lg relative transition-colors ${w.is_featured ? 'border-yellow-500/40 shadow-lg shadow-yellow-500/5' : pinnedWods.some(pw => pw.workout_id === w.id && new Date(pw.deadline) > new Date()) ? 'border-blue-500/40 shadow-lg shadow-blue-500/5' : 'border-slate-800'}`}>
-                                                                {w.is_featured && (
-                                                                    <div className="absolute -top-2 -left-2 bg-yellow-500 text-black text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
-                                                                        <Star size={10} fill="black" /> Featured
-                                                                    </div>
-                                                                )}
+                                    {w.is_featured && (
+                                        <div className="absolute -top-2 -left-2 bg-yellow-500 text-black text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
+                                            <Star size={10} fill="black" /> Featured
+                                        </div>
+                                    )}
                                                                 {pinnedWods.some(pw => pw.workout_id === w.id && new Date(pw.deadline) > new Date()) && !w.is_featured && (
                                                                     <div className="absolute -top-2 -left-2 bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
                                                                         <Pin size={10} fill="white" /> Pinned
@@ -1401,54 +1400,54 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                                                                     <div className="flex-1 min-w-0 pr-2">
                                                                         <h3 className="text-white font-bold text-sm truncate">{w.name}</h3>
                                                                         <div className="flex gap-2 mt-1 flex-wrap">
-                                                                            <span className="text-[10px] text-orange-500 bg-orange-900/20 px-1.5 py-0.5 rounded border border-orange-900/50">{w.scheme}</span>
+                                                 <span className="text-[10px] text-orange-500 bg-orange-900/20 px-1.5 py-0.5 rounded border border-orange-900/50">{w.scheme}</span>
                                                                             {w.time_cap_seconds && <span className="text-[10px] text-slate-400 flex items-center gap-1"><Timer size={10} /> {Math.floor(w.time_cap_seconds / 60)}m</span>}
                                                                             {w.rounds && w.rounds > 1 && <span className="text-[10px] text-purple-400">{w.rounds} Rounds</span>}
                                                                             <span className="text-[10px] text-slate-500">{w.components.length} exercises</span>
-                                                                        </div>
+                                            </div>
                                                                         {w.description && (
                                                                             <p className="text-[11px] text-slate-400 mt-1 line-clamp-1">{w.description}</p>
                                                                         )}
-                                                                    </div>
+                                        </div>
                                                                     <div className="flex items-center gap-0.5 flex-shrink-0">
-                                                                        <button
-                                                                            onClick={() => toggleFeaturedWorkout(w.id)}
+                                            <button
+                                                onClick={() => toggleFeaturedWorkout(w.id)}
                                                                             className={`p-1.5 hover:bg-slate-800 rounded transition-colors ${w.is_featured ? 'text-yellow-500' : 'text-slate-600 hover:text-yellow-500'}`}
-                                                                            title="Toggle Featured"
-                                                                        >
+                                                title="Toggle Featured"
+                                            >
                                                                             <Star size={16} fill={w.is_featured ? 'currentColor' : 'none'} />
-                                                                        </button>
+                                            </button>
                                                                         {(() => {
                                                                             const isPinned = pinnedWods.some(pw => pw.workout_id === w.id && new Date(pw.deadline) > new Date());
                                                                             return (
-                                                                                <button 
-                                                                                    onClick={() => handleStartPinning(w.id)}
+                                            <button 
+                                                onClick={() => handleStartPinning(w.id)}
                                                                                     className={`p-1.5 hover:bg-slate-800 rounded transition-colors ${isPinned ? 'text-blue-500' : 'text-slate-600 hover:text-blue-400'}`}
                                                                                     title={isPinned ? "Already Pinned" : "Pin WOD"}
-                                                                                >
+                                            >
                                                                                     <Pin size={16} fill={isPinned ? 'currentColor' : 'none'} />
-                                                                                </button>
+                                            </button>
                                                                             );
                                                                         })()}
-                                                                        <button 
-                                                                            onClick={() => startEditingWorkout(w)}
+                                            <button 
+                                                onClick={() => startEditingWorkout(w)}
                                                                             className="p-1.5 text-slate-600 hover:text-orange-500 hover:bg-slate-800 rounded transition-colors"
                                                                             title="Edit"
-                                                                        >
+                                            >
                                                                             <Edit size={16} />
-                                                                        </button>
-                                                                        <button 
-                                                                            onClick={() => handleDeleteWorkout(w.id)}
+                                            </button>
+                                            <button 
+                                                onClick={() => handleDeleteWorkout(w.id)}
                                                                             className="p-1.5 text-slate-600 hover:text-red-500 hover:bg-slate-800 rounded transition-colors"
                                                                             title="Delete"
-                                                                        >
+                                            >
                                                                             <Trash2 size={16} />
-                                                                        </button>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                                                         ))}
-                                                    </div>
+                        </div>
                                                 )}
                                             </div>
                                         );
@@ -1459,8 +1458,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
 
                         {/* PIN WOD MODAL */}
                         {pinningWorkoutId && (() => {
-                            // Filter users based on inviteFilter - use usersForPinModal for consistent list
-                            let filteredUsers = usersForPinModal.filter(u => !u.is_admin);
+                            // Filter users based on inviteFilter - use pinModalUsers for consistent list
+                            let filteredUsers = pinModalUsers.filter(u => !u.is_admin);
                             
                             if (inviteFilter === 'adults') {
                                 filteredUsers = filteredUsers.filter(u => u.category === UserCategory.ADULT);
@@ -1510,7 +1509,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                                                     <option value="all">All Users</option>
                                                     <option value="adults">Adults Only</option>
                                                     <option value="kids">Kids Only</option>
-                                                    {Array.from(new Set(usersForPinModal.filter(u => !u.is_admin).map(u => u.athlete_type))).map(type => (
+                                                    {Array.from(new Set(pinModalUsers.filter(u => !u.is_admin).map(u => u.athlete_type))).map(type => (
                                                         <option key={type} value={type}>{type}</option>
                                                     ))}
                                                 </select>
@@ -1812,24 +1811,24 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                                                     {/* Exercise info */}
                                                     <div className="flex-1 min-w-0">
                                                         <p className="text-white text-xs font-bold truncate">{ex?.name || 'Unknown'}</p>
-                                                        <div className="flex gap-2 items-center flex-wrap">
-                                                            {(comp.sets && comp.sets > 1) && (
-                                                                <span className="text-[10px] text-blue-400 font-bold">{comp.sets}x</span>
-                                                            )}
-                                                            <span className="text-[10px] text-orange-500">{comp.target}</span>
-                                                            {comp.weight && <span className="text-[10px] text-slate-400">@ {comp.weight}</span>}
+                                                                            <div className="flex gap-2 items-center flex-wrap">
+                                                                                {(comp.sets && comp.sets > 1) && (
+                                                                                    <span className="text-[10px] text-blue-400 font-bold">{comp.sets}x</span>
+                                                                                )}
+                                                                <span className="text-[10px] text-orange-500">{comp.target}</span>
+                                                                {comp.weight && <span className="text-[10px] text-slate-400">@ {comp.weight}</span>}
                                                             {comp.round && comp.round > 1 && (
                                                                 <span className="text-[10px] text-purple-400">R{comp.round}</span>
                                                             )}
+                                                            </div>
                                                         </div>
-                                                    </div>
                                                     
                                                     {/* Delete button */}
                                                     <button onClick={() => removeComponent(idx)} className="text-slate-600 hover:text-red-500 p-1">
                                                         <X size={14} />
                                                     </button>
                                                 </div>
-                                            );
+                                                            );
                                         })}
                                     </div>
                                 )}
