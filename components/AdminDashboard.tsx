@@ -771,18 +771,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
           });
 
       // Determine which users to invite - use pinModalUsers for consistent list
-      // Don't filter out admins - they can also receive invitations
+      // Exclude current user and master admin from invitations
       let usersToInvite: User[] = [];
       
       if (inviteFilter === 'all') {
-          usersToInvite = pinModalUsers.filter(u => u.id !== currentUser.id);
+          usersToInvite = pinModalUsers.filter(u => u.id !== currentUser.id && !u.is_master_admin);
       } else if (inviteFilter === 'adults') {
-          usersToInvite = pinModalUsers.filter(u => u.id !== currentUser.id && u.category === UserCategory.ADULT);
+          usersToInvite = pinModalUsers.filter(u => u.id !== currentUser.id && !u.is_master_admin && u.category === UserCategory.ADULT);
       } else if (inviteFilter === 'kids') {
-          usersToInvite = pinModalUsers.filter(u => u.id !== currentUser.id && u.category === UserCategory.KID);
+          usersToInvite = pinModalUsers.filter(u => u.id !== currentUser.id && !u.is_master_admin && u.category === UserCategory.KID);
       } else {
           // Filter by athlete type
-          usersToInvite = pinModalUsers.filter(u => u.id !== currentUser.id && u.athlete_type === inviteFilter);
+          usersToInvite = pinModalUsers.filter(u => u.id !== currentUser.id && !u.is_master_admin && u.athlete_type === inviteFilter);
       }
 
       // If specific users are selected, use those instead
@@ -1460,9 +1460,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                         {/* PIN WOD MODAL */}
                         {pinningWorkoutId && (() => {
                             // Filter users based on inviteFilter - use pinModalUsers
-                            // Don't filter out admins - show all users like the Assign modal does
-                            // Only exclude the current user (who is doing the pinning)
-                            let filteredUsers = pinModalUsers.filter(u => u.id !== currentUser.id);
+                            // Exclude the current user (who is doing the pinning) and master admin
+                            let filteredUsers = pinModalUsers.filter(u => u.id !== currentUser.id && !u.is_master_admin);
                             
                             if (inviteFilter === 'adults') {
                                 filteredUsers = filteredUsers.filter(u => u.category === UserCategory.ADULT);
@@ -1512,7 +1511,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                                                     <option value="all">All Users</option>
                                                     <option value="adults">Adults Only</option>
                                                     <option value="kids">Kids Only</option>
-                                                    {Array.from(new Set(pinModalUsers.filter(u => u.id !== currentUser.id).map(u => u.athlete_type))).map(type => (
+                                                    {Array.from(new Set(pinModalUsers.filter(u => u.id !== currentUser.id && !u.is_master_admin).map(u => u.athlete_type))).map(type => (
                                                         <option key={type} value={type}>{type}</option>
                                                     ))}
                                                 </select>
