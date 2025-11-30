@@ -501,20 +501,24 @@ Maintain a professional tone throughout. Avoid slang or casual language. Be anal
             </header>
 
             {/* PINNED WOD SECTION */}
-            {pinnedWods.length > 0 && (
+            {/* Filter out expired pinned workouts (deadline has passed) */}
+            {pinnedWods.filter(pw => new Date(pw.deadline) > new Date()).length > 0 && (
                 <section>
                      <h2 className={`${isKid ? 'text-blue-900' : 'text-white'} font-bold text-lg mb-3 flex items-center gap-2`}>
                         <Pin size={20} className="text-blue-500" fill="currentColor" />
                         HQ Directives
                     </h2>
                     <div className="space-y-3">
-                        {pinnedWods.map(pw => {
+                        {pinnedWods
+                            .filter(pw => new Date(pw.deadline) > new Date()) // Only show non-expired
+                            .map(pw => {
                              const isJoined = pw.participants.includes(user.id);
                              const startDate = new Date(pw.intended_date);
                              const endDate = new Date(pw.deadline);
                              
                              // Find actual workout obj
                              const fullWorkout = workouts.find(w => w.id === pw.workout_id);
+                             const workoutCategory = fullWorkout?.category || 'General';
 
                              return (
                                  <div key={pw.id} className={`${isKid ? 'bg-white border-4 border-yellow-500 shadow-lg shadow-yellow-500/30' : 'bg-slate-900 border-4 border-yellow-500 shadow-lg shadow-yellow-500/30'} rounded-xl p-4 relative overflow-hidden`}>
@@ -523,9 +527,24 @@ Maintain a professional tone throughout. Avoid slang or casual language. Be anal
                                      <div className="relative z-10">
                                          <div className="flex justify-between items-start mb-2">
                                              <div className="flex-1">
-                                                 <span className="text-[10px] font-bold bg-yellow-500/30 text-yellow-600 px-2 py-1 rounded mb-2 inline-block border border-yellow-500/50">
-                                                     ⚡ PRIORITY MISSION ⚡
-                                                 </span>
+                                                 <div className="flex items-center gap-2 mb-2">
+                                                     <span className="text-[10px] font-bold bg-yellow-500/30 text-yellow-600 px-2 py-1 rounded inline-block border border-yellow-500/50">
+                                                         ⚡ PRIORITY MISSION ⚡
+                                                     </span>
+                                                     <span className={`text-[10px] font-bold px-2 py-1 rounded border ${
+                                                         workoutCategory === 'Hyrox' ? 'bg-orange-500/20 text-orange-400 border-orange-500/40' :
+                                                         workoutCategory === 'CrossFit' ? 'bg-red-500/20 text-red-400 border-red-500/40' :
+                                                         workoutCategory === 'Calisthenics' ? 'bg-purple-500/20 text-purple-400 border-purple-500/40' :
+                                                         workoutCategory === 'Cardio' ? 'bg-green-500/20 text-green-400 border-green-500/40' :
+                                                         workoutCategory === 'Street Lift' ? 'bg-zinc-500/20 text-zinc-400 border-zinc-500/40' :
+                                                         workoutCategory === 'Obstacle' ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' :
+                                                         workoutCategory === 'Tactical' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40' :
+                                                         workoutCategory === 'Gymnastics' ? 'bg-pink-500/20 text-pink-400 border-pink-500/40' :
+                                                         'bg-slate-500/20 text-slate-400 border-slate-500/40'
+                                                     }`}>
+                                                         {workoutCategory}
+                                                     </span>
+                                                 </div>
                                                  <h3 className={`text-xl font-black ${isKid ? 'text-blue-900' : 'text-white'} italic uppercase`}>{pw.workout_name}</h3>
                                              </div>
                                              <div className="flex items-center gap-2">
