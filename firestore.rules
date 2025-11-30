@@ -206,5 +206,23 @@
         // Allow deleting messages
         allow delete: if true;
         }
+        
+        // GROUPS Collection (Master Admin Write)
+        match /groups/{groupId} {
+        // Anyone can read groups (for profile editing)
+        allow read: if true;
+        
+        // Allow creating groups
+        // Note: App-level security ensures only master admins can create groups
+        allow create: if true;
+        
+        // Allow updating groups (add/remove sub-groups)
+        // Note: App-level security ensures only master admins can update groups
+        allow update: if true;
+        
+        // Allow deleting groups
+        // Note: App-level security ensures only master admins can delete groups
+        allow delete: if true;
+        }
     }
     }

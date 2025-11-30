@@ -1,5 +1,5 @@
 
-import { AthleteType, GroupType, Log, ScalingTier, User, VerificationStatus, Workout, Exercise, WorkoutScheme, Gender, Venue, UserCategory, WorldRecord } from './types';
+import { AthleteType, GroupType, Log, ScalingTier, User, VerificationStatus, Workout, Exercise, WorkoutScheme, Gender, Venue, UserCategory, WorldRecord, Group, SubGroup } from './types';
 
 export const APP_NAME = "HDB FitX";
 
@@ -50,6 +50,41 @@ export const MOCK_VENUES: Venue[] = [
     { id: 'v15', name: 'WE ARE ONE Fitness', type: 'Commercial' },
     { id: 'v25', name: 'Virgin Active', type: 'Commercial' },
     { id: 'v30', name: '24/7 Fitness', type: 'Commercial' }
+];
+
+// Default Groups and SubGroups
+export const DEFAULT_GROUPS: Group[] = [
+    {
+        id: 'grp_hdb',
+        name: 'HDB',
+        sub_groups: [
+            { id: 'sub_big', name: 'BIG', group_id: 'grp_hdb' },
+            { id: 'sub_bqg', name: 'BQG', group_id: 'grp_hdb' },
+            { id: 'sub_bri', name: 'BRI', group_id: 'grp_hdb' },
+            { id: 'sub_cdg', name: 'CDG', group_id: 'grp_hdb' },
+            { id: 'sub_crg', name: 'CRG', group_id: 'grp_hdb' },
+            { id: 'sub_ddg', name: 'DDG', group_id: 'grp_hdb' },
+            { id: 'sub_eapg', name: 'EAPG', group_id: 'grp_hdb' },
+            { id: 'sub_fg', name: 'FG', group_id: 'grp_hdb' },
+            { id: 'sub_hmg', name: 'HMG', group_id: 'grp_hdb' },
+            { id: 'sub_iag', name: 'IAG', group_id: 'grp_hdb' },
+            { id: 'sub_isg', name: 'ISG', group_id: 'grp_hdb' },
+            { id: 'sub_legal', name: 'LEGAL', group_id: 'grp_hdb' },
+            { id: 'sub_pcg', name: 'PCG', group_id: 'grp_hdb' },
+            { id: 'sub_plg', name: 'PLG', group_id: 'grp_hdb' },
+            { id: 'sub_sceg', name: 'SCEG', group_id: 'grp_hdb' },
+            { id: 'sub_sprg', name: 'SPRG', group_id: 'grp_hdb' },
+            { id: 'sub_upg', name: 'UPG', group_id: 'grp_hdb' },
+        ].sort((a, b) => a.name.localeCompare(b.name))
+    },
+    {
+        id: 'grp_altamis',
+        name: 'Altamis KA13',
+        sub_groups: [
+            { id: 'sub_altamis_adult', name: 'Adult', group_id: 'grp_altamis' },
+            { id: 'sub_altamis_youth', name: 'Youth', group_id: 'grp_altamis' },
+        ].sort((a, b) => a.name.localeCompare(b.name))
+    }
 ];
 
 // Extensive Exercise List - Organized by Category

@@ -1,6 +1,6 @@
 
-import { Log, Notification, User, VerificationStatus, Workout, GroupType, AthleteType, Gender, Venue, PinnedWOD, UserCategory, Exercise, CollaborativeWorkout, WorkoutSuggestion, CollaborationMessage, CollaborationStatus, SuggestionStatus, SuggestionType, WorkoutScheme, ScalingTier } from '../types';
-import { MOCK_LOGS, MOCK_USERS, MOCK_WORKOUTS, MOCK_VENUES, MOCK_EXERCISES } from '../constants';
+import { Log, Notification, User, VerificationStatus, Workout, GroupType, AthleteType, Gender, Venue, PinnedWOD, UserCategory, Exercise, CollaborativeWorkout, WorkoutSuggestion, CollaborationMessage, CollaborationStatus, SuggestionStatus, SuggestionType, WorkoutScheme, ScalingTier, Group, SubGroup, UserGroupMembership } from '../types';
+import { MOCK_LOGS, MOCK_USERS, MOCK_WORKOUTS, MOCK_VENUES, MOCK_EXERCISES, DEFAULT_GROUPS } from '../constants';
 import { auth, googleProvider, db } from '../firebaseConfig';
 import { signInWithPopup } from 'firebase/auth';
 import { 
@@ -30,7 +30,8 @@ const COLLECTIONS = {
   EXERCISES: 'exercises',
   COLLAB_WORKOUTS: 'collaborativeWorkouts',
   COLLAB_SUGGESTIONS: 'collabSuggestions',
-  COLLAB_MESSAGES: 'collabMessages'
+  COLLAB_MESSAGES: 'collabMessages',
+  GROUPS: 'groups'
 };
 
 // Seed flag to prevent multiple seed operations
@@ -1292,6 +1293,136 @@ export const DataService = {
       }
     } catch (error) {
       console.error('Error cancelling collaborative workout:', error);
+      throw error;
+    }
+  },
+
+  // ============ GROUP MANAGEMENT ============
+
+  // Get all groups
+  getGroups: async (): Promise<Group[]> => {
+    try {
+      const groupsSnapshot = await getDocs(collection(db, COLLECTIONS.GROUPS));
+      if (groupsSnapshot.empty) {
+        // Seed default groups if none exist
+        const batch = writeBatch(db);
+        for (const group of DEFAULT_GROUPS) {
+          const groupRef = doc(db, COLLECTIONS.GROUPS, group.id);
+          batch.set(groupRef, group);
+        }
+        await batch.commit();
+        return DEFAULT_GROUPS;
+      }
+      return groupsSnapshot.docs.map(doc => doc.data() as Group);
+    } catch (error) {
+      console.error('Error fetching groups:', error);
+      return DEFAULT_GROUPS; // Return defaults on error
+    }
+  },
+
+  // Create a new group (master admin only)
+  createGroup: async (name: string, creatorId: string): Promise<Group> => {
+    try {
+      const newGroup: Group = {
+        id: `grp_${Date.now()}`,
+        name,
+        sub_groups: [],
+        created_by: creatorId,
+        created_at: Date.now()
+      };
+      await setDoc(doc(db, COLLECTIONS.GROUPS, newGroup.id), newGroup);
+      return newGroup;
+    } catch (error) {
+      console.error('Error creating group:', error);
+      throw error;
+    }
+  },
+
+  // Add a subgroup to a group (master admin only)
+  addSubGroup: async (groupId: string, subGroupName: string): Promise<SubGroup> => {
+    try {
+      const groupRef = doc(db, COLLECTIONS.GROUPS, groupId);
+      const groupSnap = await getDoc(groupRef);
+      if (!groupSnap.exists()) throw new Error('Group not found');
+      
+      const group = groupSnap.data() as Group;
+      const newSubGroup: SubGroup = {
+        id: `sub_${Date.now()}`,
+        name: subGroupName,
+        group_id: groupId
+      };
+      
+      const updatedSubGroups = [...group.sub_groups, newSubGroup].sort((a, b) => a.name.localeCompare(b.name));
+      await updateDoc(groupRef, { sub_groups: updatedSubGroups });
+      
+      return newSubGroup;
+    } catch (error) {
+      console.error('Error adding subgroup:', error);
+      throw error;
+    }
+  },
+
+  // Remove a subgroup from a group (master admin only)
+  removeSubGroup: async (groupId: string, subGroupId: string): Promise<void> => {
+    try {
+      const groupRef = doc(db, COLLECTIONS.GROUPS, groupId);
+      const groupSnap = await getDoc(groupRef);
+      if (!groupSnap.exists()) throw new Error('Group not found');
+      
+      const group = groupSnap.data() as Group;
+      const updatedSubGroups = group.sub_groups.filter(sg => sg.id !== subGroupId);
+      await updateDoc(groupRef, { sub_groups: updatedSubGroups });
+    } catch (error) {
+      console.error('Error removing subgroup:', error);
+      throw error;
+    }
+  },
+
+  // Delete a group (master admin only)
+  deleteGroup: async (groupId: string): Promise<void> => {
+    try {
+      await deleteDoc(doc(db, COLLECTIONS.GROUPS, groupId));
+    } catch (error) {
+      console.error('Error deleting group:', error);
+      throw error;
+    }
+  },
+
+  // Update user's group memberships
+  updateUserGroupMemberships: async (userId: string, memberships: UserGroupMembership[]): Promise<void> => {
+    try {
+      const userRef = doc(db, COLLECTIONS.USERS, userId);
+      await updateDoc(userRef, { group_memberships: memberships });
+    } catch (error) {
+      console.error('Error updating user group memberships:', error);
+      throw error;
+    }
+  },
+
+  // Sync groups from defaults (in case new groups are added)
+  syncGroups: async (): Promise<{ added: number; existing: number }> => {
+    try {
+      const groupsSnapshot = await getDocs(collection(db, COLLECTIONS.GROUPS));
+      const existingIds = new Set(groupsSnapshot.docs.map(doc => doc.id));
+      
+      const batch = writeBatch(db);
+      let addedCount = 0;
+      
+      for (const group of DEFAULT_GROUPS) {
+        if (!existingIds.has(group.id)) {
+          const groupRef = doc(db, COLLECTIONS.GROUPS, group.id);
+          batch.set(groupRef, group);
+          addedCount++;
+        }
+      }
+      
+      if (addedCount > 0) {
+        await batch.commit();
+      }
+      
+      return { added: addedCount, existing: existingIds.size };
+    } catch (error) {
+      console.error('Error syncing groups:', error);
       throw error;
     }
   }

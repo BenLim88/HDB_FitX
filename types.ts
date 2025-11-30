@@ -1,4 +1,4 @@
-
+// Legacy GroupType - kept for backward compatibility
 export enum GroupType {
   EAPG = 'EAPG',
   PLG = 'PLG',
@@ -7,6 +7,30 @@ export enum GroupType {
   BRI = 'BRI',
   ISG = 'ISG',
   NONE = 'NONE'
+}
+
+// ============ GROUP HIERARCHY TYPES ============
+
+export interface SubGroup {
+  id: string;
+  name: string;
+  group_id: string; // Parent group ID
+}
+
+export interface Group {
+  id: string;
+  name: string;
+  sub_groups: SubGroup[];
+  created_by?: string; // Master admin who created this
+  created_at?: number;
+}
+
+// User's group membership (supports multiple)
+export interface UserGroupMembership {
+  group_id: string;
+  group_name: string;
+  sub_group_ids: string[];
+  sub_group_names: string[];
 }
 
 export enum AthleteType {
@@ -62,11 +86,13 @@ export interface User {
   name: string;
   title: string;
   gender: Gender;
-  group_id: GroupType;
+  group_id: GroupType; // Legacy - kept for backward compatibility
   athlete_type: AthleteType;
   is_admin: boolean;
+  is_master_admin?: boolean; // Only master admins can create groups/subgroups
   avatar_url?: string;
   category: UserCategory;
+  group_memberships?: UserGroupMembership[]; // New hierarchical group structure
 }
 
 export interface Exercise {

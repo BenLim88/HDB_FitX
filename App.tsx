@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { MOCK_USERS, CURRENT_USER_ID } from './constants';
-import { User, Log, Notification, Workout, VerificationStatus, Gender, GroupType, AthleteType, ScalingTier, Venue, PinnedWOD, UserCategory, WorldRecord, Exercise, CollaborativeWorkout, CollaborationStatus } from './types';
+import { User, Log, Notification, Workout, VerificationStatus, Gender, GroupType, AthleteType, ScalingTier, Venue, PinnedWOD, UserCategory, WorldRecord, Exercise, CollaborativeWorkout, CollaborationStatus, Group, SubGroup, UserGroupMembership } from './types';
 import { DataService } from './services/dataService';
 import { GeminiService } from './services/geminiService';
 import Navbar from './components/Navbar';
@@ -1345,6 +1345,14 @@ const App: React.FC = () => {
   const [uploadedAvatarFile, setUploadedAvatarFile] = useState<File | null>(null);
   const [uploadedAvatarPreview, setUploadedAvatarPreview] = useState<string | null>(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  
+  // Group Management State
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [editGroupMemberships, setEditGroupMemberships] = useState<UserGroupMembership[]>([]);
+  const [isManagingGroups, setIsManagingGroups] = useState(false);
+  const [newGroupName, setNewGroupName] = useState('');
+  const [newSubGroupName, setNewSubGroupName] = useState('');
+  const [selectedGroupForSubGroup, setSelectedGroupForSubGroup] = useState('');
 
   // Restore user session on mount
   useEffect(() => {
@@ -1436,6 +1444,8 @@ const App: React.FC = () => {
             setVenues(v);
             const ex = await DataService.getExercises(); // Load custom exercises from Firestore
             setCustomExercises(ex);
+            const grps = await DataService.getGroups(); // Load Groups
+            setGroups(grps);
             // Load user's collaborations
             if (currentUser) {
                 const collabs = await DataService.getCollaborativeWorkouts(currentUser.id);
@@ -1551,6 +1561,8 @@ const App: React.FC = () => {
       setAvatarPrompt(''); 
       setUploadedAvatarFile(null);
       setUploadedAvatarPreview(null);
+      // Initialize group memberships from user or empty
+      setEditGroupMemberships(currentUser.group_memberships || []);
       
       // Attempt to parse style from current avatar URL to pre-select the dropdown
       const url = currentUser.avatar_url || '';
@@ -1656,6 +1668,9 @@ const App: React.FC = () => {
               updatedUser.avatar_url = editProfileForm.avatar_url || currentUser.avatar_url;
           }
 
+          // Add group memberships
+          updatedUser.group_memberships = editGroupMemberships;
+          
           await DataService.updateUser(updatedUser as User);
           setCurrentUser(updatedUser as User);
           localStorage.setItem('hdb_fitx_user', JSON.stringify(updatedUser));
@@ -2038,9 +2053,18 @@ const App: React.FC = () => {
                             
                             <h1 className={`text-3xl font-black ${isKid ? 'text-blue-900' : 'text-white'} uppercase italic`}>{currentUser.title} {currentUser.name}</h1>
                             
-                            <div className="flex justify-center gap-2 mt-3">
+                            <div className="flex flex-wrap justify-center gap-2 mt-3">
                                 <span className={`px-3 py-1 ${isKid ? 'bg-blue-100 text-blue-800 border-blue-300' : 'bg-slate-800 text-slate-300 border-slate-700'} rounded text-xs font-bold border`}>{currentUser.category}</span>
-                                <span className={`px-3 py-1 ${isKid ? 'bg-blue-100 text-blue-800 border-blue-300' : 'bg-slate-800 text-slate-300 border-slate-700'} rounded text-xs font-bold border`}>{currentUser.group_id}</span>
+                                {/* Show new group memberships if available, otherwise fallback to legacy */}
+                                {currentUser.group_memberships && currentUser.group_memberships.length > 0 ? (
+                                    currentUser.group_memberships.map((m, idx) => (
+                                        <span key={idx} className={`px-3 py-1 ${isKid ? 'bg-blue-100 text-blue-800 border-blue-300' : 'bg-slate-800 text-slate-300 border-slate-700'} rounded text-xs font-bold border`}>
+                                            {m.group_name}{m.sub_group_names.length > 0 ? ` (${m.sub_group_names.join(', ')})` : ''}
+                                        </span>
+                                    ))
+                                ) : currentUser.group_id && currentUser.group_id !== 'NONE' ? (
+                                    <span className={`px-3 py-1 ${isKid ? 'bg-blue-100 text-blue-800 border-blue-300' : 'bg-slate-800 text-slate-300 border-slate-700'} rounded text-xs font-bold border`}>{currentUser.group_id}</span>
+                                ) : null}
                                 <span className={`px-3 py-1 ${isKid ? 'bg-blue-100 text-blue-600 border-blue-300' : 'bg-slate-800 text-orange-500 border-slate-700'} rounded text-xs font-bold border`}>{currentUser.athlete_type}</span>
                             </div>
 
@@ -2387,10 +2411,116 @@ const App: React.FC = () => {
                                     </select>
                                 </div>
 
+                                {/* Group & Sub-Group Selection */}
                                 <div>
-                                    <label className={`text-[10px] font-bold ${isKid ? 'text-blue-600' : 'text-slate-500'} uppercase block mb-1`}>Group</label>
+                                    <label className={`text-[10px] font-bold ${isKid ? 'text-blue-600' : 'text-slate-500'} uppercase block mb-1`}>Group Memberships</label>
+                                    
+                                    {/* Current Memberships */}
+                                    {editGroupMemberships.length > 0 && (
+                                        <div className="space-y-2 mb-3">
+                                            {editGroupMemberships.map((membership, idx) => (
+                                                <div key={idx} className={`flex items-center gap-2 p-2 rounded border ${isKid ? 'bg-blue-50 border-blue-200' : 'bg-slate-900 border-slate-700'}`}>
+                                                    <div className="flex-1">
+                                                        <span className={`text-xs font-bold ${isKid ? 'text-blue-800' : 'text-orange-400'}`}>{membership.group_name}</span>
+                                                        {membership.sub_group_names.length > 0 && (
+                                                            <span className={`text-xs ${isKid ? 'text-blue-600' : 'text-slate-400'}`}> → {membership.sub_group_names.join(', ')}</span>
+                                                        )}
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setEditGroupMemberships(editGroupMemberships.filter((_, i) => i !== idx));
+                                                        }}
+                                                        className="text-red-500 hover:text-red-400"
+                                                    >
+                                                        <X size={14} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                    
+                                    {/* Add Group */}
+                                    <div className="space-y-2">
+                                        <select 
+                                            className={`w-full ${isKid ? 'bg-white border-blue-200 text-blue-900' : 'bg-slate-950 border-slate-800 text-white'} border rounded px-3 py-2 text-sm outline-none`}
+                                            value=""
+                                            onChange={e => {
+                                                const grp = groups.find(g => g.id === e.target.value);
+                                                if (grp && !editGroupMemberships.some(m => m.group_id === grp.id)) {
+                                                    setEditGroupMemberships([...editGroupMemberships, {
+                                                        group_id: grp.id,
+                                                        group_name: grp.name,
+                                                        sub_group_ids: [],
+                                                        sub_group_names: []
+                                                    }]);
+                                                }
+                                            }}
+                                        >
+                                            <option value="">+ Add Group...</option>
+                                            {groups.filter(g => !editGroupMemberships.some(m => m.group_id === g.id)).map(g => (
+                                                <option key={g.id} value={g.id}>{g.name}</option>
+                                            ))}
+                                        </select>
+                                        
+                                        {/* Sub-Group Selection for each selected group */}
+                                        {editGroupMemberships.map((membership, idx) => {
+                                            const group = groups.find(g => g.id === membership.group_id);
+                                            if (!group || group.sub_groups.length === 0) return null;
+                                            
+                                            return (
+                                                <div key={`sub-${idx}`} className={`p-2 rounded border ${isKid ? 'bg-blue-50 border-blue-200' : 'bg-slate-900 border-slate-700'}`}>
+                                                    <label className={`text-[10px] font-bold ${isKid ? 'text-blue-600' : 'text-slate-500'} uppercase block mb-2`}>{group.name} Sub-Groups</label>
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {group.sub_groups.map(sg => {
+                                                            const isSelected = membership.sub_group_ids.includes(sg.id);
+                                                            return (
+                                                                <button
+                                                                    key={sg.id}
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        const updatedMemberships = [...editGroupMemberships];
+                                                                        if (isSelected) {
+                                                                            updatedMemberships[idx] = {
+                                                                                ...membership,
+                                                                                sub_group_ids: membership.sub_group_ids.filter(id => id !== sg.id),
+                                                                                sub_group_names: membership.sub_group_names.filter(name => name !== sg.name)
+                                                                            };
+                                                                        } else {
+                                                                            updatedMemberships[idx] = {
+                                                                                ...membership,
+                                                                                sub_group_ids: [...membership.sub_group_ids, sg.id],
+                                                                                sub_group_names: [...membership.sub_group_names, sg.name]
+                                                                            };
+                                                                        }
+                                                                        setEditGroupMemberships(updatedMemberships);
+                                                                    }}
+                                                                    className={`px-2 py-1 rounded text-[10px] font-bold transition-colors ${
+                                                                        isSelected 
+                                                                            ? 'bg-orange-600 text-white' 
+                                                                            : (isKid ? 'bg-white border border-blue-200 text-blue-600 hover:bg-blue-100' : 'bg-slate-800 text-slate-400 hover:bg-slate-700')
+                                                                    }`}
+                                                                >
+                                                                    {sg.name}
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    
+                                    {editGroupMemberships.length === 0 && (
+                                        <p className={`text-[10px] ${isKid ? 'text-blue-400' : 'text-slate-500'} mt-1`}>No groups selected</p>
+                                    )}
+                                </div>
+                                
+                                {/* Legacy Group (kept for backward compatibility) */}
+                                <div>
+                                    <label className={`text-[10px] font-bold ${isKid ? 'text-blue-600' : 'text-slate-500'} uppercase block mb-1`}>Legacy Group (deprecated)</label>
                                     <select 
-                                        className={`w-full ${isKid ? 'bg-white border-blue-200 text-blue-900' : 'bg-slate-950 border-slate-800 text-white'} border rounded px-3 py-2 text-sm outline-none`}
+                                        className={`w-full ${isKid ? 'bg-white border-blue-200 text-blue-900' : 'bg-slate-950 border-slate-800 text-white'} border rounded px-3 py-2 text-sm outline-none opacity-50`}
                                         value={editProfileForm.group_id}
                                         onChange={e => setEditProfileForm({...editProfileForm, group_id: e.target.value as GroupType})}
                                     >
@@ -2433,6 +2563,165 @@ const App: React.FC = () => {
                                     )}
                                 </button>
                             </div>
+                        </div>
+                    )}
+                    
+                    {/* Group Management Section (Master Admin Only) */}
+                    {currentUser.is_master_admin && (
+                        <div className={`${isKid ? 'bg-blue-50 border-blue-200' : 'bg-slate-900 border-slate-800'} border rounded-2xl p-6 shadow-xl mt-6`}>
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className={`text-lg font-black ${isKid ? 'text-blue-900' : 'text-white'} uppercase`}>Group Management</h2>
+                                <button
+                                    onClick={() => setIsManagingGroups(!isManagingGroups)}
+                                    className={`px-3 py-1 text-xs font-bold rounded ${isManagingGroups ? 'bg-orange-600 text-white' : (isKid ? 'bg-blue-200 text-blue-800' : 'bg-slate-800 text-white')}`}
+                                >
+                                    {isManagingGroups ? 'Done' : 'Manage'}
+                                </button>
+                            </div>
+                            
+                            {isManagingGroups && (
+                                <div className="space-y-4">
+                                    {/* Create New Group */}
+                                    <div className={`p-4 rounded-xl ${isKid ? 'bg-white border-blue-200' : 'bg-slate-950 border-slate-700'} border`}>
+                                        <label className={`text-[10px] font-bold ${isKid ? 'text-blue-600' : 'text-slate-500'} uppercase block mb-2`}>Create New Group</label>
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                placeholder="Group Name"
+                                                value={newGroupName}
+                                                onChange={e => setNewGroupName(e.target.value)}
+                                                className={`flex-1 ${isKid ? 'bg-blue-50 border-blue-200 text-blue-900' : 'bg-slate-900 border-slate-800 text-white'} border rounded px-3 py-2 text-sm outline-none`}
+                                            />
+                                            <button
+                                                onClick={async () => {
+                                                    if (!newGroupName.trim()) return;
+                                                    try {
+                                                        const newGrp = await DataService.createGroup(newGroupName.trim(), currentUser.id);
+                                                        setGroups([...groups, newGrp]);
+                                                        setNewGroupName('');
+                                                    } catch (e) {
+                                                        alert('Failed to create group');
+                                                    }
+                                                }}
+                                                disabled={!newGroupName.trim()}
+                                                className="px-4 py-2 bg-green-600 text-white text-xs font-bold rounded hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                Add
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Add Sub-Group */}
+                                    <div className={`p-4 rounded-xl ${isKid ? 'bg-white border-blue-200' : 'bg-slate-950 border-slate-700'} border`}>
+                                        <label className={`text-[10px] font-bold ${isKid ? 'text-blue-600' : 'text-slate-500'} uppercase block mb-2`}>Add Sub-Group to Group</label>
+                                        <div className="flex gap-2 flex-wrap">
+                                            <select
+                                                value={selectedGroupForSubGroup}
+                                                onChange={e => setSelectedGroupForSubGroup(e.target.value)}
+                                                className={`flex-1 min-w-[120px] ${isKid ? 'bg-blue-50 border-blue-200 text-blue-900' : 'bg-slate-900 border-slate-800 text-white'} border rounded px-3 py-2 text-sm outline-none`}
+                                            >
+                                                <option value="">Select Group</option>
+                                                {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+                                            </select>
+                                            <input
+                                                type="text"
+                                                placeholder="Sub-Group Name"
+                                                value={newSubGroupName}
+                                                onChange={e => setNewSubGroupName(e.target.value)}
+                                                className={`flex-1 min-w-[120px] ${isKid ? 'bg-blue-50 border-blue-200 text-blue-900' : 'bg-slate-900 border-slate-800 text-white'} border rounded px-3 py-2 text-sm outline-none`}
+                                            />
+                                            <button
+                                                onClick={async () => {
+                                                    if (!selectedGroupForSubGroup || !newSubGroupName.trim()) return;
+                                                    try {
+                                                        const newSg = await DataService.addSubGroup(selectedGroupForSubGroup, newSubGroupName.trim());
+                                                        const updatedGroups = groups.map(g => {
+                                                            if (g.id === selectedGroupForSubGroup) {
+                                                                return { ...g, sub_groups: [...g.sub_groups, newSg].sort((a, b) => a.name.localeCompare(b.name)) };
+                                                            }
+                                                            return g;
+                                                        });
+                                                        setGroups(updatedGroups);
+                                                        setNewSubGroupName('');
+                                                    } catch (e) {
+                                                        alert('Failed to add sub-group');
+                                                    }
+                                                }}
+                                                disabled={!selectedGroupForSubGroup || !newSubGroupName.trim()}
+                                                className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                Add
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Existing Groups List */}
+                                    <div className="space-y-3">
+                                        <label className={`text-[10px] font-bold ${isKid ? 'text-blue-600' : 'text-slate-500'} uppercase block`}>Existing Groups</label>
+                                        {groups.map(grp => (
+                                            <div key={grp.id} className={`p-3 rounded-xl ${isKid ? 'bg-white border-blue-200' : 'bg-slate-950 border-slate-700'} border`}>
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <span className={`font-bold ${isKid ? 'text-blue-900' : 'text-orange-400'}`}>{grp.name}</span>
+                                                    <button
+                                                        onClick={async () => {
+                                                            if (!confirm(`Delete group "${grp.name}" and all its sub-groups?`)) return;
+                                                            try {
+                                                                await DataService.deleteGroup(grp.id);
+                                                                setGroups(groups.filter(g => g.id !== grp.id));
+                                                            } catch (e) {
+                                                                alert('Failed to delete group');
+                                                            }
+                                                        }}
+                                                        className="text-red-500 hover:text-red-400 text-xs"
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </div>
+                                                {grp.sub_groups.length > 0 ? (
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {grp.sub_groups.map(sg => (
+                                                            <div key={sg.id} className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] ${isKid ? 'bg-blue-100 text-blue-800' : 'bg-slate-800 text-slate-300'}`}>
+                                                                {sg.name}
+                                                                <button
+                                                                    onClick={async () => {
+                                                                        if (!confirm(`Remove sub-group "${sg.name}"?`)) return;
+                                                                        try {
+                                                                            await DataService.removeSubGroup(grp.id, sg.id);
+                                                                            const updatedGroups = groups.map(g => {
+                                                                                if (g.id === grp.id) {
+                                                                                    return { ...g, sub_groups: g.sub_groups.filter(s => s.id !== sg.id) };
+                                                                                }
+                                                                                return g;
+                                                                            });
+                                                                            setGroups(updatedGroups);
+                                                                        } catch (e) {
+                                                                            alert('Failed to remove sub-group');
+                                                                        }
+                                                                    }}
+                                                                    className="text-red-400 hover:text-red-300"
+                                                                >
+                                                                    <X size={10} />
+                                                                </button>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    <p className={`text-[10px] ${isKid ? 'text-blue-400' : 'text-slate-500'}`}>No sub-groups</p>
+                                                )}
+                                            </div>
+                                        ))}
+                                        {groups.length === 0 && (
+                                            <p className={`text-sm ${isKid ? 'text-blue-400' : 'text-slate-500'}`}>No groups created yet</p>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {!isManagingGroups && (
+                                <p className={`text-xs ${isKid ? 'text-blue-600' : 'text-slate-400'}`}>
+                                    {groups.length} group(s) configured with {groups.reduce((acc, g) => acc + g.sub_groups.length, 0)} total sub-groups
+                                </p>
+                            )}
                         </div>
                     )}
                 </div>
