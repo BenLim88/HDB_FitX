@@ -1364,6 +1364,7 @@ const App: React.FC = () => {
   const [uploadedAvatarFile, setUploadedAvatarFile] = useState<File | null>(null);
   const [uploadedAvatarPreview, setUploadedAvatarPreview] = useState<string | null>(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isIdCardFlipped, setIsIdCardFlipped] = useState(false);
   
   // Group Management State
   const [groups, setGroups] = useState<Group[]>([]);
@@ -2072,30 +2073,163 @@ const App: React.FC = () => {
                     {!isEditingProfile ? (
                         // VIEW PROFILE MODE
                         <>
-                             <div className={`w-28 h-28 rounded-full ${isKid ? 'bg-blue-100 border-4 border-blue-500 shadow-blue-500/20' : 'bg-slate-800 border-4 border-orange-500 shadow-orange-500/20'} overflow-hidden mx-auto mb-4 shadow-lg relative group`}>
-                                <img src={currentUser.avatar_url} alt="avatar" className="w-full h-full object-cover" />
-                            </div>
+                            {/* Athlete ID Card with Flip Animation */}
+                            {(() => {
+                                // Archetype color schemes
+                                const archetypeThemes: Record<string, { bg: string; accent: string; text: string; border: string; glow: string; pattern: string }> = {
+                                    'Hyrox': { bg: 'from-yellow-500 to-yellow-600', accent: 'bg-black', text: 'text-black', border: 'border-yellow-400', glow: 'shadow-yellow-500/50', pattern: 'bg-[radial-gradient(circle_at_30%_20%,rgba(0,0,0,0.1)_0%,transparent_50%)]' },
+                                    'CrossFit': { bg: 'from-red-600 to-red-700', accent: 'bg-white', text: 'text-white', border: 'border-red-400', glow: 'shadow-red-500/50', pattern: 'bg-[radial-gradient(circle_at_70%_80%,rgba(255,255,255,0.1)_0%,transparent_50%)]' },
+                                    'Calisthenics': { bg: 'from-purple-600 to-purple-800', accent: 'bg-purple-300', text: 'text-white', border: 'border-purple-400', glow: 'shadow-purple-500/50', pattern: 'bg-[linear-gradient(45deg,rgba(255,255,255,0.05)_25%,transparent_25%,transparent_50%,rgba(255,255,255,0.05)_50%,rgba(255,255,255,0.05)_75%,transparent_75%)]' },
+                                    'Hybrid': { bg: 'from-cyan-500 to-blue-600', accent: 'bg-cyan-200', text: 'text-white', border: 'border-cyan-400', glow: 'shadow-cyan-500/50', pattern: 'bg-[conic-gradient(from_180deg,rgba(255,255,255,0.1),transparent,rgba(255,255,255,0.1))]' },
+                                    'Runner': { bg: 'from-green-500 to-emerald-600', accent: 'bg-green-200', text: 'text-white', border: 'border-green-400', glow: 'shadow-green-500/50', pattern: 'bg-[repeating-linear-gradient(90deg,rgba(255,255,255,0.05)_0px,rgba(255,255,255,0.05)_2px,transparent_2px,transparent_20px)]' },
+                                    'Strength': { bg: 'from-zinc-700 to-zinc-900', accent: 'bg-orange-500', text: 'text-white', border: 'border-zinc-500', glow: 'shadow-zinc-500/50', pattern: 'bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.05)_0%,transparent_70%)]' },
+                                    'Bodybuilder': { bg: 'from-amber-500 to-orange-600', accent: 'bg-amber-200', text: 'text-black', border: 'border-amber-400', glow: 'shadow-amber-500/50', pattern: 'bg-[linear-gradient(135deg,rgba(0,0,0,0.1)_0%,transparent_50%)]' },
+                                    'Gymnastics': { bg: 'from-pink-500 to-rose-600', accent: 'bg-pink-200', text: 'text-white', border: 'border-pink-400', glow: 'shadow-pink-500/50', pattern: 'bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.2)_0%,transparent_50%)]' },
+                                    'Tactical': { bg: 'from-emerald-700 to-green-900', accent: 'bg-emerald-300', text: 'text-white', border: 'border-emerald-500', glow: 'shadow-emerald-500/50', pattern: 'bg-[repeating-linear-gradient(45deg,rgba(0,0,0,0.1)_0px,rgba(0,0,0,0.1)_10px,transparent_10px,transparent_20px)]' },
+                                    'Obstacle': { bg: 'from-amber-600 to-yellow-700', accent: 'bg-amber-900', text: 'text-white', border: 'border-amber-500', glow: 'shadow-amber-500/50', pattern: 'bg-[url("data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h20v20H0z\' fill=\'none\'/%3E%3Cpath d=\'M10 0v20M0 10h20\' stroke=\'rgba(0,0,0,0.1)\' stroke-width=\'1\'/%3E%3C/svg%3E")]' },
+                                    'Generic': { bg: 'from-slate-600 to-slate-800', accent: 'bg-orange-500', text: 'text-white', border: 'border-slate-500', glow: 'shadow-slate-500/50', pattern: 'bg-[radial-gradient(circle_at_100%_0%,rgba(255,255,255,0.1)_0%,transparent_50%)]' },
+                                };
+                                
+                                const theme = archetypeThemes[currentUser.athlete_type] || archetypeThemes['Generic'];
+                                
+                                // Generate unique membership ID based on user ID
+                                const membershipId = `FX-${currentUser.id.substring(0, 8).toUpperCase()}-${new Date(parseInt(currentUser.id.replace(/\D/g, '').substring(0, 13) || Date.now().toString())).getFullYear()}`;
+                                
+                                // QR code data
+                                const qrData = encodeURIComponent(JSON.stringify({
+                                    id: membershipId,
+                                    name: `${currentUser.title} ${currentUser.name}`.trim(),
+                                    gender: currentUser.gender,
+                                    archetype: currentUser.athlete_type,
+                                    groups: currentUser.group_memberships?.map(m => `${m.group_name}${m.sub_group_names.length > 0 ? ` (${m.sub_group_names.join(', ')})` : ''}`).join('; ') || currentUser.group_id,
+                                    category: currentUser.category
+                                }));
+                                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${qrData}&bgcolor=ffffff&color=000000`;
+                                
+                                return (
+                                    <div 
+                                        className="mx-auto mb-6 cursor-pointer perspective-1000"
+                                        style={{ perspective: '1000px', width: '320px', height: '200px' }}
+                                        onClick={() => setIsIdCardFlipped(!isIdCardFlipped)}
+                                    >
+                                        <div 
+                                            className="relative w-full h-full transition-transform duration-700 ease-in-out"
+                                            style={{ 
+                                                transformStyle: 'preserve-3d',
+                                                transform: isIdCardFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)'
+                                            }}
+                                        >
+                                            {/* Front of Card */}
+                                            <div 
+                                                className={`absolute w-full h-full rounded-2xl bg-gradient-to-br ${theme.bg} ${theme.border} border-2 shadow-xl ${theme.glow} overflow-hidden`}
+                                                style={{ backfaceVisibility: 'hidden' }}
+                                            >
+                                                {/* Pattern overlay */}
+                                                <div className={`absolute inset-0 ${theme.pattern} opacity-50`}></div>
+                                                
+                                                {/* Card content */}
+                                                <div className="relative h-full p-4 flex">
+                                                    {/* Left side - Photo */}
+                                                    <div className="flex flex-col items-center justify-center pr-4">
+                                                        <div className={`w-20 h-20 rounded-xl ${theme.accent} p-1 shadow-lg`}>
+                                                            <img src={currentUser.avatar_url} alt="avatar" className="w-full h-full object-cover rounded-lg" />
+                                                        </div>
+                                                        <div className={`mt-2 px-2 py-0.5 ${theme.accent} rounded text-[10px] font-black uppercase tracking-wider ${theme.text === 'text-white' ? 'text-black' : 'text-white'}`}>
+                                                            {currentUser.athlete_type}
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    {/* Right side - Info */}
+                                                    <div className={`flex-1 flex flex-col justify-center ${theme.text}`}>
+                                                        <div className="text-[10px] font-bold uppercase tracking-widest opacity-70 mb-1">HDB FITX ATHLETE</div>
+                                                        <h2 className="text-lg font-black uppercase tracking-tight leading-tight">
+                                                            {currentUser.title && <span className="font-normal text-sm">{currentUser.title} </span>}
+                                                            {currentUser.name}
+                                                        </h2>
+                                                        
+                                                        <div className="mt-2 space-y-1">
+                                                            <div className="flex items-center gap-2 text-[11px]">
+                                                                <span className="opacity-60">Gender:</span>
+                                                                <span className="font-bold">{currentUser.gender}</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-2 text-[11px]">
+                                                                <span className="opacity-60">Group:</span>
+                                                                <span className="font-bold truncate max-w-[120px]">
+                                                                    {currentUser.group_memberships && currentUser.group_memberships.length > 0 
+                                                                        ? currentUser.group_memberships.filter(m => groups.some(g => g.id === m.group_id)).map(m => m.group_name).join(', ') || 'None'
+                                                                        : currentUser.group_id !== 'NONE' ? currentUser.group_id : 'None'}
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex items-center gap-2 text-[11px]">
+                                                                <span className="opacity-60">Category:</span>
+                                                                <span className="font-bold">{currentUser.category}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                {/* Tap hint */}
+                                                <div className={`absolute bottom-2 right-3 text-[8px] ${theme.text} opacity-50 font-medium`}>
+                                                    TAP TO FLIP →
+                                                </div>
+                                            </div>
+                                            
+                                            {/* Back of Card */}
+                                            <div 
+                                                className={`absolute w-full h-full rounded-2xl bg-gradient-to-br ${theme.bg} ${theme.border} border-2 shadow-xl ${theme.glow} overflow-hidden`}
+                                                style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
+                                            >
+                                                {/* Pattern overlay */}
+                                                <div className={`absolute inset-0 ${theme.pattern} opacity-30`}></div>
+                                                
+                                                {/* Back content */}
+                                                <div className="relative h-full p-4 flex">
+                                                    {/* QR Code */}
+                                                    <div className="flex flex-col items-center justify-center pr-4">
+                                                        <div className="bg-white p-2 rounded-lg shadow-lg">
+                                                            <img src={qrUrl} alt="QR Code" className="w-24 h-24" />
+                                                        </div>
+                                                        <div className={`mt-1 text-[8px] ${theme.text} opacity-60`}>SCAN TO VERIFY</div>
+                                                    </div>
+                                                    
+                                                    {/* Membership Info */}
+                                                    <div className={`flex-1 flex flex-col justify-center ${theme.text}`}>
+                                                        <div className="text-[10px] font-bold uppercase tracking-widest opacity-70 mb-1">MEMBERSHIP ID</div>
+                                                        <div className={`font-mono text-lg font-black tracking-wider ${theme.accent} bg-opacity-20 px-2 py-1 rounded inline-block`} style={{backgroundColor: 'rgba(255,255,255,0.2)'}}>
+                                                            {membershipId}
+                                                        </div>
+                                                        
+                                                        <div className="mt-3 space-y-1.5">
+                                                            <div className="text-[10px] opacity-70">
+                                                                <span className="font-bold">Status:</span> ACTIVE
+                                                            </div>
+                                                            <div className="text-[10px] opacity-70">
+                                                                <span className="font-bold">Member Since:</span> {new Date().getFullYear()}
+                                                            </div>
+                                                            {currentUser.is_admin && (
+                                                                <div className="mt-2">
+                                                                    <span className={`px-2 py-0.5 ${theme.accent} ${theme.text === 'text-white' ? 'text-black' : 'text-white'} text-[10px] font-black uppercase rounded`}>
+                                                                        ⚡ ADMIN
+                                                                    </span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                {/* Tap hint */}
+                                                <div className={`absolute bottom-2 right-3 text-[8px] ${theme.text} opacity-50 font-medium`}>
+                                                    ← TAP TO FLIP
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
                             
-                            <h1 className={`text-3xl font-black ${isKid ? 'text-blue-900' : 'text-white'} uppercase italic`}>{currentUser.title} {currentUser.name}</h1>
-                            
-                            <div className="flex flex-wrap justify-center gap-2 mt-3">
-                                <span className={`px-3 py-1 ${isKid ? 'bg-blue-100 text-blue-800 border-blue-300' : 'bg-slate-800 text-slate-300 border-slate-700'} rounded text-xs font-bold border`}>{currentUser.category}</span>
-                                {/* Show new group memberships if available (filter out deleted groups), otherwise fallback to legacy */}
-                                {currentUser.group_memberships && currentUser.group_memberships.length > 0 ? (
-                                    currentUser.group_memberships
-                                        .filter(m => groups.some(g => g.id === m.group_id)) // Only show groups that still exist
-                                        .map((m, idx) => (
-                                            <span key={idx} className={`px-3 py-1 ${isKid ? 'bg-blue-100 text-blue-800 border-blue-300' : 'bg-slate-800 text-slate-300 border-slate-700'} rounded text-xs font-bold border`}>
-                                                {m.group_name}{m.sub_group_names.length > 0 ? ` (${m.sub_group_names.join(', ')})` : ''}
-                                            </span>
-                                        ))
-                                ) : currentUser.group_id && currentUser.group_id !== 'NONE' ? (
-                                    <span className={`px-3 py-1 ${isKid ? 'bg-blue-100 text-blue-800 border-blue-300' : 'bg-slate-800 text-slate-300 border-slate-700'} rounded text-xs font-bold border`}>{currentUser.group_id}</span>
-                                ) : null}
-                                <span className={`px-3 py-1 ${isKid ? 'bg-blue-100 text-blue-600 border-blue-300' : 'bg-slate-800 text-orange-500 border-slate-700'} rounded text-xs font-bold border`}>{currentUser.athlete_type}</span>
-                            </div>
+                            <p className={`text-xs ${isKid ? 'text-blue-400' : 'text-slate-500'} mb-4`}>Tap card to view membership details</p>
 
-                            <div className="mt-6 flex justify-center">
+                            <div className="mt-4 flex justify-center">
                                 <button 
                                     onClick={handleEditProfileStart}
                                     className={`flex items-center gap-2 text-xs font-bold ${isKid ? 'text-blue-600 hover:text-blue-800 bg-blue-50 border-blue-200' : 'text-slate-500 hover:text-white bg-slate-900 border-slate-800'} border px-4 py-2 rounded-full transition-all`}
