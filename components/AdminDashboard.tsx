@@ -712,7 +712,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
           return;
       }
       
-      setPinningWorkoutId(workoutId);
+      // Always reload users first to get the latest list before opening modal
+      await loadUsers();
+      
       // Set default dates (today and tomorrow)
       const now = new Date();
       setIntendedDate(now.toISOString().split('T')[0]);
@@ -727,10 +729,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       setInviteFilter('all');
       setSelectedUserIds(new Set());
       
-      // Load users if not already loaded
-      if (users.length === 0) {
-          await loadUsers();
-      }
+      // Open the modal after users are loaded
+      setPinningWorkoutId(workoutId);
   };
 
   const handleConfirmPin = async () => {
