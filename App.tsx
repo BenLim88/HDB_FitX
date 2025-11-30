@@ -2099,6 +2099,18 @@ const App: React.FC = () => {
                                 // Count total workouts completed by this user
                                 const totalWorkoutsCompleted = logs.filter(l => l.user_id === currentUser.id).length;
                                 
+                                // Get last workout date
+                                const userLogs = logs.filter(l => l.user_id === currentUser.id).sort((a, b) => b.timestamp - a.timestamp);
+                                const lastWorkoutDate = userLogs.length > 0 ? new Date(userLogs[0].timestamp).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'No workouts yet';
+                                
+                                // Get groups and subgroups display
+                                const groupsDisplay = currentUser.group_memberships && currentUser.group_memberships.length > 0 
+                                    ? currentUser.group_memberships.filter(m => groups.some(g => g.id === m.group_id)).map(m => m.group_name).join(', ') || '-'
+                                    : currentUser.group_id !== 'NONE' ? currentUser.group_id : '-';
+                                const subGroupsDisplay = currentUser.group_memberships && currentUser.group_memberships.length > 0 
+                                    ? currentUser.group_memberships.filter(m => groups.some(g => g.id === m.group_id)).flatMap(m => m.sub_group_names).join(', ') || '-'
+                                    : '-';
+                                
                                 // QR code data
                                 const qrData = encodeURIComponent(JSON.stringify({
                                     id: membershipId,
@@ -2162,16 +2174,16 @@ const App: React.FC = () => {
                                                         
                                                         <div className="mt-2 space-y-0.5">
                                                             <div className="flex items-center gap-2 text-[11px]">
-                                                                <span className="opacity-50 w-12">Gender</span>
+                                                                <span className="opacity-50 w-14">Gender</span>
                                                                 <span className="font-bold">{currentUser.gender}</span>
                                                             </div>
                                                             <div className="flex items-center gap-2 text-[11px]">
-                                                                <span className="opacity-50 w-12">Group</span>
-                                                                <span className="font-bold truncate max-w-[110px]">
-                                                                    {currentUser.group_memberships && currentUser.group_memberships.length > 0 
-                                                                        ? currentUser.group_memberships.filter(m => groups.some(g => g.id === m.group_id)).map(m => m.group_name).join(', ') || '-'
-                                                                        : currentUser.group_id !== 'NONE' ? currentUser.group_id : '-'}
-                                                                </span>
+                                                                <span className="opacity-50 w-14">Group</span>
+                                                                <span className="font-bold truncate max-w-[100px]">{groupsDisplay}</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-2 text-[11px]">
+                                                                <span className="opacity-50 w-14">Sub-Group</span>
+                                                                <span className="font-bold truncate max-w-[100px]">{subGroupsDisplay}</span>
                                                             </div>
                                                         </div>
                                                         
@@ -2226,8 +2238,8 @@ const App: React.FC = () => {
                                                                 <span className="font-bold text-green-300">● ACTIVE</span>
                                                             </div>
                                                             <div className="flex items-center gap-2 text-[10px]">
-                                                                <span className="opacity-50">Workouts</span>
-                                                                <span className="font-bold">{totalWorkoutsCompleted} completed</span>
+                                                                <span className="opacity-50">Last Workout</span>
+                                                                <span className="font-bold">{lastWorkoutDate}</span>
                                                             </div>
                                                             {currentUser.is_admin && (
                                                                 <div className="mt-2">
