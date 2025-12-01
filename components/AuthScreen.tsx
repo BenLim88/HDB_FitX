@@ -138,7 +138,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
           <Dumbbell size={48} className="text-white -rotate-3" />
         </div>
         <div>
-            <h1 className={`text-4xl font-black ${isKid && isRegistering ? 'text-blue-900' : 'text-white'} italic tracking-tighter uppercase`}>HDB FitX</h1>
+            <h1 className={`text-4xl font-black ${isKid && isRegistering ? 'text-blue-900' : 'text-white'} italic tracking-tighter uppercase`}>FIT X LAB</h1>
             <p className={`${isKid && isRegistering ? 'text-blue-600' : 'text-orange-500'} font-bold tracking-widest text-xs uppercase mt-1`}>
                 {isKid && isRegistering ? 'Junior Cadet Program' : 'Community Fitness Protocol'}
             </p>
@@ -359,7 +359,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
       </div>
       
       <div className="mt-8 text-center opacity-30">
-        <p className="text-[10px] text-slate-400 uppercase tracking-widest">V 1.0.0 • Singapore HDB FitX Initiative</p>
+        <p className="text-[10px] text-slate-400 uppercase tracking-widest">V 1.0.0 • FIT X LAB Initiative</p>
       </div>
     </div>
   );
