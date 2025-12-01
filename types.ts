@@ -149,6 +149,7 @@ export interface Log {
   verification_status: VerificationStatus;
   witness_id: string | null;
   witness_name?: string;
+  verified_at?: number; // Timestamp when verified
 }
 
 export interface Notification {

@@ -746,6 +746,7 @@ export const DataService = {
               const verifierSnap = await getDoc(verifierRef);
               const verifier = verifierSnap.data() as User | undefined;
               updateData.witness_name = verifier?.name;
+              updateData.verified_at = Date.now();
           }
           
           await updateDoc(logRef, updateData);

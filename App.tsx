@@ -1004,6 +1004,7 @@ const LeaderboardTab: React.FC<{ logs: Log[], workouts: Workout[], allUsers: Use
     const [selectedTier, setSelectedTier] = useState<string>('all');
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
     const [isWorldRecordsExpanded, setIsWorldRecordsExpanded] = useState<boolean>(false);
+    const [selectedVerificationLog, setSelectedVerificationLog] = useState<Log | null>(null);
 
     const filteredLogs = useMemo(() => {
         let tempLogs = logs;
@@ -1301,9 +1302,15 @@ const LeaderboardTab: React.FC<{ logs: Log[], workouts: Workout[], allUsers: Use
                                     <div className="text-white font-mono font-bold">{log.score_display}</div>
                                     <div className="flex items-center justify-end gap-1 mt-1">
                                         {log.verification_status === VerificationStatus.VERIFIED ? (
-                                            <span className="flex items-center gap-1 text-[10px] text-green-500 bg-green-500/10 px-1.5 py-0.5 rounded border border-green-500/20">
-                                                Verified
-                                            </span>
+                                            <button 
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setSelectedVerificationLog(log);
+                                                }}
+                                                className="flex items-center gap-1 text-[10px] text-green-500 bg-green-500/10 px-1.5 py-0.5 rounded border border-green-500/20 hover:bg-green-500/20 transition-colors cursor-pointer"
+                                            >
+                                                <Check size={10} /> Verified
+                                            </button>
                                         ) : (
                                             <span className="text-[10px] text-slate-500 italic">Unverified</span>
                                         )}
@@ -1315,6 +1322,65 @@ const LeaderboardTab: React.FC<{ logs: Log[], workouts: Workout[], allUsers: Use
                     </>
                 )}
             </div>
+
+            {/* Verification Details Modal */}
+            {selectedVerificationLog && (
+                <div 
+                    className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                    onClick={() => setSelectedVerificationLog(null)}
+                >
+                    <div 
+                        className="bg-slate-900 border border-slate-700 rounded-xl p-5 max-w-xs w-full shadow-2xl animate-in zoom-in-95 duration-200"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                                <Check size={20} className="text-green-500" />
+                            </div>
+                            <div>
+                                <h3 className="text-white font-bold">Verified Result</h3>
+                                <p className="text-xs text-slate-400">{selectedVerificationLog.workout_name}</p>
+                            </div>
+                        </div>
+                        
+                        <div className="space-y-3 border-t border-slate-800 pt-4">
+                            <div className="flex items-center justify-between">
+                                <span className="text-xs text-slate-500">Score</span>
+                                <span className="text-sm text-white font-mono font-bold">{selectedVerificationLog.score_display}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-xs text-slate-500">Verified by</span>
+                                <span className="text-sm text-green-400 font-bold">{selectedVerificationLog.witness_name || 'Unknown'}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-xs text-slate-500">Verified on</span>
+                                <span className="text-sm text-white">
+                                    {selectedVerificationLog.verified_at 
+                                        ? new Date(selectedVerificationLog.verified_at).toLocaleDateString('en-US', {
+                                            day: 'numeric',
+                                            month: 'short',
+                                            year: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                          })
+                                        : 'N/A'}
+                                </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-xs text-slate-500">Athlete</span>
+                                <span className="text-sm text-orange-400 font-bold">{selectedVerificationLog.user_name}</span>
+                            </div>
+                        </div>
+                        
+                        <button 
+                            onClick={() => setSelectedVerificationLog(null)}
+                            className="w-full mt-5 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold uppercase rounded-lg transition-colors"
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
