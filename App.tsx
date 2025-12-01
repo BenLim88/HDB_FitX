@@ -2143,7 +2143,7 @@ const App: React.FC = () => {
                             {(() => {
                                 // Archetype color schemes with enhanced designs
                                 const archetypeThemes: Record<string, { bg: string; accent: string; text: string; border: string; glow: string; secondaryBg: string; isHolographic?: boolean }> = {
-                                    'MasterAdmin': { bg: 'from-yellow-300 via-amber-400 to-yellow-600', accent: 'bg-gradient-to-r from-yellow-200 via-white to-yellow-200', text: 'text-amber-900', border: 'border-yellow-200', glow: 'shadow-yellow-400/80', secondaryBg: 'from-white/40 to-transparent', isHolographic: true },
+                                    'MasterAdmin': { bg: 'from-yellow-300 via-amber-400 to-yellow-600', accent: 'bg-gradient-to-r from-amber-800 via-amber-900 to-amber-800', text: 'text-amber-950', border: 'border-yellow-200', glow: 'shadow-yellow-400/80', secondaryBg: 'from-white/40 to-transparent', isHolographic: true },
                                     'Hyrox': { bg: 'from-yellow-400 via-yellow-500 to-amber-600', accent: 'bg-black', text: 'text-black', border: 'border-yellow-300', glow: 'shadow-yellow-500/60', secondaryBg: 'from-black/20 to-transparent' },
                                     'CrossFit': { bg: 'from-red-500 via-red-600 to-red-800', accent: 'bg-white', text: 'text-white', border: 'border-red-400', glow: 'shadow-red-500/60', secondaryBg: 'from-white/10 to-transparent' },
                                     'Calisthenics': { bg: 'from-purple-500 via-purple-600 to-indigo-800', accent: 'bg-purple-200', text: 'text-white', border: 'border-purple-400', glow: 'shadow-purple-500/60', secondaryBg: 'from-white/10 to-transparent' },
@@ -2245,18 +2245,19 @@ const App: React.FC = () => {
                             </div>
                             
                                                     {/* Right side - Info */}
-                                                    <div className={`flex-1 flex flex-col justify-center ${theme.text}`}>
+                                                    <div 
+                                                        className={`flex-1 flex flex-col justify-center ${theme.text}`}
+                                                        style={isMasterAdminCard ? { textShadow: '0 1px 2px rgba(255,255,255,0.3)' } : {}}
+                                                    >
                                                         <div className="flex items-center gap-2 mb-1">
                                                             {isMasterAdminCard ? (
                                                                 <div 
-                                                                    className="text-[10px] font-black uppercase tracking-[0.2em]"
+                                                                    className="text-[10px] font-black uppercase tracking-[0.15em] px-2 py-0.5 rounded"
                                                                     style={{
-                                                                        background: 'linear-gradient(135deg, #d4af37 0%, #f9f295 25%, #d4af37 50%, #f9f295 75%, #d4af37 100%)',
-                                                                        WebkitBackgroundClip: 'text',
-                                                                        WebkitTextFillColor: 'transparent',
-                                                                        backgroundSize: '200% 200%',
-                                                                        textShadow: '0 1px 2px rgba(0,0,0,0.3)',
-                                                                        filter: 'drop-shadow(0 1px 1px rgba(212,175,55,0.5))'
+                                                                        background: 'linear-gradient(135deg, #78350f 0%, #451a03 50%, #78350f 100%)',
+                                                                        color: '#fcd34d',
+                                                                        textShadow: '0 1px 2px rgba(0,0,0,0.5)',
+                                                                        boxShadow: '0 2px 4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)'
                                                                     }}
                                                                 >
                                                                     ★ MASTER ADMIN ★
@@ -2264,31 +2265,40 @@ const App: React.FC = () => {
                                                             ) : (
                                                                 <div className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">FITX ATHLETE</div>
                                                             )}
-                                                            <div className="flex-1 h-[1px] bg-current opacity-20"></div>
+                                                            <div className={`flex-1 h-[1px] ${isMasterAdminCard ? 'bg-amber-900' : 'bg-current'} opacity-30`}></div>
                                                         </div>
-                                                        <h2 className="text-lg font-black uppercase tracking-tight leading-tight drop-shadow-sm">
+                                                        <h2 
+                                                            className="text-lg font-black uppercase tracking-tight leading-tight"
+                                                            style={isMasterAdminCard ? { textShadow: '1px 1px 0 rgba(255,255,255,0.5), -1px -1px 0 rgba(0,0,0,0.1)' } : {}}
+                                                        >
                                                             {currentUser.title && <span className="font-medium text-sm opacity-80">{currentUser.title} </span>}
                                                             {currentUser.name}
                                                         </h2>
                                                         
                                                         <div className="mt-2 space-y-0.5">
                                                             <div className="flex items-center gap-2 text-[11px]">
-                                                                <span className="opacity-50 w-14">Gender</span>
+                                                                <span className={`${isMasterAdminCard ? 'opacity-70' : 'opacity-50'} w-14 font-semibold`}>Gender</span>
                                                                 <span className="font-bold">{currentUser.gender}</span>
                                                             </div>
                                                             <div className="flex items-center gap-2 text-[11px]">
-                                                                <span className="opacity-50 w-14">Group</span>
+                                                                <span className={`${isMasterAdminCard ? 'opacity-70' : 'opacity-50'} w-14 font-semibold`}>Group</span>
                                                                 <span className="font-bold truncate max-w-[100px]">{groupsDisplay}</span>
                                                             </div>
                                                             <div className="flex items-center gap-2 text-[11px]">
-                                                                <span className="opacity-50 w-14">Sub-Group</span>
+                                                                <span className={`${isMasterAdminCard ? 'opacity-70' : 'opacity-50'} w-14 font-semibold`}>Sub-Group</span>
                                                                 <span className="font-bold truncate max-w-[100px]">{subGroupsDisplay}</span>
                                                             </div>
-                            </div>
+                                                        </div>
 
                                                         {/* Workouts completed badge */}
                                                         <div className="mt-3 flex items-center gap-2">
-                                                            <div className={`${theme.accent} ${theme.text === 'text-white' ? 'text-black' : 'text-white'} px-2 py-1 rounded-lg flex items-center gap-1.5 shadow-md`}>
+                                                            <div 
+                                                                className={`${isMasterAdminCard ? '' : theme.accent} ${theme.text === 'text-white' ? 'text-black' : 'text-white'} px-2 py-1 rounded-lg flex items-center gap-1.5 shadow-md`}
+                                                                style={isMasterAdminCard ? {
+                                                                    background: 'linear-gradient(135deg, #78350f 0%, #451a03 50%, #78350f 100%)',
+                                                                    color: '#fcd34d'
+                                                                } : {}}
+                                                            >
                                                                 <Dumbbell size={12} />
                                                                 <span className="font-black text-sm">{totalWorkoutsCompleted}</span>
                                                                 <span className="text-[8px] font-bold uppercase opacity-70">Workouts</span>
@@ -2298,9 +2308,14 @@ const App: React.FC = () => {
                                                 </div>
                                                 
                                                 {/* Bottom bar with ID preview */}
-                                                <div className={`absolute bottom-0 left-0 right-0 h-7 ${theme.accent} bg-opacity-90 flex items-center justify-between px-4`}>
-                                                    <span className={`text-[9px] font-mono font-bold ${theme.text === 'text-white' ? 'text-black' : 'text-white'} opacity-70`}>{membershipId}</span>
-                                                    <span className={`text-[8px] ${theme.text === 'text-white' ? 'text-black' : 'text-white'} opacity-50 font-medium`}>TAP TO FLIP →</span>
+                                                <div 
+                                                    className={`absolute bottom-0 left-0 right-0 h-7 ${isMasterAdminCard ? '' : theme.accent} bg-opacity-90 flex items-center justify-between px-4`}
+                                                    style={isMasterAdminCard ? {
+                                                        background: 'linear-gradient(90deg, #78350f 0%, #451a03 50%, #78350f 100%)'
+                                                    } : {}}
+                                                >
+                                                    <span className={`text-[9px] font-mono font-bold ${isMasterAdminCard ? 'text-yellow-300' : (theme.text === 'text-white' ? 'text-black' : 'text-white')}`}>{membershipId}</span>
+                                                    <span className={`text-[8px] ${isMasterAdminCard ? 'text-yellow-300/70' : (theme.text === 'text-white' ? 'text-black' : 'text-white')} opacity-70 font-medium`}>TAP TO FLIP →</span>
                                                 </div>
                                             </div>
                                             
@@ -2337,19 +2352,25 @@ const App: React.FC = () => {
                                                     </div>
                                                     
                                                     {/* Membership Info */}
-                                                    <div className={`flex-1 flex flex-col justify-center ${theme.text}`}>
-                                                        <div className="text-[9px] font-bold uppercase tracking-[0.15em] opacity-60 mb-1">MEMBERSHIP ID</div>
-                                                        <div className={`font-mono text-xl font-black tracking-wider drop-shadow-md`}>
+                                                    <div 
+                                                        className={`flex-1 flex flex-col justify-center ${theme.text}`}
+                                                        style={isMasterAdminCard ? { textShadow: '0 1px 2px rgba(255,255,255,0.3)' } : {}}
+                                                    >
+                                                        <div className={`text-[9px] font-bold uppercase tracking-[0.15em] ${isMasterAdminCard ? 'opacity-80' : 'opacity-60'} mb-1`}>MEMBERSHIP ID</div>
+                                                        <div 
+                                                            className="font-mono text-xl font-black tracking-wider"
+                                                            style={isMasterAdminCard ? { textShadow: '1px 1px 0 rgba(255,255,255,0.5)' } : {}}
+                                                        >
                                                             {membershipId}
                                                         </div>
                                                         
                                                         <div className="mt-3 space-y-1.5">
                                                             <div className="flex items-center gap-2 text-[10px]">
-                                                                <span className="opacity-50">Status</span>
-                                                                <span className="font-bold text-green-300">● ACTIVE</span>
+                                                                <span className={`${isMasterAdminCard ? 'opacity-80' : 'opacity-50'} font-semibold`}>Status</span>
+                                                                <span className={`font-bold ${isMasterAdminCard ? 'text-green-700' : 'text-green-300'}`}>● ACTIVE</span>
                                                             </div>
                                                             <div className="flex items-center gap-2 text-[10px]">
-                                                                <span className="opacity-50">Last Workout</span>
+                                                                <span className={`${isMasterAdminCard ? 'opacity-80' : 'opacity-50'} font-semibold`}>Last Workout</span>
                                                                 <span className="font-bold">{lastWorkoutDate}</span>
                                                             </div>
                                                             {currentUser.is_admin && (
@@ -2380,13 +2401,13 @@ const App: React.FC = () => {
                                                 <div 
                                                     className={`absolute bottom-0 left-0 right-0 h-7 ${isMasterAdminCard ? '' : theme.accent} bg-opacity-90 flex items-center justify-between px-4`}
                                                     style={isMasterAdminCard ? {
-                                                        background: 'linear-gradient(90deg, #d4af37 0%, #f9f295 50%, #d4af37 100%)'
+                                                        background: 'linear-gradient(90deg, #78350f 0%, #451a03 50%, #78350f 100%)'
                                                     } : {}}
                                                 >
-                                                    <span className={`text-[9px] font-bold ${isMasterAdminCard ? 'text-amber-900' : (theme.text === 'text-white' ? 'text-black' : 'text-white')} opacity-70`}>
+                                                    <span className={`text-[9px] font-bold ${isMasterAdminCard ? 'text-yellow-300' : (theme.text === 'text-white' ? 'text-black' : 'text-white')}`}>
                                                         {isMasterAdminCard ? '👑 ELITE MEMBERSHIP' : 'FITX MEMBERSHIP'}
                                                     </span>
-                                                    <span className={`text-[8px] ${isMasterAdminCard ? 'text-amber-900' : (theme.text === 'text-white' ? 'text-black' : 'text-white')} opacity-50 font-medium`}>← TAP TO FLIP</span>
+                                                    <span className={`text-[8px] ${isMasterAdminCard ? 'text-yellow-300/70' : (theme.text === 'text-white' ? 'text-black' : 'text-white')} opacity-70 font-medium`}>← TAP TO FLIP</span>
                                                 </div>
                                             </div>
                                         </div>
