@@ -109,6 +109,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
   const [weightInput, setWeightInput] = useState('');
   const [setsInput, setSetsInput] = useState<string>('1');
   const [exerciseCategoryFilter, setExerciseCategoryFilter] = useState<string>('All');
+  const [componentExerciseSearch, setComponentExerciseSearch] = useState<string>('');
 
   useEffect(() => {
       setWorkouts(initialWorkouts);
@@ -1837,37 +1838,86 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
 
                                 {/* Adder */}
                                 <div className="flex gap-2 items-end flex-wrap">
-                                    <div className="w-full">
-                                        <label className="text-[10px] text-slate-500 font-bold mb-1 block">Filter by Category</label>
-                                        <select 
-                                            className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-xs outline-none mb-2"
-                                            value={exerciseCategoryFilter}
-                                            onChange={e => {
-                                                setExerciseCategoryFilter(e.target.value);
-                                                // Reset selected exercise if it's not in filtered list
-                                                const filtered = exercises.filter(ex => 
-                                                    e.target.value === 'All' || ex.category === e.target.value
-                                                );
-                                                if (!filtered.find(ex => ex.id === selectedExId)) {
-                                                    setSelectedExId(filtered[0]?.id || '');
-                                                }
-                                            }}
-                                        >
-                                            <option value="All">All Categories</option>
-                                            {Array.from(new Set(exercises.map(e => e.category))).map(cat => (
-                                                <option key={cat} value={cat}>{cat}</option>
-                                            ))}
-                                        </select>
+                                    {/* Search and Filter Row */}
+                                    <div className="w-full flex gap-2 mb-2">
+                                        <div className="flex-1">
+                                            <label className="text-[10px] text-slate-500 font-bold mb-1 block">Search Exercise</label>
+                                            <input 
+                                                type="text"
+                                                className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-xs outline-none placeholder:text-slate-600"
+                                                placeholder="🔍 Type to search..."
+                                                value={componentExerciseSearch}
+                                                onChange={e => {
+                                                    setComponentExerciseSearch(e.target.value);
+                                                    // Auto-select first matching exercise
+                                                    const searchVal = e.target.value.toLowerCase();
+                                                    const filtered = exercises.filter(ex => 
+                                                        (exerciseCategoryFilter === 'All' || ex.category === exerciseCategoryFilter) &&
+                                                        (searchVal === '' || ex.name.toLowerCase().includes(searchVal))
+                                                    );
+                                                    if (filtered.length > 0 && !filtered.find(ex => ex.id === selectedExId)) {
+                                                        setSelectedExId(filtered[0].id);
+                                                    }
+                                                }}
+                                            />
+                                        </div>
+                                        <div className="flex-1">
+                                            <label className="text-[10px] text-slate-500 font-bold mb-1 block">Filter by Category</label>
+                                            <select 
+                                                className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-xs outline-none"
+                                                value={exerciseCategoryFilter}
+                                                onChange={e => {
+                                                    setExerciseCategoryFilter(e.target.value);
+                                                    // Reset selected exercise if it's not in filtered list
+                                                    const filtered = exercises.filter(ex => 
+                                                        (e.target.value === 'All' || ex.category === e.target.value) &&
+                                                        (componentExerciseSearch === '' || ex.name.toLowerCase().includes(componentExerciseSearch.toLowerCase()))
+                                                    );
+                                                    if (!filtered.find(ex => ex.id === selectedExId)) {
+                                                        setSelectedExId(filtered[0]?.id || '');
+                                                    }
+                                                }}
+                                            >
+                                                <option value="All">All Categories</option>
+                                                {Array.from(new Set(exercises.map(e => e.category))).map(cat => (
+                                                    <option key={cat} value={cat}>{cat}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        {(componentExerciseSearch || exerciseCategoryFilter !== 'All') && (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setComponentExerciseSearch('');
+                                                    setExerciseCategoryFilter('All');
+                                                }}
+                                                className="self-end px-2 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs rounded"
+                                                title="Clear filters"
+                                            >
+                                                ✕
+                                            </button>
+                                        )}
                                     </div>
                                     <div className="w-full">
-                                        <label className="text-[10px] text-slate-500 font-bold mb-1 block">Exercise</label>
+                                        <label className="text-[10px] text-slate-500 font-bold mb-1 block">
+                                            Exercise 
+                                            <span className="text-slate-600 font-normal ml-1">
+                                                ({exercises.filter(e => 
+                                                    (exerciseCategoryFilter === 'All' || e.category === exerciseCategoryFilter) &&
+                                                    (componentExerciseSearch === '' || e.name.toLowerCase().includes(componentExerciseSearch.toLowerCase()))
+                                                ).length} found)
+                                            </span>
+                                        </label>
                                         <select 
                                             className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-xs outline-none"
                                             value={selectedExId}
                                             onChange={e => setSelectedExId(e.target.value)}
                                         >
                                             {exercises
-                                                .filter(e => exerciseCategoryFilter === 'All' || e.category === exerciseCategoryFilter)
+                                                .filter(e => 
+                                                    (exerciseCategoryFilter === 'All' || e.category === exerciseCategoryFilter) &&
+                                                    (componentExerciseSearch === '' || e.name.toLowerCase().includes(componentExerciseSearch.toLowerCase()))
+                                                )
                                                 .map(e => <option key={e.id} value={e.id}>{e.name} ({e.category})</option>)}
                                         </select>
                                     </div>
