@@ -2459,7 +2459,7 @@ const App: React.FC = () => {
                                                                 >
                                                                     <option value="">No Witness (Unverified)</option>
                                                                     {allUsers
-                                                                        .filter(u => u.id !== log.user_id && !u.is_admin)
+                                                                        .filter(u => u.id !== log.user_id && !u.is_master_admin)
                                                                         .map(u => (
                                                                             <option key={u.id} value={u.id}>
                                                                                 {u.name} {log.witness_id === u.id ? '(Current)' : ''}
