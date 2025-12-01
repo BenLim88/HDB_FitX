@@ -36,6 +36,21 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
   const [avatarStyle, setAvatarStyle] = useState<AvatarStyle>('avataaars');
   const [avatarUrl, setAvatarUrl] = useState('');
 
+  // Easter Egg State
+  const [logoClickCount, setLogoClickCount] = useState(0);
+  const [showEasterEgg, setShowEasterEgg] = useState(false);
+
+  const handleLogoClick = () => {
+      const newCount = logoClickCount + 1;
+      setLogoClickCount(newCount);
+      if (newCount >= 3) {
+          setShowEasterEgg(true);
+          setLogoClickCount(0);
+      }
+      // Reset count after 2 seconds of inactivity
+      setTimeout(() => setLogoClickCount(0), 2000);
+  };
+
   const getAvatarUrl = (style: AvatarStyle, seed: string) => {
       const s = encodeURIComponent(seed);
       if (style === 'cats') return `https://robohash.org/${s}.png?set=set4`;
@@ -193,9 +208,36 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
   return (
     <div className={`min-h-screen flex flex-col items-center justify-center p-6 ${isKid && isRegistering ? 'bg-blue-50' : 'bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black'}`}>
       
+      {/* Easter Egg Modal */}
+      {showEasterEgg && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowEasterEgg(false)}>
+          <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-orange-500/30 rounded-2xl p-8 max-w-sm text-center shadow-2xl shadow-orange-500/20 animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
+            <div className="w-20 h-20 mx-auto bg-orange-600 rounded-2xl rotate-3 flex items-center justify-center mb-4 shadow-lg shadow-orange-500/30">
+              <Dumbbell size={40} className="text-white -rotate-3" />
+            </div>
+            <h3 className="text-2xl font-black text-white italic mb-2">FIT X LAB</h3>
+            <p className="text-orange-500 text-xs font-bold uppercase tracking-widest mb-4">Community Fitness Protocol</p>
+            <div className="border-t border-slate-700 pt-4 mt-4">
+              <p className="text-slate-400 text-sm">Fitness App created by</p>
+              <p className="text-white font-bold text-lg mt-1">Dr. Benjamin JM LIM</p>
+              <p className="text-slate-500 text-xs mt-2">🏋️ Train Hard. Stay Strong. 💪</p>
+            </div>
+            <button 
+              onClick={() => setShowEasterEgg(false)}
+              className="mt-6 px-6 py-2 bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold uppercase rounded-lg transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header / Logo Area */}
       <div className="mb-10 text-center space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
-        <div className={`w-24 h-24 mx-auto ${isKid && isRegistering ? 'bg-blue-500 border-blue-300 shadow-blue-500/40' : 'bg-orange-600 border-orange-400 shadow-[0_0_40px_rgba(249,115,22,0.4)]'} rounded-3xl rotate-3 flex items-center justify-center shadow-lg border`}>
+        <div 
+          onClick={handleLogoClick}
+          className={`w-24 h-24 mx-auto ${isKid && isRegistering ? 'bg-blue-500 border-blue-300 shadow-blue-500/40' : 'bg-orange-600 border-orange-400 shadow-[0_0_40px_rgba(249,115,22,0.4)]'} rounded-3xl rotate-3 flex items-center justify-center shadow-lg border cursor-pointer select-none active:scale-95 transition-transform`}
+        >
           <Dumbbell size={48} className="text-white -rotate-3" />
         </div>
         <div>
