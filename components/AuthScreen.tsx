@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-import { User, GroupType, AthleteType, Gender, UserCategory } from '../types';
+import { User, Group, UserGroupMembership, AthleteType, Gender, UserCategory } from '../types';
 import { DataService } from '../services/dataService';
-import { Dumbbell, UserPlus, LogIn, Wand2, RefreshCcw } from 'lucide-react';
+import { Dumbbell, UserPlus, LogIn, RefreshCcw, Plus, X } from 'lucide-react';
 
 interface AuthScreenProps {
   onAuthSuccess: (user: User) => void;
@@ -22,8 +22,14 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
   const [title, setTitle] = useState(''); // Empty by default - user should set their own designation
   const [gender, setGender] = useState<Gender>(Gender.MALE);
   const [category, setCategory] = useState<UserCategory>(UserCategory.ADULT);
-  const [group, setGroup] = useState<GroupType>(GroupType.NONE);
   const [athleteType, setAthleteType] = useState<AthleteType>(AthleteType.GENERIC);
+  
+  // Group Memberships State
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [groupMemberships, setGroupMemberships] = useState<UserGroupMembership[]>([]);
+  const [selectedGroupId, setSelectedGroupId] = useState<string>('');
+  const [selectedSubGroupIds, setSelectedSubGroupIds] = useState<string[]>([]);
+  const [showGroupSelector, setShowGroupSelector] = useState(false);
   
   // Avatar State
   const [avatarSeed, setAvatarSeed] = useState('');
@@ -42,6 +48,57 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
       const seed = avatarSeed || name || 'guest';
       setAvatarUrl(getAvatarUrl(avatarStyle, seed));
   }, [avatarSeed, name, avatarStyle]);
+
+  // Load groups when registering
+  useEffect(() => {
+      if (isRegistering) {
+          DataService.getGroups().then(setGroups).catch(console.error);
+      }
+  }, [isRegistering]);
+
+  // Helper functions for group membership management
+  const handleAddGroupMembership = () => {
+      if (!selectedGroupId) return;
+      
+      const group = groups.find(g => g.id === selectedGroupId);
+      if (!group) return;
+      
+      // Check if this group is already added
+      if (groupMemberships.some(m => m.group_id === selectedGroupId)) {
+          alert('This group is already added.');
+          return;
+      }
+      
+      const subGroupNames = selectedSubGroupIds
+          .map(id => group.sub_groups.find(sg => sg.id === id)?.name || '')
+          .filter(Boolean);
+      
+      const newMembership: UserGroupMembership = {
+          group_id: selectedGroupId,
+          group_name: group.name,
+          sub_group_ids: selectedSubGroupIds,
+          sub_group_names: subGroupNames
+      };
+      
+      setGroupMemberships([...groupMemberships, newMembership]);
+      setSelectedGroupId('');
+      setSelectedSubGroupIds([]);
+      setShowGroupSelector(false);
+  };
+
+  const handleRemoveGroupMembership = (groupId: string) => {
+      setGroupMemberships(groupMemberships.filter(m => m.group_id !== groupId));
+  };
+
+  const toggleSubGroup = (subGroupId: string) => {
+      setSelectedSubGroupIds(prev => 
+          prev.includes(subGroupId) 
+              ? prev.filter(id => id !== subGroupId)
+              : [...prev, subGroupId]
+      );
+  };
+
+  const selectedGroup = groups.find(g => g.id === selectedGroupId);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,16 +134,20 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
         name,
         title,
         gender,
-        group_id: group,
+        group_id: 'NONE', // Legacy field - kept for backward compatibility
         athlete_type: athleteType,
         category
       });
       
-      // Update the avatar with the specific chosen seed/style
-      const userWithAvatar = { ...newUser, avatar_url: avatarUrl };
-      await DataService.updateUser(userWithAvatar);
+      // Update the avatar and group memberships
+      const userWithUpdates = { 
+          ...newUser, 
+          avatar_url: avatarUrl,
+          group_memberships: groupMemberships.length > 0 ? groupMemberships : undefined
+      };
+      await DataService.updateUser(userWithUpdates);
 
-      onAuthSuccess(userWithAvatar);
+      onAuthSuccess(userWithUpdates);
     } catch (err) {
       setError('Registration failed.');
     } finally {
@@ -256,15 +317,112 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
 
                     <div>
                         <label className={`block text-[10px] uppercase font-bold ${isKid ? 'text-blue-400' : 'text-slate-500'} mb-1`}>Affiliation Group</label>
-                        <select 
-                            value={group}
-                            onChange={(e) => setGroup(e.target.value as GroupType)}
-                            className={`w-full ${isKid ? 'bg-blue-50 border-blue-200 text-blue-900' : 'bg-slate-950 border-slate-800 text-white focus:border-orange-500'} border rounded-lg px-4 py-3 text-sm outline-none`}
-                        >
-                            {Object.values(GroupType).map(g => (
-                                <option key={g} value={g}>{g}</option>
-                            ))}
-                        </select>
+                        
+                        {/* Current Memberships */}
+                        {groupMemberships.length > 0 ? (
+                            <div className="space-y-2 mb-2">
+                                {groupMemberships.map((m) => (
+                                    <div key={m.group_id} className={`flex items-center justify-between ${isKid ? 'bg-blue-100 border-blue-200' : 'bg-slate-800 border-slate-700'} border rounded-lg px-3 py-2`}>
+                                        <div className="flex-1">
+                                            <span className={`text-xs font-bold ${isKid ? 'text-blue-900' : 'text-white'}`}>{m.group_name}</span>
+                                            {m.sub_group_names.length > 0 && (
+                                                <span className={`text-[10px] ${isKid ? 'text-blue-600' : 'text-slate-400'} ml-2`}>
+                                                    ({m.sub_group_names.join(', ')})
+                                                </span>
+                                            )}
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemoveGroupMembership(m.group_id)}
+                                            className={`p-1 ${isKid ? 'text-blue-400 hover:text-blue-600' : 'text-slate-500 hover:text-red-400'}`}
+                                        >
+                                            <X size={14} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className={`text-xs ${isKid ? 'text-blue-400' : 'text-slate-500'} italic mb-2`}>
+                                None selected
+                            </div>
+                        )}
+                        
+                        {/* Add Group Button / Selector */}
+                        {!showGroupSelector ? (
+                            <button
+                                type="button"
+                                onClick={() => setShowGroupSelector(true)}
+                                className={`w-full py-2 px-3 ${isKid ? 'bg-blue-100 border-blue-200 text-blue-600 hover:bg-blue-200' : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700'} border rounded-lg text-xs font-bold flex items-center justify-center gap-2`}
+                            >
+                                <Plus size={14} /> Add Group
+                            </button>
+                        ) : (
+                            <div className={`${isKid ? 'bg-blue-50 border-blue-200' : 'bg-slate-950 border-slate-800'} border rounded-lg p-3 space-y-2`}>
+                                {/* Group Selection */}
+                                <select
+                                    value={selectedGroupId}
+                                    onChange={(e) => {
+                                        setSelectedGroupId(e.target.value);
+                                        setSelectedSubGroupIds([]);
+                                    }}
+                                    className={`w-full ${isKid ? 'bg-blue-100 border-blue-200 text-blue-900' : 'bg-slate-900 border-slate-700 text-white'} border rounded px-3 py-2 text-xs outline-none`}
+                                >
+                                    <option value="">Select a Group...</option>
+                                    {groups
+                                        .filter(g => !groupMemberships.some(m => m.group_id === g.id))
+                                        .map(g => (
+                                            <option key={g.id} value={g.id}>{g.name}</option>
+                                        ))
+                                    }
+                                </select>
+                                
+                                {/* Sub-Group Selection */}
+                                {selectedGroup && selectedGroup.sub_groups.length > 0 && (
+                                    <div className="space-y-1">
+                                        <label className={`text-[10px] ${isKid ? 'text-blue-500' : 'text-slate-500'} font-bold`}>Sub-Groups (optional)</label>
+                                        <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
+                                            {selectedGroup.sub_groups.map(sg => (
+                                                <button
+                                                    key={sg.id}
+                                                    type="button"
+                                                    onClick={() => toggleSubGroup(sg.id)}
+                                                    className={`px-2 py-1 text-[10px] font-bold rounded transition-colors ${
+                                                        selectedSubGroupIds.includes(sg.id)
+                                                            ? (isKid ? 'bg-blue-500 text-white' : 'bg-orange-600 text-white')
+                                                            : (isKid ? 'bg-blue-100 text-blue-600' : 'bg-slate-800 text-slate-400')
+                                                    }`}
+                                                >
+                                                    {sg.name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                                
+                                {/* Action Buttons */}
+                                <div className="flex gap-2 pt-1">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setShowGroupSelector(false);
+                                            setSelectedGroupId('');
+                                            setSelectedSubGroupIds([]);
+                                        }}
+                                        className={`flex-1 py-1.5 text-[10px] font-bold ${isKid ? 'text-blue-500' : 'text-slate-500'} hover:underline`}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleAddGroupMembership}
+                                        disabled={!selectedGroupId}
+                                        className={`flex-1 py-1.5 text-[10px] font-bold ${isKid ? 'bg-blue-500' : 'bg-orange-600'} text-white rounded disabled:opacity-50`}
+                                    >
+                                        Add
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     <div>
