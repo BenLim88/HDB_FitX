@@ -317,7 +317,7 @@ Maintain a professional tone throughout. Avoid slang or casual language. Be anal
             try {
                 // Assign to all selected athletes
                 for (const targetUser of selectedUsers) {
-                    await onAssignWorkout(targetUser.id, workout.id, workout.name);
+                await onAssignWorkout(targetUser.id, workout.id, workout.name);
                 }
                 alert(`Workout assigned to ${selectedUsers.length} athlete(s)!`);
                 setAssigningWorkoutId(null);
@@ -417,20 +417,20 @@ Maintain a professional tone throughout. Avoid slang or casual language. Be anal
                                 .map(u => {
                                     const isSelected = selectedAthleteIds.has(u.id);
                                     return (
-                                        <button
-                                            key={u.id}
+                                <button
+                                    key={u.id}
                                             onClick={() => toggleAthleteSelection(u.id)}
-                                            disabled={isAssigning}
-                                            className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all ${
+                                    disabled={isAssigning}
+                                    className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all ${
                                                 isSelected
                                                     ? isKid 
                                                         ? 'bg-blue-100 border-blue-400 ring-2 ring-blue-400' 
                                                         : 'bg-orange-500/20 border-orange-500 ring-2 ring-orange-500'
                                                     : isKid 
-                                                        ? 'bg-white border-blue-100 hover:border-blue-400 hover:bg-blue-50' 
-                                                        : 'bg-slate-950 border-slate-800 hover:border-orange-500 hover:bg-slate-900'
-                                            }`}
-                                        >
+                                            ? 'bg-white border-blue-100 hover:border-blue-400 hover:bg-blue-50' 
+                                            : 'bg-slate-950 border-slate-800 hover:border-orange-500 hover:bg-slate-900'
+                                    }`}
+                                >
                                             {/* Checkbox indicator */}
                                             <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
                                                 isSelected
@@ -443,14 +443,14 @@ Maintain a professional tone throughout. Avoid slang or casual language. Be anal
                                                     </svg>
                                                 )}
                                             </div>
-                                            <div className="w-10 h-10 rounded-full bg-slate-800 overflow-hidden border border-slate-700">
-                                                <img src={u.avatar_url} className="w-full h-full object-cover" />
-                                            </div>
+                                    <div className="w-10 h-10 rounded-full bg-slate-800 overflow-hidden border border-slate-700">
+                                        <img src={u.avatar_url} className="w-full h-full object-cover" />
+                                    </div>
                                             <div className="text-left flex-1">
-                                                <p className={`${isKid ? 'text-blue-900' : 'text-white'} font-bold text-sm`}>{u.name}</p>
-                                                <p className="text-xs text-slate-500">{u.athlete_type}</p>
-                                            </div>
-                                        </button>
+                                        <p className={`${isKid ? 'text-blue-900' : 'text-white'} font-bold text-sm`}>{u.name}</p>
+                                        <p className="text-xs text-slate-500">{u.athlete_type}</p>
+                                    </div>
+                                </button>
                                     );
                                 })}
                             {allUsers.filter(u => u.id !== user.id && !u.is_master_admin && u.name.toLowerCase().includes(assignSearchTerm.toLowerCase())).length === 0 && (
@@ -529,8 +529,8 @@ Maintain a professional tone throughout. Avoid slang or casual language. Be anal
                                              <div className="flex-1">
                                                  <div className="flex items-center gap-2 mb-2">
                                                      <span className="text-[10px] font-bold bg-yellow-500/30 text-yellow-600 px-2 py-1 rounded inline-block border border-yellow-500/50">
-                                                         ⚡ PRIORITY MISSION ⚡
-                                                     </span>
+                                                     ⚡ PRIORITY MISSION ⚡
+                                                 </span>
                                                      <span className={`text-[10px] font-bold px-2 py-1 rounded border ${
                                                          workoutCategory === 'Hyrox' ? 'bg-orange-500/20 text-orange-400 border-orange-500/40' :
                                                          workoutCategory === 'CrossFit' ? 'bg-red-500/20 text-red-400 border-red-500/40' :
@@ -704,8 +704,8 @@ Maintain a professional tone throughout. Avoid slang or casual language. Be anal
                     
                     <div className="flex flex-wrap gap-2 mt-3">
                         {!aiTip ? (
-                            <button 
-                                onClick={handleGetTip}
+                        <button 
+                            onClick={handleGetTip}
                                 disabled={loadingTip}
                                 className={`text-xs ${isKid ? 'bg-blue-500 hover:bg-blue-400' : 'bg-indigo-600 hover:bg-indigo-500'} disabled:opacity-50 text-white px-3 py-1.5 rounded font-bold transition-colors flex items-center gap-1`}
                             >
@@ -718,8 +718,8 @@ Maintain a professional tone throughout. Avoid slang or casual language. Be anal
                                 className={`text-xs ${isKid ? 'bg-blue-400/80 hover:bg-blue-400' : 'bg-indigo-500/50 hover:bg-indigo-500'} disabled:opacity-50 text-white px-3 py-1.5 rounded font-bold transition-colors flex items-center gap-1`}
                             >
                                 <RefreshCcw size={12} /> Refresh
-                            </button>
-                        )}
+                        </button>
+                    )}
                         
                         {/* Generate Workout Button */}
                         <button 
@@ -1761,7 +1761,7 @@ const App: React.FC = () => {
           updatedUser.group_memberships = editGroupMemberships.filter(m => 
               groups.some(g => g.id === m.group_id)
           );
-          
+
           await DataService.updateUser(updatedUser as User);
           setCurrentUser(updatedUser as User);
           localStorage.setItem('hdb_fitx_user', JSON.stringify(updatedUser));
@@ -1880,7 +1880,7 @@ const App: React.FC = () => {
                     workout={activeWorkout} 
                     currentUser={currentUser} 
                     allUsers={allUsers}
-                    venues={venues}
+                    venues={venues} 
                     exercises={customExercises}
                     onExit={() => {
                         setActiveWorkout(null);
@@ -1915,7 +1915,7 @@ const App: React.FC = () => {
             {activeTab === 'home' && (
                 <HomeTab 
                     user={currentUser} 
-                    workouts={workouts}
+                    workouts={workouts} 
                     logs={logs}
                     pinnedWods={pinnedWods}
                     onStartWorkout={handleStartWorkout} 
@@ -2142,7 +2142,8 @@ const App: React.FC = () => {
                             {/* Athlete ID Card with Flip Animation */}
                             {(() => {
                                 // Archetype color schemes with enhanced designs
-                                const archetypeThemes: Record<string, { bg: string; accent: string; text: string; border: string; glow: string; secondaryBg: string }> = {
+                                const archetypeThemes: Record<string, { bg: string; accent: string; text: string; border: string; glow: string; secondaryBg: string; isHolographic?: boolean }> = {
+                                    'MasterAdmin': { bg: 'from-yellow-300 via-amber-400 to-yellow-600', accent: 'bg-gradient-to-r from-yellow-200 via-white to-yellow-200', text: 'text-amber-900', border: 'border-yellow-200', glow: 'shadow-yellow-400/80', secondaryBg: 'from-white/40 to-transparent', isHolographic: true },
                                     'Hyrox': { bg: 'from-yellow-400 via-yellow-500 to-amber-600', accent: 'bg-black', text: 'text-black', border: 'border-yellow-300', glow: 'shadow-yellow-500/60', secondaryBg: 'from-black/20 to-transparent' },
                                     'CrossFit': { bg: 'from-red-500 via-red-600 to-red-800', accent: 'bg-white', text: 'text-white', border: 'border-red-400', glow: 'shadow-red-500/60', secondaryBg: 'from-white/10 to-transparent' },
                                     'Calisthenics': { bg: 'from-purple-500 via-purple-600 to-indigo-800', accent: 'bg-purple-200', text: 'text-white', border: 'border-purple-400', glow: 'shadow-purple-500/60', secondaryBg: 'from-white/10 to-transparent' },
@@ -2156,7 +2157,11 @@ const App: React.FC = () => {
                                     'Generic': { bg: 'from-slate-500 via-slate-600 to-slate-800', accent: 'bg-orange-500', text: 'text-white', border: 'border-slate-400', glow: 'shadow-slate-500/50', secondaryBg: 'from-orange-500/10 to-transparent' },
                                 };
                                 
-                                const theme = archetypeThemes[currentUser.athlete_type] || archetypeThemes['Generic'];
+                                // Master admin gets special gold holographic theme
+                                const theme = currentUser.is_master_admin 
+                                    ? archetypeThemes['MasterAdmin'] 
+                                    : (archetypeThemes[currentUser.athlete_type] || archetypeThemes['Generic']);
+                                const isMasterAdminCard = currentUser.is_master_admin;
                                 
                                 // Generate unique membership ID - uses actual user ID for uniqueness
                                 // Format: FX-[first 8 chars of user ID in uppercase]
@@ -2204,13 +2209,25 @@ const App: React.FC = () => {
                                         >
                                             {/* Front of Card */}
                                             <div 
-                                                className={`absolute w-full h-full rounded-2xl bg-gradient-to-br ${theme.bg} ${theme.border} border-2 shadow-2xl ${theme.glow} overflow-hidden`}
+                                                className={`absolute w-full h-full rounded-2xl bg-gradient-to-br ${theme.bg} ${theme.border} border-2 shadow-2xl ${theme.glow} overflow-hidden ${isMasterAdminCard ? 'ring-2 ring-yellow-200/50' : ''}`}
                                                 style={{ backfaceVisibility: 'hidden' }}
                                             >
                                                 {/* Decorative elements */}
                                                 <div className={`absolute -top-20 -right-20 w-48 h-48 rounded-full bg-gradient-to-br ${theme.secondaryBg} blur-sm`}></div>
                                                 <div className={`absolute -bottom-16 -left-16 w-40 h-40 rounded-full bg-gradient-to-tr ${theme.secondaryBg} blur-sm`}></div>
                                                 <div className="absolute top-0 left-0 w-full h-full opacity-20" style={{backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.15\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")'}}></div>
+                                                
+                                                {/* Holographic shimmer effect for Master Admin */}
+                                                {isMasterAdminCard && (
+                                                    <>
+                                                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse" style={{animationDuration: '3s'}}></div>
+                                                        <div className="absolute inset-0 opacity-30" style={{
+                                                            background: 'linear-gradient(135deg, rgba(255,0,0,0.1) 0%, rgba(255,165,0,0.1) 14%, rgba(255,255,0,0.1) 28%, rgba(0,255,0,0.1) 42%, rgba(0,255,255,0.1) 57%, rgba(0,0,255,0.1) 71%, rgba(238,130,238,0.1) 85%, rgba(255,0,0,0.1) 100%)',
+                                                            backgroundSize: '200% 200%',
+                                                            animation: 'holographicShimmer 4s ease infinite'
+                                                        }}></div>
+                                                    </>
+                                                )}
                                                 
                                                 {/* Diagonal stripe accent */}
                                                 <div className={`absolute top-0 right-0 w-24 h-full ${theme.accent} opacity-10 transform skew-x-[-15deg] translate-x-10`}></div>
@@ -2225,12 +2242,28 @@ const App: React.FC = () => {
                                                         <div className={`mt-2 px-3 py-1 ${theme.accent} rounded-full text-[9px] font-black uppercase tracking-wider ${theme.text === 'text-white' ? 'text-black' : 'text-white'} shadow-md`}>
                                                             {currentUser.athlete_type}
                                                         </div>
-                                                    </div>
-                                                    
+                            </div>
+                            
                                                     {/* Right side - Info */}
                                                     <div className={`flex-1 flex flex-col justify-center ${theme.text}`}>
                                                         <div className="flex items-center gap-2 mb-1">
-                                                            <div className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">FITX ATHLETE</div>
+                                                            {isMasterAdminCard ? (
+                                                                <div 
+                                                                    className="text-[10px] font-black uppercase tracking-[0.2em]"
+                                                                    style={{
+                                                                        background: 'linear-gradient(135deg, #d4af37 0%, #f9f295 25%, #d4af37 50%, #f9f295 75%, #d4af37 100%)',
+                                                                        WebkitBackgroundClip: 'text',
+                                                                        WebkitTextFillColor: 'transparent',
+                                                                        backgroundSize: '200% 200%',
+                                                                        textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+                                                                        filter: 'drop-shadow(0 1px 1px rgba(212,175,55,0.5))'
+                                                                    }}
+                                                                >
+                                                                    ★ MASTER ADMIN ★
+                                                                </div>
+                                                            ) : (
+                                                                <div className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">FITX ATHLETE</div>
+                                                            )}
                                                             <div className="flex-1 h-[1px] bg-current opacity-20"></div>
                                                         </div>
                                                         <h2 className="text-lg font-black uppercase tracking-tight leading-tight drop-shadow-sm">
@@ -2251,8 +2284,8 @@ const App: React.FC = () => {
                                                                 <span className="opacity-50 w-14">Sub-Group</span>
                                                                 <span className="font-bold truncate max-w-[100px]">{subGroupsDisplay}</span>
                                                             </div>
-                                                        </div>
-                                                        
+                            </div>
+
                                                         {/* Workouts completed badge */}
                                                         <div className="mt-3 flex items-center gap-2">
                                                             <div className={`${theme.accent} ${theme.text === 'text-white' ? 'text-black' : 'text-white'} px-2 py-1 rounded-lg flex items-center gap-1.5 shadow-md`}>
@@ -2273,13 +2306,25 @@ const App: React.FC = () => {
                                             
                                             {/* Back of Card */}
                                             <div 
-                                                className={`absolute w-full h-full rounded-2xl bg-gradient-to-br ${theme.bg} ${theme.border} border-2 shadow-2xl ${theme.glow} overflow-hidden`}
+                                                className={`absolute w-full h-full rounded-2xl bg-gradient-to-br ${theme.bg} ${theme.border} border-2 shadow-2xl ${theme.glow} overflow-hidden ${isMasterAdminCard ? 'ring-2 ring-yellow-200/50' : ''}`}
                                                 style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
                                             >
                                                 {/* Decorative elements */}
                                                 <div className={`absolute -top-16 -left-16 w-40 h-40 rounded-full bg-gradient-to-br ${theme.secondaryBg} blur-sm`}></div>
                                                 <div className={`absolute -bottom-20 -right-20 w-48 h-48 rounded-full bg-gradient-to-tl ${theme.secondaryBg} blur-sm`}></div>
                                                 <div className="absolute top-0 left-0 w-full h-full opacity-10" style={{backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'40\' height=\'40\' viewBox=\'0 0 40 40\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.2\' fill-rule=\'evenodd\'%3E%3Cpath d=\'M0 40L40 0H20L0 20M40 40V20L20 40\'/%3E%3C/g%3E%3C/svg%3E")'}}></div>
+                                                
+                                                {/* Holographic shimmer effect for Master Admin */}
+                                                {isMasterAdminCard && (
+                                                    <>
+                                                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse" style={{animationDuration: '3s'}}></div>
+                                                        <div className="absolute inset-0 opacity-30" style={{
+                                                            background: 'linear-gradient(135deg, rgba(255,0,0,0.1) 0%, rgba(255,165,0,0.1) 14%, rgba(255,255,0,0.1) 28%, rgba(0,255,0,0.1) 42%, rgba(0,255,255,0.1) 57%, rgba(0,0,255,0.1) 71%, rgba(238,130,238,0.1) 85%, rgba(255,0,0,0.1) 100%)',
+                                                            backgroundSize: '200% 200%',
+                                                            animation: 'holographicShimmer 4s ease infinite'
+                                                        }}></div>
+                                                    </>
+                                                )}
                                                 
                                                 {/* Back content */}
                                                 <div className="relative h-full p-4 flex">
@@ -2309,9 +2354,22 @@ const App: React.FC = () => {
                                                             </div>
                                                             {currentUser.is_admin && (
                                                                 <div className="mt-2">
-                                                                    <span className={`px-2 py-0.5 ${theme.accent} ${theme.text === 'text-white' ? 'text-black' : 'text-white'} text-[9px] font-black uppercase rounded-full shadow-md`}>
-                                                                        ⚡ ADMIN ACCESS
-                                                                    </span>
+                                                                    {isMasterAdminCard ? (
+                                                                        <span 
+                                                                            className="px-3 py-1 text-[9px] font-black uppercase rounded-full shadow-lg"
+                                                                            style={{
+                                                                                background: 'linear-gradient(135deg, #d4af37 0%, #f9f295 25%, #d4af37 50%, #f9f295 75%, #d4af37 100%)',
+                                                                                color: '#000',
+                                                                                boxShadow: '0 2px 8px rgba(212,175,55,0.5), inset 0 1px 0 rgba(255,255,255,0.3)'
+                                                                            }}
+                                                                        >
+                                                                            👑 MASTER ADMIN
+                                                                        </span>
+                                                                    ) : (
+                                                                        <span className={`px-2 py-0.5 ${theme.accent} ${theme.text === 'text-white' ? 'text-black' : 'text-white'} text-[9px] font-black uppercase rounded-full shadow-md`}>
+                                                                            ⚡ ADMIN ACCESS
+                                                                        </span>
+                                                                    )}
                                                                 </div>
                                                             )}
                                                         </div>
@@ -2319,9 +2377,16 @@ const App: React.FC = () => {
                                                 </div>
                                                 
                                                 {/* Bottom bar */}
-                                                <div className={`absolute bottom-0 left-0 right-0 h-7 ${theme.accent} bg-opacity-90 flex items-center justify-between px-4`}>
-                                                    <span className={`text-[9px] font-bold ${theme.text === 'text-white' ? 'text-black' : 'text-white'} opacity-70`}>FITX MEMBERSHIP</span>
-                                                    <span className={`text-[8px] ${theme.text === 'text-white' ? 'text-black' : 'text-white'} opacity-50 font-medium`}>← TAP TO FLIP</span>
+                                                <div 
+                                                    className={`absolute bottom-0 left-0 right-0 h-7 ${isMasterAdminCard ? '' : theme.accent} bg-opacity-90 flex items-center justify-between px-4`}
+                                                    style={isMasterAdminCard ? {
+                                                        background: 'linear-gradient(90deg, #d4af37 0%, #f9f295 50%, #d4af37 100%)'
+                                                    } : {}}
+                                                >
+                                                    <span className={`text-[9px] font-bold ${isMasterAdminCard ? 'text-amber-900' : (theme.text === 'text-white' ? 'text-black' : 'text-white')} opacity-70`}>
+                                                        {isMasterAdminCard ? '👑 ELITE MEMBERSHIP' : 'FITX MEMBERSHIP'}
+                                                    </span>
+                                                    <span className={`text-[8px] ${isMasterAdminCard ? 'text-amber-900' : (theme.text === 'text-white' ? 'text-black' : 'text-white')} opacity-50 font-medium`}>← TAP TO FLIP</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -2707,8 +2772,8 @@ const App: React.FC = () => {
                                     
                                     {/* Add Group */}
                                     <div className="space-y-2">
-                                        <select 
-                                            className={`w-full ${isKid ? 'bg-white border-blue-200 text-blue-900' : 'bg-slate-950 border-slate-800 text-white'} border rounded px-3 py-2 text-sm outline-none`}
+                                    <select 
+                                        className={`w-full ${isKid ? 'bg-white border-blue-200 text-blue-900' : 'bg-slate-950 border-slate-800 text-white'} border rounded px-3 py-2 text-sm outline-none`}
                                             value=""
                                             onChange={e => {
                                                 const grp = groups.find(g => g.id === e.target.value);
@@ -2726,7 +2791,7 @@ const App: React.FC = () => {
                                             {groups.filter(g => !editGroupMemberships.some(m => m.group_id === g.id)).map(g => (
                                                 <option key={g.id} value={g.id}>{g.name}</option>
                                             ))}
-                                        </select>
+                                    </select>
                                         
                                         {/* Sub-Group Selection for each selected group */}
                                         {editGroupMemberships.map((membership, idx) => {
@@ -3004,7 +3069,7 @@ const App: React.FC = () => {
           <Navbar 
             activeTab={activeTab === 'admin' ? 'profile' : activeTab} 
             setActiveTab={setActiveTab} 
-            notificationCount={notifications.filter(n => !n.read).length}
+            notificationCount={notifications.filter(n => !n.read).length} 
             collabCount={userCollabs.filter(c => c.status === 'active').length}
           />
       )}
