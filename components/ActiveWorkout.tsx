@@ -919,7 +919,7 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
                     disabled={!selectedVenueId}
                     className="w-full py-4 bg-orange-600 hover:bg-orange-500 text-white font-black uppercase italic tracking-wider rounded-xl shadow-lg shadow-orange-900/20 flex items-center justify-center gap-2 animate-pulse disabled:opacity-50 disabled:animate-none"
                 >
-                    <Play size={20} fill="currentColor" /> Start Mission
+                    <Play size={20} fill="currentColor" /> Start Workout
                 </button>
                 
                 <button 

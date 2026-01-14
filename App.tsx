@@ -804,7 +804,7 @@ Maintain a professional tone throughout. Avoid slang or casual language. Be anal
                                     </div>
                                     <p className={`${isKid ? 'text-blue-700' : 'text-slate-400'} text-xs line-clamp-2 mb-2`}>{w.description}</p>
                                     <div className={`text-xs font-bold ${isKid ? 'text-blue-900' : 'text-white'} flex items-center gap-1 mt-auto`}>
-                                        Start Mission <ChevronRight size={14} className="text-yellow-500" />
+                                        Start Workout <ChevronRight size={14} className="text-yellow-500" />
                                     </div>
                                     <button 
                                         onClick={(e) => {

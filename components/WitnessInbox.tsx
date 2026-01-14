@@ -189,7 +189,7 @@ const WitnessInbox: React.FC<WitnessInboxProps> = ({ notifications, currentUserI
                       }}
                       className="flex-1 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2"
                     >
-                      Start Mission <ArrowRight size={14} />
+                      Start Workout <ArrowRight size={14} />
                     </button>
                   )}
                   <button 
