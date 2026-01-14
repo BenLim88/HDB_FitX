@@ -671,7 +671,7 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
               onChange={(e) => setSelectedVenueId(e.target.value)}
             >
               <option value="">-- Select Training Venue --</option>
-              {venues.map(v => <option key={v.id} value={v.id}>{v.name} ({v.type})</option>)}
+              {[...venues].sort((a, b) => a.name.localeCompare(b.name)).map(v => <option key={v.id} value={v.id}>{v.name} ({v.type})</option>)}
             </select>
             
             {showCustomInput && (
@@ -856,7 +856,7 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({ workout, currentUser, all
                                 onChange={(e) => setSelectedVenueId(e.target.value)}
                             >
                                 <option value="">-- Select Training Venue --</option>
-                                {venues.map(v => <option key={v.id} value={v.id}>{v.name} ({v.type})</option>)}
+                                {[...venues].sort((a, b) => a.name.localeCompare(b.name)).map(v => <option key={v.id} value={v.id}>{v.name} ({v.type})</option>)}
                             </select>
                             
                             {showCustomInput && (
