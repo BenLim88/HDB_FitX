@@ -1015,7 +1015,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                             No venues registered yet. Add one above.
                         </div>
                     ) : (
-                    venues.map(v => (
+                    [...venues].sort((a, b) => a.name.localeCompare(b.name)).map(v => (
                         <div key={v.id} className={`bg-slate-900/50 border ${editingVenueId === v.id ? 'border-orange-500/50' : 'border-slate-800'} p-4 rounded-lg flex justify-between items-start`}>
                             <div className="flex items-start gap-3">
                                 <div className="w-10 h-10 rounded bg-slate-800 flex items-center justify-center text-slate-500 shrink-0">
