@@ -594,7 +594,7 @@ Maintain a professional tone throughout. Avoid slang or casual language. Be anal
                                                 className={`flex items-center gap-2 text-xs ${isKid ? 'text-blue-600 hover:text-blue-800' : 'text-slate-400 hover:text-white'}`}
                                              >
                                                  <Users size={14} /> 
-                                                 <span className="font-bold">{pw.participants.length}</span> Soldiers Committed
+                                                 <span className="font-bold">{pw.participants.length}</span> Athletes Committed
                                              </button>
                                              
                                              <div className="flex gap-2">
