@@ -46,6 +46,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
   
   // Sync Exercises State
   const [isSyncingExercises, setIsSyncingExercises] = useState(false);
+  const [isSyncingVenues, setIsSyncingVenues] = useState(false);
 
   // Workout Search & Filter State
   const [workoutSearchQuery, setWorkoutSearchQuery] = useState('');
@@ -318,6 +319,24 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
       setEditingVenueId(null);
       setNewVenueName('');
   }
+
+  const handleSyncVenues = async () => {
+      setIsSyncingVenues(true);
+      try {
+          const result = await DataService.syncNewVenues();
+          if (result.added > 0) {
+              alert(`✅ Synced ${result.added} new venue(s) to the database!`);
+              await loadVenues(); // Reload venues to show the new ones
+          } else {
+              alert(`All ${result.existing} venues are already synced.`);
+          }
+      } catch (error) {
+          console.error('Error syncing venues:', error);
+          alert('Failed to sync venues. Check console for details.');
+      } finally {
+          setIsSyncingVenues(false);
+      }
+  };
 
   const handleDeleteVenue = async (id: string) => {
       if (confirm("Delete this venue?")) {
@@ -1007,6 +1026,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialWorkouts, onUpda
                         </div>
                     </div>
                  </div>
+
+                 {/* Sync Venues Button */}
+                 <div className="flex gap-2">
+                    <button
+                        onClick={handleSyncVenues}
+                        disabled={isSyncingVenues}
+                        className="flex-1 py-3 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-bold rounded-lg flex items-center justify-center gap-2"
+                        title="Sync new venues from library"
+                    >
+                        {isSyncingVenues ? <Loader2 size={20} className="animate-spin" /> : <RefreshCcw size={20} />}
+                        <span>Sync New Venues</span>
+                    </button>
+                 </div>
+                 <p className="text-xs text-slate-500 text-center">
+                    Tap to sync new venues
+                 </p>
 
                  {/* Venue List */}
                  <div className="space-y-3">

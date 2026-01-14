@@ -416,6 +416,34 @@ export const DataService = {
       await deleteDoc(venueRef);
   },
 
+  syncNewVenues: async (): Promise<{ added: number; existing: number }> => {
+      try {
+          const venuesSnapshot = await getDocs(collection(db, COLLECTIONS.VENUES));
+          const existingIds = new Set(venuesSnapshot.docs.map(doc => doc.id));
+          
+          const batch = writeBatch(db);
+          let addedCount = 0;
+          
+          for (const venue of MOCK_VENUES) {
+              if (!existingIds.has(venue.id)) {
+                  const venueRef = doc(db, COLLECTIONS.VENUES, venue.id);
+                  batch.set(venueRef, venue);
+                  addedCount++;
+              }
+          }
+          
+          if (addedCount > 0) {
+              await batch.commit();
+          }
+          
+          console.log(`Synced venues: ${addedCount} added, ${existingIds.size} already existed`);
+          return { added: addedCount, existing: existingIds.size };
+      } catch (error) {
+          console.error('Error syncing venues:', error);
+          throw error;
+      }
+  },
+
   // --- PINNED WOD MANAGEMENT ---
   getPinnedWODs: async (): Promise<PinnedWOD[]> => {
       const pinnedWodsSnapshot = await getDocs(
